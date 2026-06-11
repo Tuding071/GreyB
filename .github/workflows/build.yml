@@ -91,6 +91,14 @@ jobs:
           </resources>
           EOF
 
+          cat > app/src/main/res/values/strings.xml << 'EOF'
+          <?xml version="1.0" encoding="utf-8"?>
+          <resources>
+              <string name="ime_name">GreyB Keyboard</string>
+              <string name="label_symbols">?123</string>
+          </resources>
+          EOF
+
           cat > app/src/main/res/layout/input.xml << 'EOF'
           <?xml version="1.0" encoding="utf-8"?>
           <com.greyb.keyboard.KeyboardView
@@ -190,7 +198,7 @@ jobs:
               </Row>
 
               <Row>
-                  <Key app:codes="-2"  app:keyLabel="?123" app:keyWidth="14%p" app:keyEdgeFlags="1"/>
+                  <Key app:codes="-2"  app:keyLabel="@string/label_symbols" app:keyWidth="14%p" app:keyEdgeFlags="1"/>
                   <Key app:codes="44"  app:keyLabel=","/>
                   <Key app:codes="32"  app:keyLabel="" app:keyWidth="42%p"/>
                   <Key app:codes="46"  app:keyLabel="."/>
@@ -259,7 +267,7 @@ jobs:
               </Row>
 
               <Row>
-                  <Key app:codes="-2"  app:keyLabel="?123" app:keyWidth="14%p" app:keyEdgeFlags="1"/>
+                  <Key app:codes="-2"  app:keyLabel="@string/label_symbols" app:keyWidth="14%p" app:keyEdgeFlags="1"/>
                   <Key app:codes="44"  app:keyLabel=","/>
                   <Key app:codes="32"  app:keyLabel="" app:keyWidth="42%p"/>
                   <Key app:codes="46"  app:keyLabel="."/>
@@ -368,13 +376,6 @@ jobs:
           <?xml version="1.0" encoding="utf-8"?>
           <input-method xmlns:android="http://schemas.android.com/apk/res/android"
               android:supportsSwitchingToNextInputMethod="true"/>
-          EOF
-
-          cat > app/src/main/res/values/strings.xml << 'EOF'
-          <?xml version="1.0" encoding="utf-8"?>
-          <resources>
-              <string name="ime_name">GreyB Keyboard</string>
-          </resources>
           EOF
 
           cat > app/src/main/res/values/themes.xml << 'EOF'
