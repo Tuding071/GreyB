@@ -521,7 +521,7 @@ class GreyBIME : InputMethodService() {
     }
 
     override fun onCreateInputView(): View {
-        keyboardView = layoutInflater.inflate(R.layout.input, null) as KeyboardView
+        keyboardView = KeyboardView(this)
         keyboardView.setKeyboard(qwertyKeyboard)
         keyboardView.addCallback(keyboardActionListener)
         return keyboardView
