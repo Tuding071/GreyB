@@ -102,9 +102,9 @@ jobs:
               android:layout_width="match_parent"
               android:layout_height="wrap_content"
               android:layout_alignParentBottom="true"
-              android:background="#1A1A1A"
+              android:background="#801A1A1A"
               app:keyBackground="@drawable/key_bg"
-              app:keyTextColorPrimary="#DCDCD7"
+              app:keyTextColorPrimary="#80DCDCD7"
               app:labelTextSize="16sp"/>
           EOF
 
@@ -113,19 +113,19 @@ jobs:
           <selector xmlns:android="http://schemas.android.com/apk/res/android">
               <item android:state_pressed="true">
                   <shape android:shape="rectangle">
-                      <solid android:color="#B4B4AA"/>
+                      <solid android:color="#80B4B4AA"/>
                       <corners android:radius="4dp"/>
                   </shape>
               </item>
               <item android:state_checkable="true" android:state_checked="true">
                   <shape android:shape="rectangle">
-                      <solid android:color="#B4B4AA"/>
+                      <solid android:color="#80B4B4AA"/>
                       <corners android:radius="4dp"/>
                   </shape>
               </item>
               <item>
                   <shape android:shape="rectangle">
-                      <solid android:color="#2A2A2A"/>
+                      <solid android:color="#802A2A2A"/>
                       <corners android:radius="4dp"/>
                   </shape>
               </item>
@@ -384,9 +384,10 @@ jobs:
           cat > app/src/main/res/values/themes.xml << 'EOF'
           <resources>
               <style name="AppTheme" parent="android:Theme.Material.Light.NoActionBar">
-                  <item name="android:windowBackground">#1A1A1A</item>
-                  <item name="android:navigationBarColor">#1A1A1A</item>
+                  <item name="android:windowBackground">#801A1A1A</item>
+                  <item name="android:navigationBarColor">#801A1A1A</item>
                   <item name="android:windowLightStatusBar">false</item>
+                  <item name="android:windowIsTranslucent">true</item>
               </style>
           </resources>
           EOF
@@ -412,9 +413,9 @@ jobs:
           import os
 
           def make_icon(size):
-              BG = (26, 26, 26, 255)
-              ACCENT = (180, 180, 170, 255)
-              WHITE = (220, 220, 215, 255)
+              BG = (26, 26, 26, 128)
+              ACCENT = (180, 180, 170, 128)
+              WHITE = (220, 220, 215, 128)
               img = Image.new('RGBA', (size, size), BG)
               d = ImageDraw.Draw(img)
               margin = size // 5
