@@ -52,7 +52,7 @@ jobs:
 
           cp Keyboard.kt $PKG/
 
-          cat > settings.gradle.kts << 'SETTINGS'
+          cat > settings.gradle.kts << 'EOF'
           pluginManagement {
               repositories { google(); mavenCentral(); gradlePluginPortal() }
           }
@@ -62,17 +62,17 @@ jobs:
           }
           rootProject.name = "GreyB"
           include(":app")
-          SETTINGS
+          EOF
 
-          cat > build.gradle.kts << 'BUILDROOT'
+          cat > build.gradle.kts << 'EOF'
           plugins {
               id("com.android.application")             version "8.9.1" apply false
               id("org.jetbrains.kotlin.android")        version "2.2.0" apply false
               id("org.jetbrains.kotlin.plugin.compose") version "2.2.0" apply false
           }
-          BUILDROOT
+          EOF
 
-          cat > app/build.gradle.kts << BUILDAPP
+          cat > app/build.gradle.kts << EOF
           plugins {
               id("com.android.application")
               id("org.jetbrains.kotlin.android")
@@ -139,17 +139,17 @@ jobs:
               implementation("androidx.compose.material:material-icons-extended")
               implementation("androidx.compose.animation:animation")
           }
-          BUILDAPP
+          EOF
 
-          cat > gradle.properties << 'PROPS'
+          cat > gradle.properties << 'EOF'
           android.useAndroidX=true
           android.enableJetifier=true
           org.gradle.jvmargs=-Xmx4g -XX:MaxMetaspaceSize=512m -XX:+UseParallelGC
           kotlin.code.style=official
           android.suppressUnsupportedCompileSdk=36
-          PROPS
+          EOF
 
-          cat > app/src/main/AndroidManifest.xml << 'MANIFEST'
+          cat > app/src/main/AndroidManifest.xml << 'EOF'
           <?xml version="1.0" encoding="utf-8"?>
           <manifest xmlns:android="http://schemas.android.com/apk/res/android">
               <uses-permission android:name="android.permission.VIBRATE" />
@@ -185,21 +185,21 @@ jobs:
                   </service>
               </application>
           </manifest>
-          MANIFEST
+          EOF
 
-          cat > app/src/main/res/xml/method.xml << 'METHOD'
+          cat > app/src/main/res/xml/method.xml << 'EOF'
           <?xml version="1.0" encoding="utf-8"?>
           <input-method xmlns:android="http://schemas.android.com/apk/res/android"
               android:supportsSwitchingToNextInputMethod="true"
               android:isDefault="false"
               android:settingsActivity="com.greyb.keyboard.MainActivity" />
-          METHOD
+          EOF
 
-          cat > app/src/main/res/values/strings.xml << 'STRINGS'
+          cat > app/src/main/res/values/strings.xml << 'EOF'
           <resources><string name="app_name">GreyB Keyboard</string></resources>
-          STRINGS
+          EOF
 
-          cat > app/src/main/res/values/themes.xml << 'THEMES'
+          cat > app/src/main/res/values/themes.xml << 'EOF'
           <resources>
               <style name="AppTheme" parent="android:Theme.Material.Light.NoActionBar">
                   <item name="android:windowBackground">#1A1A1A</item>
@@ -208,7 +208,7 @@ jobs:
                   <item name="android:windowLightStatusBar">false</item>
               </style>
           </resources>
-          THEMES
+          EOF
 
       - name: Generate dummy keystore
         run: |
