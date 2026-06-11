@@ -5,14 +5,12 @@ import android.view.View
 import android.view.ViewGroup
 import android.view.inputmethod.EditorInfo
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
-import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material.icons.filled.EmojiEmotions
 import androidx.compose.material.icons.filled.KeyboardCapslock
@@ -23,15 +21,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.input.key.*
 import androidx.compose.ui.platform.ComposeView
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import kotlin.math.roundToInt
 
 class GreyBIME : InputMethodService() {
 
@@ -48,16 +43,22 @@ class GreyBIME : InputMethodService() {
                     )
                 }
             }
-            layoutParams = ViewGroup.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT,
-                ViewGroup.LayoutParams.WRAP_CONTENT
-            )
         }
         return composeView
     }
 
+    override fun onEvaluateFullscreenMode(): Boolean = false
+
+    override fun onComputeInsets(outInsets: InputMethodService.Insets?) {
+        super.onComputeInsets(outInsets)
+        if (outInsets != null) {
+            outInsets.contentTopInsets = outInsets.visibleTopInsets
+        }
+    }
+
     override fun onStartInputView(info: EditorInfo?, restarting: Boolean) {
         super.onStartInputView(info, restarting)
+        composeView.requestLayout()
     }
 
     private fun handleKeyPress(key: KeyDef) {
@@ -84,7 +85,7 @@ class GreyBIME : InputMethodService() {
                         )
                     }
                     Action.SPACE -> ic.commitText(" ", 1)
-                    Action.SHIFT -> { /* handle shift toggle */ }
+                    Action.SHIFT -> { /* handled in UI */ }
                     Action.SYMBOLS -> { /* switch to symbols */ }
                     Action.EMOJI -> { /* switch to emoji */ }
                 }
@@ -117,8 +118,6 @@ enum class Action {
     DELETE, ENTER, SPACE, SHIFT, SYMBOLS, EMOJI
 }
 
-data class KeyRow(val keys: List<KeyDef>, val sidePadding: Dp = 0.dp)
-
 @Composable
 fun GreyBKeyboard(
     onKeyPress: (KeyDef) -> Unit
@@ -142,12 +141,6 @@ fun GreyBKeyboard(
         KeyDef.CharKey('z'), KeyDef.CharKey('x'), KeyDef.CharKey('c'),
         KeyDef.CharKey('v'), KeyDef.CharKey('b'), KeyDef.CharKey('n'),
         KeyDef.CharKey('m')
-    )
-
-    val rows = listOf(
-        KeyRow(qwertyRow),
-        KeyRow(asdfRow, sidePadding = 5.dp),
-        KeyRow(zxcvRow, sidePadding = 8.dp)
     )
 
     val surfaceColor = MaterialTheme.colorScheme.surface
