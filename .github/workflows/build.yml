@@ -52,178 +52,37 @@ jobs:
           mkdir -p app/src/main/res/drawable
           mkdir -p gradle/wrapper
 
-          cat > $PKG/SoftKeyboard.kt << 'KOTLINEOF'
-          package com.greyb.keyboard
-
-          import android.inputmethodservice.InputMethodService
-          import android.inputmethodservice.Keyboard
-          import android.inputmethodservice.KeyboardView
-          import android.text.InputType
-          import android.view.KeyEvent
-          import android.view.View
-          import android.view.inputmethod.EditorInfo
-
-          class SoftKeyboard : InputMethodService(), KeyboardView.OnKeyboardActionListener {
-
-              private var mInputView: KeyboardView? = null
-              private var mQwertyKeyboard: Keyboard? = null
-              private var mSymbolsKeyboard: Keyboard? = null
-              private var mCurKeyboard: Keyboard? = null
-
-              private var mCapsLock = false
-              private var mLastShiftTime = 0L
-
-              override fun onCreate() {
-                  super.onCreate()
-              }
-
-              override fun onInitializeInterface() {
-                  if (mQwertyKeyboard != null) return
-                  mQwertyKeyboard = Keyboard(this, R.xml.qwerty)
-                  mSymbolsKeyboard = Keyboard(this, R.xml.symbols)
-              }
-
-              override fun onCreateInputView(): View {
-                  mInputView = layoutInflater.inflate(R.layout.input, null) as KeyboardView
-                  mInputView!!.setOnKeyboardActionListener(this)
-                  mInputView!!.isPreviewEnabled = false
-                  setKeyboard(mQwertyKeyboard!!)
-                  return mInputView!!
-              }
-
-              private fun setKeyboard(nextKeyboard: Keyboard) {
-                  mInputView?.setKeyboard(nextKeyboard)
-              }
-
-              override fun onStartInput(attribute: EditorInfo?, restarting: Boolean) {
-                  super.onStartInput(attribute, restarting)
-                  mCurKeyboard = when (attribute?.inputType?.and(InputType.TYPE_MASK_CLASS)) {
-                      InputType.TYPE_CLASS_NUMBER,
-                      InputType.TYPE_CLASS_DATETIME,
-                      InputType.TYPE_CLASS_PHONE -> mSymbolsKeyboard
-                      else -> mQwertyKeyboard
-                  }
-                  setKeyboard(mCurKeyboard!!)
-                  updateShiftKeyState(attribute)
-              }
-
-              override fun onStartInputView(info: EditorInfo?, restarting: Boolean) {
-                  super.onStartInputView(info, restarting)
-                  setKeyboard(mCurKeyboard!!)
-              }
-
-              override fun onFinishInput() {
-                  super.onFinishInput()
-                  mCurKeyboard = mQwertyKeyboard
-                  mInputView?.closing()
-              }
-
-              private fun updateShiftKeyState(attr: EditorInfo?) {
-                  if (attr != null && mInputView != null && mQwertyKeyboard == mInputView!!.keyboard) {
-                      var caps = 0
-                      val ei = currentInputEditorInfo
-                      if (ei != null && ei.inputType != InputType.TYPE_NULL) {
-                          caps = currentInputConnection.cursorCapsMode(attr.inputType)
-                      }
-                      mInputView!!.isShifted = mCapsLock || caps != 0
-                  }
-              }
-
-              override fun onKey(primaryCode: Int, keyCodes: IntArray?) {
-                  val ic = currentInputConnection
-                  when (primaryCode) {
-                      Keyboard.KEYCODE_DONE -> {
-                          ic.sendKeyEvent(KeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_ENTER))
-                          ic.sendKeyEvent(KeyEvent(KeyEvent.ACTION_UP, KeyEvent.KEYCODE_ENTER))
-                      }
-                      Keyboard.KEYCODE_DELETE -> {
-                          handleBackspace()
-                      }
-                      Keyboard.KEYCODE_SHIFT -> {
-                          handleShift()
-                      }
-                      Keyboard.KEYCODE_MODE_CHANGE -> {
-                          if (mInputView != null) {
-                              val current = mInputView!!.keyboard
-                              if (current == mSymbolsKeyboard) {
-                                  setKeyboard(mQwertyKeyboard!!)
-                              } else {
-                                  setKeyboard(mSymbolsKeyboard!!)
-                              }
-                          }
-                      }
-                      else -> {
-                          handleCharacter(primaryCode)
-                      }
-                  }
-              }
-
-              private fun handleBackspace() {
-                  val ic = currentInputConnection
-                  ic.sendKeyEvent(KeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_DEL))
-                  ic.sendKeyEvent(KeyEvent(KeyEvent.ACTION_UP, KeyEvent.KEYCODE_DEL))
-                  updateShiftKeyState(currentInputEditorInfo)
-              }
-
-              private fun handleShift() {
-                  if (mInputView == null) return
-                  val currentKeyboard = mInputView!!.keyboard
-                  if (mQwertyKeyboard == currentKeyboard) {
-                      checkToggleCapsLock()
-                      mInputView!!.isShifted = mCapsLock || !mInputView!!.isShifted
-                  }
-              }
-
-              private fun handleCharacter(primaryCode: Int) {
-                  var code = primaryCode
-                  if (isInputViewShown && mInputView!!.isShifted) {
-                      code = Character.toUpperCase(code)
-                  }
-                  currentInputConnection.commitText(code.toChar().toString(), 1)
-                  if (mInputView!!.isShifted && !mCapsLock) {
-                      mInputView!!.isShifted = false
-                  }
-                  updateShiftKeyState(currentInputEditorInfo)
-              }
-
-              private fun checkToggleCapsLock() {
-                  val now = System.currentTimeMillis()
-                  if (mLastShiftTime + 800 > now) {
-                      mCapsLock = !mCapsLock
-                      mLastShiftTime = 0
-                  } else {
-                      mLastShiftTime = now
-                  }
-              }
-
-              override fun onText(text: CharSequence?) {}
-
-              override fun swipeLeft() {}
-              override fun swipeRight() {}
-              override fun swipeDown() {}
-              override fun swipeUp() {}
-              override fun onPress(primaryCode: Int) {}
-              override fun onRelease(primaryCode: Int) {}
-
-              override fun onEvaluateFullscreenMode(): Boolean = false
-          }
-          KOTLINEOF
-
-          cat > app/src/main/res/layout/input.xml << 'EOF'
+          //PART 1.1 START
+          cat > app/src/main/res/values/strings.xml << 'EOF'
           <?xml version="1.0" encoding="utf-8"?>
-          <android.inputmethodservice.KeyboardView
-              xmlns:android="http://schemas.android.com/apk/res/android"
-              android:id="@+id/keyboard"
-              android:layout_width="match_parent"
-              android:layout_height="wrap_content"
-              android:layout_alignParentBottom="true"
-              android:background="#1A1A1A"
-              android:keyBackground="@drawable/key_bg"
-              android:keyTextColor="#DCDCD7"
-              android:keyTextSize="16sp"
-              android:labelTextSize="16sp"/>
+          <resources>
+              <string name="ime_name">GreyB Keyboard</string>
+              <string name="backspace">⌫</string>
+              <string name="enter">⏎</string>
+              <string name="shift">⇧</string>
+          </resources>
           EOF
+          //PART 1.1 END
 
+          //PART 1.2 START
+          cat > app/src/main/res/values/dimens.xml << 'EOF'
+          <?xml version="1.0" encoding="utf-8"?>
+          <resources>
+              <dimen name="key_height">48dp</dimen>
+              <dimen name="key_text_size">16sp</dimen>
+          </resources>
+          EOF
+          //PART 1.2 END
+
+          //PART 1.3 START
+          cat > app/src/main/res/xml/method.xml << 'EOF'
+          <?xml version="1.0" encoding="utf-8"?>
+          <input-method xmlns:android="http://schemas.android.com/apk/res/android"
+              android:supportsSwitchingToNextInputMethod="true"/>
+          EOF
+          //PART 1.3 END
+
+          //PART 1.4 START
           cat > app/src/main/res/drawable/key_bg.xml << 'EOF'
           <?xml version="1.0" encoding="utf-8"?>
           <selector xmlns:android="http://schemas.android.com/apk/res/android">
@@ -247,7 +106,26 @@ jobs:
               </item>
           </selector>
           EOF
+          //PART 1.4 END
 
+          //PART 1.5 START
+          cat > app/src/main/res/layout/input.xml << 'EOF'
+          <?xml version="1.0" encoding="utf-8"?>
+          <android.inputmethodservice.KeyboardView
+              xmlns:android="http://schemas.android.com/apk/res/android"
+              android:id="@+id/keyboard"
+              android:layout_width="match_parent"
+              android:layout_height="wrap_content"
+              android:layout_alignParentBottom="true"
+              android:background="#1A1A1A"
+              android:keyBackground="@drawable/key_bg"
+              android:keyTextColor="#DCDCD7"
+              android:keyTextSize="16sp"
+              android:labelTextSize="16sp"/>
+          EOF
+          //PART 1.5 END
+
+          //PART 2.1 START
           cat > app/src/main/res/xml/qwerty.xml << 'EOF'
           <?xml version="1.0" encoding="utf-8"?>
           <Keyboard xmlns:android="http://schemas.android.com/apk/res/android"
@@ -316,7 +194,9 @@ jobs:
 
           </Keyboard>
           EOF
+          //PART 2.1 END
 
+          //PART 2.2 START
           cat > app/src/main/res/xml/symbols.xml << 'EOF'
           <?xml version="1.0" encoding="utf-8"?>
           <Keyboard xmlns:android="http://schemas.android.com/apk/res/android"
@@ -386,31 +266,188 @@ jobs:
 
           </Keyboard>
           EOF
+          //PART 2.2 END
 
-          cat > app/src/main/res/xml/method.xml << 'EOF'
-          <?xml version="1.0" encoding="utf-8"?>
-          <input-method xmlns:android="http://schemas.android.com/apk/res/android"
-              android:supportsSwitchingToNextInputMethod="true"/>
-          EOF
+          //PART 3.1 START
+          cat > $PKG/SoftKeyboard.kt << 'KOTLINEOF'
+          package com.greyb.keyboard
 
-          cat > app/src/main/res/values/strings.xml << 'EOF'
-          <?xml version="1.0" encoding="utf-8"?>
-          <resources>
-              <string name="ime_name">GreyB Keyboard</string>
-              <string name="backspace">⌫</string>
-              <string name="enter">⏎</string>
-              <string name="shift">⇧</string>
-          </resources>
-          EOF
+          import android.inputmethodservice.InputMethodService
+          import android.inputmethodservice.Keyboard
+          import android.inputmethodservice.KeyboardView
+          import android.text.InputType
+          import android.view.KeyEvent
+          import android.view.View
+          import android.view.inputmethod.EditorInfo
 
-          cat > app/src/main/res/values/dimens.xml << 'EOF'
-          <?xml version="1.0" encoding="utf-8"?>
-          <resources>
-              <dimen name="key_height">48dp</dimen>
-              <dimen name="key_text_size">16sp</dimen>
-          </resources>
-          EOF
+          class SoftKeyboard : InputMethodService(), KeyboardView.OnKeyboardActionListener {
 
+              private var mInputView: KeyboardView? = null
+              private var mQwertyKeyboard: Keyboard? = null
+              private var mSymbolsKeyboard: Keyboard? = null
+              private var mCurKeyboard: Keyboard? = null
+
+              private var mCapsLock = false
+              private var mLastShiftTime = 0L
+          KOTLINEOF
+          //PART 3.1 END
+
+          //PART 3.2 START
+          cat >> $PKG/SoftKeyboard.kt << 'KOTLINEOF'
+
+              override fun onCreate() {
+                  super.onCreate()
+              }
+
+              override fun onInitializeInterface() {
+                  if (mQwertyKeyboard != null) return
+                  mQwertyKeyboard = Keyboard(this, R.xml.qwerty)
+                  mSymbolsKeyboard = Keyboard(this, R.xml.symbols)
+              }
+
+              override fun onCreateInputView(): View {
+                  mInputView = layoutInflater.inflate(R.layout.input, null) as KeyboardView
+                  mInputView!!.setOnKeyboardActionListener(this)
+                  mInputView!!.isPreviewEnabled = false
+                  setKeyboard(mQwertyKeyboard!!)
+                  return mInputView!!
+              }
+
+              private fun setKeyboard(nextKeyboard: Keyboard) {
+                  mInputView?.setKeyboard(nextKeyboard)
+              }
+          KOTLINEOF
+          //PART 3.2 END
+
+          //PART 3.3 START
+          cat >> $PKG/SoftKeyboard.kt << 'KOTLINEOF'
+
+              override fun onStartInput(attribute: EditorInfo?, restarting: Boolean) {
+                  super.onStartInput(attribute, restarting)
+                  mCurKeyboard = when (attribute?.inputType?.and(InputType.TYPE_MASK_CLASS)) {
+                      InputType.TYPE_CLASS_NUMBER,
+                      InputType.TYPE_CLASS_DATETIME,
+                      InputType.TYPE_CLASS_PHONE -> mSymbolsKeyboard
+                      else -> mQwertyKeyboard
+                  }
+                  setKeyboard(mCurKeyboard!!)
+                  updateShiftKeyState(attribute)
+              }
+
+              override fun onStartInputView(info: EditorInfo?, restarting: Boolean) {
+                  super.onStartInputView(info, restarting)
+                  setKeyboard(mCurKeyboard!!)
+              }
+
+              override fun onFinishInput() {
+                  super.onFinishInput()
+                  mCurKeyboard = mQwertyKeyboard
+                  mInputView?.closing()
+              }
+
+              private fun updateShiftKeyState(attr: EditorInfo?) {
+                  if (attr != null && mInputView != null && mQwertyKeyboard == mInputView!!.keyboard) {
+                      mInputView!!.isShifted = mCapsLock || attr.initialCapsMode != 0
+                  }
+              }
+          KOTLINEOF
+          //PART 3.3 END
+
+          //PART 3.4 START
+          cat >> $PKG/SoftKeyboard.kt << 'KOTLINEOF'
+
+              override fun onKey(primaryCode: Int, keyCodes: IntArray?) {
+                  val ic = currentInputConnection
+                  when (primaryCode) {
+                      Keyboard.KEYCODE_DONE -> {
+                          ic.sendKeyEvent(KeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_ENTER))
+                          ic.sendKeyEvent(KeyEvent(KeyEvent.ACTION_UP, KeyEvent.KEYCODE_ENTER))
+                      }
+                      Keyboard.KEYCODE_DELETE -> {
+                          handleBackspace()
+                      }
+                      Keyboard.KEYCODE_SHIFT -> {
+                          handleShift()
+                      }
+                      Keyboard.KEYCODE_MODE_CHANGE -> {
+                          if (mInputView != null) {
+                              val current = mInputView!!.keyboard
+                              if (current == mSymbolsKeyboard) {
+                                  setKeyboard(mQwertyKeyboard!!)
+                              } else {
+                                  setKeyboard(mSymbolsKeyboard!!)
+                              }
+                          }
+                      }
+                      -8 -> {
+                          if (mInputView != null) {
+                              setKeyboard(mQwertyKeyboard!!)
+                          }
+                      }
+                      else -> {
+                          handleCharacter(primaryCode)
+                      }
+                  }
+              }
+
+              private fun handleBackspace() {
+                  val ic = currentInputConnection
+                  ic.sendKeyEvent(KeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_DEL))
+                  ic.sendKeyEvent(KeyEvent(KeyEvent.ACTION_UP, KeyEvent.KEYCODE_DEL))
+                  updateShiftKeyState(currentInputEditorInfo)
+              }
+
+              private fun handleShift() {
+                  if (mInputView == null) return
+                  val currentKeyboard = mInputView!!.keyboard
+                  if (mQwertyKeyboard == currentKeyboard) {
+                      checkToggleCapsLock()
+                      mInputView!!.isShifted = mCapsLock || !mInputView!!.isShifted
+                  }
+              }
+
+              private fun handleCharacter(primaryCode: Int) {
+                  var code = primaryCode
+                  if (isInputViewShown && mInputView!!.isShifted) {
+                      code = Character.toUpperCase(code)
+                  }
+                  currentInputConnection.commitText(code.toChar().toString(), 1)
+                  if (mInputView!!.isShifted && !mCapsLock) {
+                      mInputView!!.isShifted = false
+                  }
+                  updateShiftKeyState(currentInputEditorInfo)
+              }
+          KOTLINEOF
+          //PART 3.4 END
+
+          //PART 3.5 START
+          cat >> $PKG/SoftKeyboard.kt << 'KOTLINEOF'
+
+              private fun checkToggleCapsLock() {
+                  val now = System.currentTimeMillis()
+                  if (mLastShiftTime + 800 > now) {
+                      mCapsLock = !mCapsLock
+                      mLastShiftTime = 0
+                  } else {
+                      mLastShiftTime = now
+                  }
+              }
+
+              override fun onText(text: CharSequence?) {}
+
+              override fun swipeLeft() {}
+              override fun swipeRight() {}
+              override fun swipeDown() {}
+              override fun swipeUp() {}
+              override fun onPress(primaryCode: Int) {}
+              override fun onRelease(primaryCode: Int) {}
+
+              override fun onEvaluateFullscreenMode(): Boolean = false
+          }
+          KOTLINEOF
+          //PART 3.5 END
+
+          //PART 4.1 START
           cat > settings.gradle.kts << 'EOF'
           pluginManagement {
               repositories { google(); mavenCentral(); gradlePluginPortal() }
@@ -422,14 +459,18 @@ jobs:
           rootProject.name = "GreyB"
           include(":app")
           EOF
+          //PART 4.1 END
 
+          //PART 4.2 START
           cat > build.gradle.kts << 'EOF'
           plugins {
               id("com.android.application") version "8.9.1" apply false
               id("org.jetbrains.kotlin.android") version "2.2.0" apply false
           }
           EOF
+          //PART 4.2 END
 
+          //PART 4.3 START
           cat > app/build.gradle.kts << APP
           plugins {
               id("com.android.application")
@@ -473,7 +514,9 @@ jobs:
               kotlinOptions { jvmTarget = "17" }
           }
           APP
+          //PART 4.3 END
 
+          //PART 4.4 START
           cat > gradle.properties << 'EOF'
           android.useAndroidX=true
           android.enableJetifier=true
@@ -481,7 +524,9 @@ jobs:
           kotlin.code.style=official
           android.suppressUnsupportedCompileSdk=36
           EOF
+          //PART 4.4 END
 
+          //PART 4.5 START
           cat > app/src/main/AndroidManifest.xml << 'EOF'
           <?xml version="1.0" encoding="utf-8"?>
           <manifest xmlns:android="http://schemas.android.com/apk/res/android">
@@ -505,6 +550,7 @@ jobs:
               </application>
           </manifest>
           EOF
+          //PART 4.5 END
 
       - name: Generate fixed keystore
         run: |
