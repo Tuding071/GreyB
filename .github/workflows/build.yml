@@ -47,6 +47,7 @@ jobs:
           mkdir -p app/src/main/res/values
           mkdir -p app/src/main/res/xml
           mkdir -p app/src/main/res/layout
+          mkdir -p app/src/main/res/drawable
           mkdir -p gradle/wrapper
 
           cat > $PKG/LatinKeyboard.kt << 'LATIN'
