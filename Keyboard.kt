@@ -26,21 +26,24 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.*
+import androidx.lifecycle.setViewTreeLifecycleOwner
 import androidx.savedstate.SavedStateRegistry
 import androidx.savedstate.SavedStateRegistryController
 import androidx.savedstate.SavedStateRegistryOwner
 import androidx.savedstate.setViewTreeSavedStateRegistryOwner
-import androidx.lifecycle.setViewTreeLifecycleOwner
 
 class GreyBIME : InputMethodService(),
     LifecycleOwner,
-    SavedStateRegistryOwner {
+    SavedStateRegistryOwner,
+    ViewModelStoreOwner {
 
     private val lifecycleRegistry = LifecycleRegistry(this)
     private val savedStateRegistryController = SavedStateRegistryController.create(this)
+    private val store = ViewModelStore()
 
     override val lifecycle: Lifecycle get() = lifecycleRegistry
     override val savedStateRegistry: SavedStateRegistry get() = savedStateRegistryController.savedStateRegistry
+    override val viewModelStore: ViewModelStore get() = store
 
     private lateinit var composeView: ComposeView
 
@@ -57,6 +60,7 @@ class GreyBIME : InputMethodService(),
         composeView = ComposeView(this).apply {
             setViewTreeLifecycleOwner(this@GreyBIME)
             setViewTreeSavedStateRegistryOwner(this@GreyBIME)
+            androidx.lifecycle.ViewTreeViewModelStoreOwner.set(this, this@GreyBIME)
             setContent {
                 GreyBTheme {
                     GreyBKeyboard(onKeyPress = { key -> handleKeyPress(key) })
@@ -68,12 +72,13 @@ class GreyBIME : InputMethodService(),
 
     override fun onDestroy() {
         super.onDestroy()
+        store.clear()
         lifecycleRegistry.handleLifecycleEvent(Lifecycle.Event.ON_DESTROY)
     }
 
     override fun onEvaluateFullscreenMode(): Boolean = false
 
-    override fun onComputeInsets(outInsets: Insets?) {
+    override fun onComputeInsets(outInsets: InputMethodService.Insets?) {
         super.onComputeInsets(outInsets)
         if (outInsets != null) {
             outInsets.contentTopInsets = outInsets.visibleTopInsets
@@ -103,8 +108,6 @@ class GreyBIME : InputMethodService(),
         }
     }
 }
-
-// ── Everything below is unchanged ──────────────────────────────────────────
 
 @Composable
 fun GreyBTheme(content: @Composable () -> Unit) {
@@ -160,14 +163,23 @@ fun GreyBKeyboard(onKeyPress: (KeyDef) -> Unit) {
         }
 
         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
-            KeyButton(KeyDef.ActionKey(Action.SHIFT, "⇧", Icons.Default.KeyboardCapslock),
+            KeyButton(
+                key = KeyDef.ActionKey(Action.SHIFT, "⇧", Icons.Default.KeyboardCapslock),
                 onClick = { isShifted = !isShifted; onKeyPress(KeyDef.ActionKey(Action.SHIFT, "⇧")) },
-                modifier = Modifier.weight(1.4f), bgColor = if (isShifted) accentColor else keyBgColor,
-                textColor = keyTextColor, showIcon = true)
+                modifier = Modifier.weight(1.4f),
+                bgColor = if (isShifted) accentColor else keyBgColor,
+                textColor = keyTextColor,
+                showIcon = true
+            )
             zxcvRow.forEach { KeyButton(it, onKeyPress, Modifier.weight(1f), keyBgColor, keyTextColor, isShifted) }
-            KeyButton(KeyDef.ActionKey(Action.DELETE, "⌫", Icons.AutoMirrored.Filled.KeyboardArrowLeft),
+            KeyButton(
+                key = KeyDef.ActionKey(Action.DELETE, "⌫", Icons.AutoMirrored.Filled.KeyboardArrowLeft),
                 onClick = { onKeyPress(KeyDef.ActionKey(Action.DELETE, "⌫")) },
-                modifier = Modifier.weight(1.4f), bgColor = keyBgColor, textColor = keyTextColor, showIcon = true)
+                modifier = Modifier.weight(1.4f),
+                bgColor = keyBgColor,
+                textColor = keyTextColor,
+                showIcon = true
+            )
         }
 
         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
