@@ -48,342 +48,368 @@ jobs:
           mkdir -p $PKG
           mkdir -p app/src/main/res/values
           mkdir -p app/src/main/res/xml
+          mkdir -p app/src/main/res/layout
+          mkdir -p app/src/main/res/drawable
           mkdir -p gradle/wrapper
 
-          cat > $PKG/Keyboard.kt << 'KOTLINEOF'
+          cat > $PKG/SoftKeyboard.kt << 'KOTLINEOF'
           package com.greyb.keyboard
 
           import android.inputmethodservice.InputMethodService
+          import android.inputmethodservice.Keyboard
+          import android.inputmethodservice.KeyboardView
+          import android.text.InputType
           import android.view.KeyEvent
           import android.view.View
           import android.view.inputmethod.EditorInfo
-          import android.view.inputmethod.InputConnection
-          import androidx.compose.foundation.background
-          import androidx.compose.foundation.clickable
-          import androidx.compose.foundation.interaction.MutableInteractionSource
-          import androidx.compose.foundation.interaction.PressInteraction
-          import androidx.compose.foundation.layout.*
-          import androidx.compose.foundation.shape.RoundedCornerShape
-          import androidx.compose.material3.Text
-          import androidx.compose.runtime.*
-          import androidx.compose.ui.Alignment
-          import androidx.compose.ui.Modifier
-          import androidx.compose.ui.draw.clip
-          import androidx.compose.ui.graphics.Color
-          import androidx.compose.ui.platform.ComposeView
-          import androidx.compose.ui.text.style.TextAlign
-          import androidx.compose.ui.unit.dp
-          import androidx.compose.ui.unit.sp
-          import androidx.lifecycle.ViewModel
-          import androidx.lifecycle.viewmodel.compose.viewModel
-          import kotlinx.coroutines.delay
-          import kotlinx.coroutines.isActive
 
-          enum class KeyType {
-              REGULAR, MODIFIER, STICKY, REPEATABLE, ACTION, SPACE
-          }
+          class SoftKeyboard : InputMethodService(), KeyboardView.OnKeyboardActionListener {
 
-          data class KeyData(
-              val code: Int,
-              val label: String,
-              val width: Float,
-              val keyType: KeyType = KeyType.REGULAR,
-              val edgeFlags: Int = 0
-          )
+              private var mInputView: KeyboardView? = null
+              private var mQwertyKeyboard: Keyboard? = null
+              private var mSymbolsKeyboard: Keyboard? = null
+              private var mCurKeyboard: Keyboard? = null
 
-          data class KeyboardRowData(
-              val keys: List<KeyData>
-          )
-
-          data class KeyboardLayoutData(
-              val rows: List<KeyboardRowData>
-          )
-
-          val qwertyLayout = KeyboardLayoutData(
-              rows = listOf(
-                  KeyboardRowData(listOf(
-                      KeyData(49, "1", 10f, edgeFlags = 4),
-                      KeyData(50, "2", 10f),
-                      KeyData(51, "3", 10f),
-                      KeyData(52, "4", 10f),
-                      KeyData(53, "5", 10f),
-                      KeyData(54, "6", 10f),
-                      KeyData(55, "7", 10f),
-                      KeyData(56, "8", 10f),
-                      KeyData(57, "9", 10f),
-                      KeyData(48, "0", 10f, edgeFlags = 2)
-                  )),
-                  KeyboardRowData(listOf(
-                      KeyData(113, "q", 10f, edgeFlags = 1),
-                      KeyData(119, "w", 10f),
-                      KeyData(101, "e", 10f),
-                      KeyData(114, "r", 10f),
-                      KeyData(116, "t", 10f),
-                      KeyData(121, "y", 10f),
-                      KeyData(117, "u", 10f),
-                      KeyData(105, "i", 10f),
-                      KeyData(111, "o", 10f),
-                      KeyData(112, "p", 10f, edgeFlags = 2)
-                  )),
-                  KeyboardRowData(listOf(
-                      KeyData(97, "a", 11f, edgeFlags = 1),
-                      KeyData(115, "s", 10f),
-                      KeyData(100, "d", 10f),
-                      KeyData(102, "f", 10f),
-                      KeyData(103, "g", 10f),
-                      KeyData(104, "h", 10f),
-                      KeyData(106, "j", 10f),
-                      KeyData(107, "k", 10f),
-                      KeyData(108, "l", 11f, edgeFlags = 2)
-                  )),
-                  KeyboardRowData(listOf(
-                      KeyData(-1, "⇧", 14f, KeyType.STICKY, edgeFlags = 1),
-                      KeyData(122, "z", 10f),
-                      KeyData(120, "x", 10f),
-                      KeyData(99, "c", 10f),
-                      KeyData(118, "v", 10f),
-                      KeyData(98, "b", 10f),
-                      KeyData(110, "n", 10f),
-                      KeyData(109, "m", 10f),
-                      KeyData(-5, "⌫", 14f, KeyType.REPEATABLE, edgeFlags = 2)
-                  )),
-                  KeyboardRowData(listOf(
-                      KeyData(-2, "?123", 14f, KeyType.ACTION, edgeFlags = 1),
-                      KeyData(44, ",", 10f),
-                      KeyData(32, "", 42f, KeyType.SPACE),
-                      KeyData(46, ".", 10f),
-                      KeyData(-4, "⏎", 14f, KeyType.ACTION, edgeFlags = 2)
-                  ))
-              )
-          )
-
-          val symbolLayout = KeyboardLayoutData(
-              rows = listOf(
-                  KeyboardRowData(listOf(
-                      KeyData(49, "1", 10f, edgeFlags = 4),
-                      KeyData(50, "2", 10f),
-                      KeyData(51, "3", 10f),
-                      KeyData(52, "4", 10f),
-                      KeyData(53, "5", 10f),
-                      KeyData(54, "6", 10f),
-                      KeyData(55, "7", 10f),
-                      KeyData(56, "8", 10f),
-                      KeyData(57, "9", 10f),
-                      KeyData(48, "0", 10f, edgeFlags = 2)
-                  )),
-                  KeyboardRowData(listOf(
-                      KeyData(64, "@", 10f, edgeFlags = 1),
-                      KeyData(35, "#", 10f),
-                      KeyData(36, "$", 10f),
-                      KeyData(37, "%", 10f),
-                      KeyData(38, "&", 10f),
-                      KeyData(45, "-", 10f),
-                      KeyData(43, "+", 10f),
-                      KeyData(40, "(", 10f),
-                      KeyData(41, ")", 10f),
-                      KeyData(47, "/", 10f, edgeFlags = 2)
-                  )),
-                  KeyboardRowData(listOf(
-                      KeyData(33, "!", 11f, edgeFlags = 1),
-                      KeyData(34, "\"", 10f),
-                      KeyData(39, "'", 10f),
-                      KeyData(58, ":", 10f),
-                      KeyData(59, ";", 10f),
-                      KeyData(47, "/", 10f),
-                      KeyData(63, "?", 10f),
-                      KeyData(126, "~", 10f),
-                      KeyData(96, "`", 11f, edgeFlags = 2)
-                  )),
-                  KeyboardRowData(listOf(
-                      KeyData(-8, "ABC", 14f, KeyType.ACTION, edgeFlags = 1),
-                      KeyData(92, "\\", 10f),
-                      KeyData(124, "|", 10f),
-                      KeyData(60, "<", 10f),
-                      KeyData(62, ">", 10f),
-                      KeyData(123, "{", 10f),
-                      KeyData(125, "}", 10f),
-                      KeyData(-5, "⌫", 14f, KeyType.REPEATABLE, edgeFlags = 2)
-                  )),
-                  KeyboardRowData(listOf(
-                      KeyData(-2, "?123", 14f, KeyType.ACTION, edgeFlags = 1),
-                      KeyData(44, ",", 10f),
-                      KeyData(32, "", 42f, KeyType.SPACE),
-                      KeyData(46, ".", 10f),
-                      KeyData(-4, "⏎", 14f, KeyType.ACTION, edgeFlags = 2)
-                  ))
-              )
-          )
-
-          class KeyboardViewModel : ViewModel() {
-              private val _currentLayout = mutableStateOf(qwertyLayout)
-              val currentLayout: KeyboardLayoutData by _currentLayout
-
-              private val _isShifted = mutableStateOf(false)
-              val isShifted: Boolean by _isShifted
-
-              private val _pressedKeys = mutableStateMapOf<Int, Boolean>()
-              val pressedKeys: Map<Int, Boolean> = _pressedKeys
-
-              var inputConnection: InputConnection? = null
-
-              fun onKeyDown(key: KeyData) {
-                  _pressedKeys[key.hashCode()] = true
-              }
-
-              fun onKeyUp(key: KeyData) {
-                  _pressedKeys[key.hashCode()] = false
-                  handleKeyAction(key)
-              }
-
-              fun onKeyCancel(key: KeyData) {
-                  _pressedKeys[key.hashCode()] = false
-              }
-
-              private fun handleKeyAction(key: KeyData) {
-                  val ic = inputConnection ?: return
-                  when (key.code) {
-                      -5 -> ic.deleteSurroundingText(1, 0)
-                      -1 -> _isShifted.value = !_isShifted.value
-                      -2 -> _currentLayout.value = if (_currentLayout.value == qwertyLayout) symbolLayout else qwertyLayout
-                      -4 -> {
-                          ic.sendKeyEvent(KeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_ENTER))
-                          ic.sendKeyEvent(KeyEvent(KeyEvent.ACTION_UP, KeyEvent.KEYCODE_ENTER))
-                      }
-                      -8 -> _currentLayout.value = qwertyLayout
-                      -99 -> {}
-                      else -> {
-                          var ch = key.code.toChar()
-                          if (_isShifted.value && ch.isLowerCase()) {
-                              ch = ch.uppercaseChar()
-                          }
-                          ic.commitText(ch.toString(), 1)
-                          if (_isShifted.value) {
-                              _isShifted.value = false
-                          }
-                      }
-                  }
-              }
-
-              fun getDisplayLabel(key: KeyData): String {
-                  if (key.code == 32) return ""
-                  if (key.code < 0) return key.label
-                  var ch = key.code.toChar()
-                  if (_isShifted.value && ch.isLowerCase()) {
-                      ch = ch.uppercaseChar()
-                  }
-                  return if (ch.isLetter()) ch.toString() else key.label
-              }
-          }
-
-          @androidx.compose.runtime.Composable
-          fun KeyboardScreen(viewModel: KeyboardViewModel = viewModel()) {
-              Column(
-                  modifier = Modifier
-                      .fillMaxWidth()
-                      .background(Color(0x801A1A1A))
-                      .padding(horizontal = 4.dp, vertical = 2.dp),
-                  horizontalAlignment = Alignment.CenterHorizontally
-              ) {
-                  viewModel.currentLayout.rows.forEach { row ->
-                      KeyboardRow(row, viewModel)
-                  }
-              }
-          }
-
-          @androidx.compose.runtime.Composable
-          fun KeyboardRow(row: KeyboardRowData, viewModel: KeyboardViewModel) {
-              Row(
-                  modifier = Modifier.fillMaxWidth(),
-                  horizontalArrangement = Arrangement.Center
-              ) {
-                  row.keys.forEach { key ->
-                      KeyboardKey(key, viewModel)
-                  }
-              }
-          }
-
-          @androidx.compose.runtime.Composable
-          fun KeyboardKey(key: KeyData, viewModel: KeyboardViewModel) {
-              val isPressed = viewModel.pressedKeys[key.hashCode()] ?: false
-              val interactionSource = remember { MutableInteractionSource() }
-
-              LaunchedEffect(interactionSource) {
-                  interactionSource.interactions.collect { interaction ->
-                      when (interaction) {
-                          is PressInteraction.Press -> {
-                              viewModel.onKeyDown(key)
-                              if (key.keyType == KeyType.REPEATABLE) {
-                                  viewModel.onKeyUp(key)
-                                  while (isActive) {
-                                      delay(50)
-                                      viewModel.onKeyUp(key)
-                                  }
-                              }
-                          }
-                          is PressInteraction.Release -> {
-                              if (key.keyType != KeyType.REPEATABLE) {
-                                  viewModel.onKeyUp(key)
-                              }
-                          }
-                          is PressInteraction.Cancel -> {
-                              viewModel.onKeyCancel(key)
-                          }
-                      }
-                  }
-              }
-
-              Box(
-                  modifier = Modifier
-                      .width((key.width * 3.6).dp)
-                      .height(48.dp)
-                      .padding(1.dp)
-                      .clip(RoundedCornerShape(4.dp))
-                      .background(
-                          when {
-                              key.keyType == KeyType.STICKY && viewModel.isShifted -> Color(0x80B4B4AA)
-                              isPressed -> Color(0x80B4B4AA)
-                              else -> Color(0x802A2A2A)
-                          }
-                      )
-                      .clickable(
-                          interactionSource = interactionSource,
-                          indication = null
-                      ) { },
-                  contentAlignment = Alignment.Center
-              ) {
-                  Text(
-                      text = viewModel.getDisplayLabel(key),
-                      color = Color(0x80DCDCD7),
-                      fontSize = if (key.code < 0 && key.code != 32) 14.sp else 16.sp,
-                      textAlign = TextAlign.Center
-                  )
-              }
-          }
-
-          class GreyBIME : InputMethodService() {
-              private lateinit var keyboardViewModel: KeyboardViewModel
+              private var mCapsLock = false
+              private var mLastShiftTime = 0L
 
               override fun onCreate() {
                   super.onCreate()
               }
 
+              override fun onInitializeInterface() {
+                  if (mQwertyKeyboard != null) return
+                  mQwertyKeyboard = Keyboard(this, R.xml.qwerty)
+                  mSymbolsKeyboard = Keyboard(this, R.xml.symbols)
+              }
+
               override fun onCreateInputView(): View {
-                  return ComposeView(this).apply {
-                      setContent {
-                          keyboardViewModel = viewModel()
-                          KeyboardScreen(keyboardViewModel)
-                      }
+                  mInputView = layoutInflater.inflate(R.layout.input, null) as KeyboardView
+                  mInputView!!.setOnKeyboardActionListener(this)
+                  mInputView!!.isPreviewEnabled = false
+                  setKeyboard(mQwertyKeyboard!!)
+                  return mInputView!!
+              }
+
+              private fun setKeyboard(nextKeyboard: Keyboard) {
+                  mInputView?.setKeyboard(nextKeyboard)
+              }
+
+              override fun onStartInput(attribute: EditorInfo?, restarting: Boolean) {
+                  super.onStartInput(attribute, restarting)
+                  mCurKeyboard = when (attribute?.inputType?.and(InputType.TYPE_MASK_CLASS)) {
+                      InputType.TYPE_CLASS_NUMBER,
+                      InputType.TYPE_CLASS_DATETIME,
+                      InputType.TYPE_CLASS_PHONE -> mSymbolsKeyboard
+                      else -> mQwertyKeyboard
                   }
+                  setKeyboard(mCurKeyboard!!)
+                  updateShiftKeyState(attribute)
               }
 
               override fun onStartInputView(info: EditorInfo?, restarting: Boolean) {
                   super.onStartInputView(info, restarting)
-                  keyboardViewModel.inputConnection = currentInputConnection
+                  setKeyboard(mCurKeyboard!!)
               }
+
+              override fun onFinishInput() {
+                  super.onFinishInput()
+                  mCurKeyboard = mQwertyKeyboard
+                  mInputView?.closing()
+              }
+
+              private fun updateShiftKeyState(attr: EditorInfo?) {
+                  if (attr != null && mInputView != null && mQwertyKeyboard == mInputView!!.keyboard) {
+                      var caps = 0
+                      val ei = currentInputEditorInfo
+                      if (ei != null && ei.inputType != InputType.TYPE_NULL) {
+                          caps = currentInputConnection.cursorCapsMode(attr.inputType)
+                      }
+                      mInputView!!.isShifted = mCapsLock || caps != 0
+                  }
+              }
+
+              override fun onKey(primaryCode: Int, keyCodes: IntArray?) {
+                  val ic = currentInputConnection
+                  when (primaryCode) {
+                      Keyboard.KEYCODE_DONE -> {
+                          ic.sendKeyEvent(KeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_ENTER))
+                          ic.sendKeyEvent(KeyEvent(KeyEvent.ACTION_UP, KeyEvent.KEYCODE_ENTER))
+                      }
+                      Keyboard.KEYCODE_DELETE -> {
+                          handleBackspace()
+                      }
+                      Keyboard.KEYCODE_SHIFT -> {
+                          handleShift()
+                      }
+                      Keyboard.KEYCODE_MODE_CHANGE -> {
+                          if (mInputView != null) {
+                              val current = mInputView!!.keyboard
+                              if (current == mSymbolsKeyboard) {
+                                  setKeyboard(mQwertyKeyboard!!)
+                              } else {
+                                  setKeyboard(mSymbolsKeyboard!!)
+                              }
+                          }
+                      }
+                      else -> {
+                          handleCharacter(primaryCode)
+                      }
+                  }
+              }
+
+              private fun handleBackspace() {
+                  val ic = currentInputConnection
+                  ic.sendKeyEvent(KeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_DEL))
+                  ic.sendKeyEvent(KeyEvent(KeyEvent.ACTION_UP, KeyEvent.KEYCODE_DEL))
+                  updateShiftKeyState(currentInputEditorInfo)
+              }
+
+              private fun handleShift() {
+                  if (mInputView == null) return
+                  val currentKeyboard = mInputView!!.keyboard
+                  if (mQwertyKeyboard == currentKeyboard) {
+                      checkToggleCapsLock()
+                      mInputView!!.isShifted = mCapsLock || !mInputView!!.isShifted
+                  }
+              }
+
+              private fun handleCharacter(primaryCode: Int) {
+                  var code = primaryCode
+                  if (isInputViewShown && mInputView!!.isShifted) {
+                      code = Character.toUpperCase(code)
+                  }
+                  currentInputConnection.commitText(code.toChar().toString(), 1)
+                  if (mInputView!!.isShifted && !mCapsLock) {
+                      mInputView!!.isShifted = false
+                  }
+                  updateShiftKeyState(currentInputEditorInfo)
+              }
+
+              private fun checkToggleCapsLock() {
+                  val now = System.currentTimeMillis()
+                  if (mLastShiftTime + 800 > now) {
+                      mCapsLock = !mCapsLock
+                      mLastShiftTime = 0
+                  } else {
+                      mLastShiftTime = now
+                  }
+              }
+
+              override fun onText(text: CharSequence?) {}
+
+              override fun swipeLeft() {}
+              override fun swipeRight() {}
+              override fun swipeDown() {}
+              override fun swipeUp() {}
+              override fun onPress(primaryCode: Int) {}
+              override fun onRelease(primaryCode: Int) {}
 
               override fun onEvaluateFullscreenMode(): Boolean = false
           }
           KOTLINEOF
+
+          cat > app/src/main/res/layout/input.xml << 'EOF'
+          <?xml version="1.0" encoding="utf-8"?>
+          <android.inputmethodservice.KeyboardView
+              xmlns:android="http://schemas.android.com/apk/res/android"
+              android:id="@+id/keyboard"
+              android:layout_width="match_parent"
+              android:layout_height="wrap_content"
+              android:layout_alignParentBottom="true"
+              android:background="#1A1A1A"
+              android:keyBackground="@drawable/key_bg"
+              android:keyTextColor="#DCDCD7"
+              android:keyTextSize="16sp"
+              android:labelTextSize="16sp"/>
+          EOF
+
+          cat > app/src/main/res/drawable/key_bg.xml << 'EOF'
+          <?xml version="1.0" encoding="utf-8"?>
+          <selector xmlns:android="http://schemas.android.com/apk/res/android">
+              <item android:state_pressed="true">
+                  <shape android:shape="rectangle">
+                      <solid android:color="#B4B4AA"/>
+                      <corners android:radius="4dp"/>
+                  </shape>
+              </item>
+              <item android:state_checkable="true" android:state_checked="true">
+                  <shape android:shape="rectangle">
+                      <solid android:color="#B4B4AA"/>
+                      <corners android:radius="4dp"/>
+                  </shape>
+              </item>
+              <item>
+                  <shape android:shape="rectangle">
+                      <solid android:color="#2A2A2A"/>
+                      <corners android:radius="4dp"/>
+                  </shape>
+              </item>
+          </selector>
+          EOF
+
+          cat > app/src/main/res/xml/qwerty.xml << 'EOF'
+          <?xml version="1.0" encoding="utf-8"?>
+          <Keyboard xmlns:android="http://schemas.android.com/apk/res/android"
+              android:keyWidth="10%p"
+              android:keyHeight="48dp"
+              android:horizontalGap="1dp"
+              android:verticalGap="1dp">
+
+              <Row>
+                  <Key android:codes="49" android:keyLabel="1"/>
+                  <Key android:codes="50" android:keyLabel="2"/>
+                  <Key android:codes="51" android:keyLabel="3"/>
+                  <Key android:codes="52" android:keyLabel="4"/>
+                  <Key android:codes="53" android:keyLabel="5"/>
+                  <Key android:codes="54" android:keyLabel="6"/>
+                  <Key android:codes="55" android:keyLabel="7"/>
+                  <Key android:codes="56" android:keyLabel="8"/>
+                  <Key android:codes="57" android:keyLabel="9"/>
+                  <Key android:codes="48" android:keyLabel="0"/>
+              </Row>
+
+              <Row>
+                  <Key android:codes="113" android:keyLabel="q"/>
+                  <Key android:codes="119" android:keyLabel="w"/>
+                  <Key android:codes="101" android:keyLabel="e"/>
+                  <Key android:codes="114" android:keyLabel="r"/>
+                  <Key android:codes="116" android:keyLabel="t"/>
+                  <Key android:codes="121" android:keyLabel="y"/>
+                  <Key android:codes="117" android:keyLabel="u"/>
+                  <Key android:codes="105" android:keyLabel="i"/>
+                  <Key android:codes="111" android:keyLabel="o"/>
+                  <Key android:codes="112" android:keyLabel="p"/>
+              </Row>
+
+              <Row>
+                  <Key android:codes="97" android:keyLabel="a" android:horizontalGap="1%p"/>
+                  <Key android:codes="115" android:keyLabel="s"/>
+                  <Key android:codes="100" android:keyLabel="d"/>
+                  <Key android:codes="102" android:keyLabel="f"/>
+                  <Key android:codes="103" android:keyLabel="g"/>
+                  <Key android:codes="104" android:keyLabel="h"/>
+                  <Key android:codes="106" android:keyLabel="j"/>
+                  <Key android:codes="107" android:keyLabel="k"/>
+                  <Key android:codes="108" android:keyLabel="l" android:width="11%p"/>
+              </Row>
+
+              <Row>
+                  <Key android:codes="-1" android:keyLabel="@string/shift" android:keyWidth="14%p" android:isModifier="true" android:isSticky="true"/>
+                  <Key android:codes="122" android:keyLabel="z"/>
+                  <Key android:codes="120" android:keyLabel="x"/>
+                  <Key android:codes="99" android:keyLabel="c"/>
+                  <Key android:codes="118" android:keyLabel="v"/>
+                  <Key android:codes="98" android:keyLabel="b"/>
+                  <Key android:codes="110" android:keyLabel="n"/>
+                  <Key android:codes="109" android:keyLabel="m"/>
+                  <Key android:codes="-5" android:keyLabel="@string/backspace" android:keyWidth="14%p" android:isRepeatable="true"/>
+              </Row>
+
+              <Row android:rowEdgeFlags="bottom">
+                  <Key android:codes="-2" android:keyLabel="?123" android:keyWidth="14%p"/>
+                  <Key android:codes="44" android:keyLabel=","/>
+                  <Key android:codes="32" android:keyLabel=" " android:keyWidth="42%p"/>
+                  <Key android:codes="46" android:keyLabel="."/>
+                  <Key android:codes="-4" android:keyLabel="@string/enter" android:keyWidth="14%p"/>
+              </Row>
+
+          </Keyboard>
+          EOF
+
+          cat > app/src/main/res/xml/symbols.xml << 'EOF'
+          <?xml version="1.0" encoding="utf-8"?>
+          <Keyboard xmlns:android="http://schemas.android.com/apk/res/android"
+              android:keyWidth="10%p"
+              android:keyHeight="48dp"
+              android:horizontalGap="1dp"
+              android:verticalGap="1dp">
+
+              <Row>
+                  <Key android:codes="49" android:keyLabel="1"/>
+                  <Key android:codes="50" android:keyLabel="2"/>
+                  <Key android:codes="51" android:keyLabel="3"/>
+                  <Key android:codes="52" android:keyLabel="4"/>
+                  <Key android:codes="53" android:keyLabel="5"/>
+                  <Key android:codes="54" android:keyLabel="6"/>
+                  <Key android:codes="55" android:keyLabel="7"/>
+                  <Key android:codes="56" android:keyLabel="8"/>
+                  <Key android:codes="57" android:keyLabel="9"/>
+                  <Key android:codes="48" android:keyLabel="0"/>
+              </Row>
+
+              <Row>
+                  <Key android:codes="64" android:keyLabel="\@"/>
+                  <Key android:codes="35" android:keyLabel="\#"/>
+                  <Key android:codes="36" android:keyLabel="$"/>
+                  <Key android:codes="37" android:keyLabel="%"/>
+                  <Key android:codes="38" android:keyLabel="&amp;"/>
+                  <Key android:codes="45" android:keyLabel="-"/>
+                  <Key android:codes="43" android:keyLabel="+"/>
+                  <Key android:codes="40" android:keyLabel="("/>
+                  <Key android:codes="41" android:keyLabel=")"/>
+                  <Key android:codes="47" android:keyLabel="/"/>
+              </Row>
+
+              <Row>
+                  <Key android:codes="33" android:keyLabel="!" android:horizontalGap="1%p"/>
+                  <Key android:codes="34" android:keyLabel="&quot;"/>
+                  <Key android:codes="39" android:keyLabel="\'"/>
+                  <Key android:codes="58" android:keyLabel=":"/>
+                  <Key android:codes="59" android:keyLabel=";"/>
+                  <Key android:codes="47" android:keyLabel="/"/>
+                  <Key android:codes="63" android:keyLabel="\?"/>
+                  <Key android:codes="126" android:keyLabel="~"/>
+                  <Key android:codes="96" android:keyLabel="`" android:width="11%p"/>
+              </Row>
+
+              <Row>
+                  <Key android:codes="-8" android:keyLabel="ABC" android:keyWidth="14%p"/>
+                  <Key android:codes="92" android:keyLabel="\\"/>
+                  <Key android:codes="124" android:keyLabel="|"/>
+                  <Key android:codes="60" android:keyLabel="&lt;"/>
+                  <Key android:codes="62" android:keyLabel="&gt;"/>
+                  <Key android:codes="123" android:keyLabel="{"/>
+                  <Key android:codes="125" android:keyLabel="}"/>
+                  <Key android:codes="91" android:keyLabel="["/>
+                  <Key android:codes="93" android:keyLabel="]"/>
+                  <Key android:codes="-5" android:keyLabel="@string/backspace" android:keyWidth="14%p" android:isRepeatable="true"/>
+              </Row>
+
+              <Row android:rowEdgeFlags="bottom">
+                  <Key android:codes="-2" android:keyLabel="?123" android:keyWidth="14%p"/>
+                  <Key android:codes="44" android:keyLabel=","/>
+                  <Key android:codes="32" android:keyLabel=" " android:keyWidth="42%p"/>
+                  <Key android:codes="46" android:keyLabel="."/>
+                  <Key android:codes="-4" android:keyLabel="@string/enter" android:keyWidth="14%p"/>
+              </Row>
+
+          </Keyboard>
+          EOF
+
+          cat > app/src/main/res/xml/method.xml << 'EOF'
+          <?xml version="1.0" encoding="utf-8"?>
+          <input-method xmlns:android="http://schemas.android.com/apk/res/android"
+              android:supportsSwitchingToNextInputMethod="true"/>
+          EOF
+
+          cat > app/src/main/res/values/strings.xml << 'EOF'
+          <?xml version="1.0" encoding="utf-8"?>
+          <resources>
+              <string name="ime_name">GreyB Keyboard</string>
+              <string name="backspace">⌫</string>
+              <string name="enter">⏎</string>
+              <string name="shift">⇧</string>
+          </resources>
+          EOF
+
+          cat > app/src/main/res/values/dimens.xml << 'EOF'
+          <?xml version="1.0" encoding="utf-8"?>
+          <resources>
+              <dimen name="key_height">48dp</dimen>
+              <dimen name="key_text_size">16sp</dimen>
+          </resources>
+          EOF
 
           cat > settings.gradle.kts << 'EOF'
           pluginManagement {
@@ -401,7 +427,6 @@ jobs:
           plugins {
               id("com.android.application") version "8.9.1" apply false
               id("org.jetbrains.kotlin.android") version "2.2.0" apply false
-              id("org.jetbrains.kotlin.plugin.compose") version "2.2.0" apply false
           }
           EOF
 
@@ -409,7 +434,6 @@ jobs:
           plugins {
               id("com.android.application")
               id("org.jetbrains.kotlin.android")
-              id("org.jetbrains.kotlin.plugin.compose")
           }
 
           android {
@@ -447,22 +471,6 @@ jobs:
                   targetCompatibility = JavaVersion.VERSION_17
               }
               kotlinOptions { jvmTarget = "17" }
-              buildFeatures { compose = true }
-          }
-
-          dependencies {
-              implementation("androidx.core:core-ktx:1.15.0")
-              implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.9.0")
-              implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.9.0")
-              implementation("androidx.activity:activity-compose:1.10.1")
-              
-              val composeBom = platform("androidx.compose:compose-bom:2025.05.00")
-              implementation(composeBom)
-              implementation("androidx.compose.ui:ui")
-              implementation("androidx.compose.foundation:foundation")
-              implementation("androidx.compose.material3:material3")
-              implementation("androidx.compose.ui:ui-graphics")
-              implementation("androidx.compose.animation:animation")
           }
           APP
 
@@ -483,7 +491,7 @@ jobs:
                   android:icon="@mipmap/ic_launcher"
                   android:roundIcon="@mipmap/ic_launcher_round">
                   <service
-                      android:name=".GreyBIME"
+                      android:name=".SoftKeyboard"
                       android:label="@string/ime_name"
                       android:permission="android.permission.BIND_INPUT_METHOD"
                       android:exported="true">
@@ -496,30 +504,6 @@ jobs:
                   </service>
               </application>
           </manifest>
-          EOF
-
-          cat > app/src/main/res/xml/method.xml << 'EOF'
-          <?xml version="1.0" encoding="utf-8"?>
-          <input-method xmlns:android="http://schemas.android.com/apk/res/android"
-              android:supportsSwitchingToNextInputMethod="true"/>
-          EOF
-
-          cat > app/src/main/res/values/strings.xml << 'EOF'
-          <?xml version="1.0" encoding="utf-8"?>
-          <resources>
-              <string name="ime_name">GreyB Keyboard</string>
-          </resources>
-          EOF
-
-          cat > app/src/main/res/values/themes.xml << 'EOF'
-          <resources>
-              <style name="AppTheme" parent="android:Theme.Material.Light.NoActionBar">
-                  <item name="android:windowBackground">#801A1A1A</item>
-                  <item name="android:navigationBarColor">#801A1A1A</item>
-                  <item name="android:windowLightStatusBar">false</item>
-                  <item name="android:windowIsTranslucent">true</item>
-              </style>
-          </resources>
           EOF
 
       - name: Generate fixed keystore
@@ -543,9 +527,9 @@ jobs:
           import os
 
           def make_icon(size):
-              BG = (26, 26, 26, 128)
-              ACCENT = (180, 180, 170, 128)
-              WHITE = (220, 220, 215, 128)
+              BG = (26, 26, 26, 255)
+              ACCENT = (180, 180, 170, 255)
+              WHITE = (220, 220, 215, 255)
               img = Image.new('RGBA', (size, size), BG)
               d = ImageDraw.Draw(img)
               margin = size // 5
@@ -606,7 +590,7 @@ jobs:
         run: |
           mkdir -p GreyB-release
           cp app/build/outputs/apk/release/app-release.apk GreyB-release/GreyB.apk
-          cp app/src/main/java/com/greyb/keyboard/Keyboard.kt GreyB-release/
+          cp app/src/main/java/com/greyb/keyboard/SoftKeyboard.kt GreyB-release/
           cp .github/workflows/build.yml GreyB-release/
 
           APK_SIZE=$(ls -lh app/build/outputs/apk/release/app-release.apk | awk '{print $5}')
@@ -618,7 +602,7 @@ jobs:
           Signed:     Yes (fixed key)
           APK Size:   $APK_SIZE
           Optimized:  Yes (ProGuard/R8 enabled)
-          Framework:  Jetpack Compose
+          Framework:  AOSP KeyboardView (XML-based)
           EOF
 
       - name: Upload artifact
