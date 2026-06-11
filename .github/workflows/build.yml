@@ -1,1 +1,243 @@
-6
+name: Build GreyB Keyboard
+
+on:
+  push:
+    branches: [ main, master ]
+    paths:
+      - 'Keyboard.kt'
+      - '*.xml'
+      - '.github/workflows/build.yml'
+  pull_request:
+    branches: [ main, master ]
+    paths:
+      - 'Keyboard.kt'
+      - '*.xml'
+      - '.github/workflows/build.yml'
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Set Android SDK path
+        run: echo "sdk.dir=/usr/local/lib/android/sdk" > local.properties
+
+      - name: Cache Gradle packages
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
+          restore-keys: |
+            ${{ runner.os }}-gradle-
+
+      - name: Generate project structure
+        env:
+          BUILD_NUMBER: ${{ github.run_number }}
+        run: |
+          PKG=app/src/main/java/com/greyb/keyboard
+          mkdir -p $PKG
+          mkdir -p app/src/main/res/values
+          mkdir -p app/src/main/res/xml
+          mkdir -p app/src/main/res/layout
+          mkdir -p app/src/main/res/drawable
+          mkdir -p gradle/wrapper
+
+          cp Keyboard.kt $PKG/
+          cp qwerty.xml app/src/main/res/xml/
+          cp symbols.xml app/src/main/res/xml/
+          cp input.xml app/src/main/res/layout/
+          cp key_bg.xml app/src/main/res/drawable/
+          cp strings.xml app/src/main/res/values/
+          cp themes.xml app/src/main/res/values/
+          cp method.xml app/src/main/res/xml/
+          cp AndroidManifest.xml app/src/main/
+
+          cat > settings.gradle.kts << 'EOF'
+          pluginManagement {
+              repositories { google(); mavenCentral(); gradlePluginPortal() }
+          }
+          dependencyResolutionManagement {
+              repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
+              repositories { google(); mavenCentral() }
+          }
+          rootProject.name = "GreyB"
+          include(":app")
+          EOF
+
+          cat > build.gradle.kts << 'EOF'
+          plugins {
+              id("com.android.application") version "8.9.1" apply false
+              id("org.jetbrains.kotlin.android") version "2.2.0" apply false
+          }
+          EOF
+
+          cat > app/build.gradle.kts << APP
+          plugins {
+              id("com.android.application")
+              id("org.jetbrains.kotlin.android")
+          }
+
+          android {
+              namespace  = "com.greyb.keyboard"
+              compileSdk = 36
+
+              defaultConfig {
+                  applicationId = "com.greyb.keyboard"
+                  minSdk        = 26
+                  targetSdk     = 36
+                  versionCode   = ${BUILD_NUMBER}
+                  versionName   = "${BUILD_NUMBER}"
+              }
+
+              signingConfigs {
+                  create("release") {
+                      storeFile     = file("release.keystore")
+                      storePassword = "greyb2024"
+                      keyAlias      = "greyb"
+                      keyPassword   = "greyb2024"
+                  }
+              }
+
+              buildTypes {
+                  release {
+                      isMinifyEnabled = true
+                      isShrinkResources = true
+                      proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"))
+                      signingConfig = signingConfigs.getByName("release")
+                  }
+              }
+
+              compileOptions {
+                  sourceCompatibility = JavaVersion.VERSION_17
+                  targetCompatibility = JavaVersion.VERSION_17
+              }
+              kotlinOptions { jvmTarget = "17" }
+          }
+          APP
+
+          cat > gradle.properties << 'EOF'
+          android.useAndroidX=true
+          android.enableJetifier=true
+          org.gradle.jvmargs=-Xmx4g -XX:MaxMetaspaceSize=512m -XX:+UseParallelGC
+          kotlin.code.style=official
+          android.suppressUnsupportedCompileSdk=36
+          EOF
+
+      - name: Generate fixed keystore
+        run: |
+          keytool -genkey -v \
+            -keystore app/release.keystore \
+            -alias greyb \
+            -keyalg RSA \
+            -keysize 2048 \
+            -validity 10000 \
+            -storepass greyb2024 \
+            -keypass greyb2024 \
+            -dname "CN=GreyB, OU=GreyB, O=GreyB Keyboard, L=Test, S=Test, C=US"
+
+      - name: Generate launcher icons
+        run: |
+          rm -rf app/src/main/res/mipmap-*
+          pip install Pillow --quiet
+          python3 << 'PYEOF'
+          from PIL import Image, ImageDraw
+          import os
+
+          def make_icon(size):
+              BG = (42, 45, 52, 255)
+              ACCENT = (90, 93, 100, 255)
+              WHITE = (255, 255, 255, 255)
+              img = Image.new('RGBA', (size, size), BG)
+              d = ImageDraw.Draw(img)
+              margin = size // 5
+              key_w = (size - 2 * margin) // 4
+              key_h = (size - 2 * margin) // 5
+              gap = max(1, size // 40)
+              start_y = margin + key_h
+              for row in range(3):
+                  y = start_y + row * (key_h + gap)
+                  keys_in_row = [4, 4, 3]
+                  row_margin = (size - keys_in_row[row] * (key_w + gap) + gap) // 2
+                  for col in range(keys_in_row[row]):
+                      x = row_margin + col * (key_w + gap)
+                      color = ACCENT if (row == 0 and col == 0) else WHITE
+                      d.rounded_rectangle([x, y, x + key_w, y + key_h], radius=key_w // 5, fill=color)
+              space_y = start_y + 3 * (key_h + gap)
+              space_w = key_w * 2 + gap
+              space_x = (size - space_w) // 2
+              d.rounded_rectangle([space_x, space_y, space_x + space_w, space_y + key_h], radius=key_w // 5, fill=ACCENT)
+              return img
+
+          sizes = {'mdpi': 48, 'hdpi': 72, 'xhdpi': 96, 'xxhdpi': 144, 'xxxhdpi': 192}
+          for density, s in sizes.items():
+              path = f'app/src/main/res/mipmap-{density}'
+              os.makedirs(path, exist_ok=True)
+              icon = make_icon(s)
+              icon.save(f'{path}/ic_launcher.png')
+              icon.save(f'{path}/ic_launcher_round.png')
+          print("Icons generated!")
+          PYEOF
+
+      - name: Setup Gradle Wrapper
+        run: |
+          gradle wrapper --gradle-version=8.11.1 --distribution-type=bin
+          chmod +x gradlew
+
+      - name: Clean build
+        run: |
+          rm -rf app/build
+          ./gradlew clean --no-daemon
+
+      - name: Build signed release APK
+        run: ./gradlew assembleRelease --no-daemon
+
+      - name: Verify APK signing
+        run: |
+          APK_PATH="app/build/outputs/apk/release/app-release.apk"
+          if [ -f "$APK_PATH" ]; then
+              echo "✅ Release APK generated"
+              echo "📦 APK size: $(ls -lh "$APK_PATH" | awk '{print $5}')"
+              $ANDROID_HOME/build-tools/36.0.0/apksigner verify --print-certs "$APK_PATH"
+          else
+              echo "❌ Release APK not found"
+              exit 1
+          fi
+
+      - name: Bundle APK + source
+        run: |
+          mkdir -p GreyB-release
+          cp app/build/outputs/apk/release/app-release.apk GreyB-release/GreyB.apk
+          cp Keyboard.kt GreyB-release/
+          cp qwerty.xml GreyB-release/
+          cp symbols.xml GreyB-release/
+          cp .github/workflows/build.yml GreyB-release/
+
+          APK_SIZE=$(ls -lh app/build/outputs/apk/release/app-release.apk | awk '{print $5}')
+
+          cat > GreyB-release/BUILD_INFO.txt << EOF
+          Build:      #${{ github.run_number }}
+          Commit:     ${{ github.sha }}
+          Timestamp:  $(date -u '+%Y-%m-%d %H:%M:%S UTC')
+          Signed:     Yes (fixed key)
+          APK Size:   $APK_SIZE
+          Optimized:  Yes (ProGuard/R8 enabled)
+          EOF
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: GreyB-${{ github.run_number }}
+          path: GreyB-release/
+          retention-days: 30
