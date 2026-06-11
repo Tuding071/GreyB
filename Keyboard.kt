@@ -1,323 +1,253 @@
 package com.greyb.keyboard
 
+import android.content.Context
+import android.content.res.Resources
+import android.content.res.XmlResourceParser
+import android.graphics.Bitmap
+import android.graphics.Canvas
+import android.graphics.Color
+import android.graphics.Paint
+import android.graphics.PorterDuff
+import android.graphics.Rect
+import android.graphics.Typeface
+import android.graphics.drawable.Drawable
 import android.inputmethodservice.InputMethodService
-import android.view.KeyEvent
+import android.util.AttributeSet
+import android.util.TypedValue
+import android.util.Xml
+import android.view.MotionEvent
 import android.view.View
+import android.view.ViewConfiguration
 import android.view.inputmethod.EditorInfo
-import android.view.inputmethod.InputConnection
-import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.interaction.MutableInteractionSource
-import androidx.compose.foundation.interaction.PressInteraction
-import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Text
-import androidx.compose.runtime.*
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.ComposeView
-import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.isActive
+import org.xmlpull.v1.XmlPullParser
+import org.xmlpull.v1.XmlPullParserException
+import java.util.Locale
+import kotlin.math.max
+import kotlin.math.roundToInt
+
+// ── Keyboard Data Models (Programmatic) ────────────────────────────────────
 
 enum class KeyType {
     REGULAR, MODIFIER, STICKY, REPEATABLE, ACTION, SPACE
 }
 
-data class KeyData(
+data class KeyDef(
     val code: Int,
     val label: String,
-    val width: Float,
+    val widthPercent: Float = 10f,
     val keyType: KeyType = KeyType.REGULAR,
     val edgeFlags: Int = 0
 )
 
-data class KeyboardRowData(
-    val keys: List<KeyData>
-)
+data class RowDef(val keys: List<KeyDef>)
+data class LayoutDef(val rows: List<RowDef>)
 
-data class KeyboardLayoutData(
-    val rows: List<KeyboardRowData>
-)
+// ── Predefined Layouts ─────────────────────────────────────────────────────
 
-val qwertyLayout = KeyboardLayoutData(
-    rows = listOf(
-        KeyboardRowData(listOf(
-            KeyData(49, "1", 10f, edgeFlags = 4),
-            KeyData(50, "2", 10f),
-            KeyData(51, "3", 10f),
-            KeyData(52, "4", 10f),
-            KeyData(53, "5", 10f),
-            KeyData(54, "6", 10f),
-            KeyData(55, "7", 10f),
-            KeyData(56, "8", 10f),
-            KeyData(57, "9", 10f),
-            KeyData(48, "0", 10f, edgeFlags = 2)
-        )),
-        KeyboardRowData(listOf(
-            KeyData(113, "q", 10f, edgeFlags = 1),
-            KeyData(119, "w", 10f),
-            KeyData(101, "e", 10f),
-            KeyData(114, "r", 10f),
-            KeyData(116, "t", 10f),
-            KeyData(121, "y", 10f),
-            KeyData(117, "u", 10f),
-            KeyData(105, "i", 10f),
-            KeyData(111, "o", 10f),
-            KeyData(112, "p", 10f, edgeFlags = 2)
-        )),
-        KeyboardRowData(listOf(
-            KeyData(97, "a", 11f, edgeFlags = 1),
-            KeyData(115, "s", 10f),
-            KeyData(100, "d", 10f),
-            KeyData(102, "f", 10f),
-            KeyData(103, "g", 10f),
-            KeyData(104, "h", 10f),
-            KeyData(106, "j", 10f),
-            KeyData(107, "k", 10f),
-            KeyData(108, "l", 11f, edgeFlags = 2)
-        )),
-        KeyboardRowData(listOf(
-            KeyData(-1, "⇧", 14f, KeyType.STICKY, edgeFlags = 1),
-            KeyData(122, "z", 10f),
-            KeyData(120, "x", 10f),
-            KeyData(99, "c", 10f),
-            KeyData(118, "v", 10f),
-            KeyData(98, "b", 10f),
-            KeyData(110, "n", 10f),
-            KeyData(109, "m", 10f),
-            KeyData(-5, "⌫", 14f, KeyType.REPEATABLE, edgeFlags = 2)
-        )),
-        KeyboardRowData(listOf(
-            KeyData(-2, "?123", 14f, KeyType.ACTION, edgeFlags = 1),
-            KeyData(44, ",", 10f),
-            KeyData(32, "", 42f, KeyType.SPACE),
-            KeyData(46, ".", 10f),
-            KeyData(-4, "⏎", 14f, KeyType.ACTION, edgeFlags = 2)
-        ))
-    )
-)
+val qwertyDef = LayoutDef(rows = listOf(
+    RowDef(listOf(KeyDef(49,"1",10f,edgeFlags=4), KeyDef(50,"2"), KeyDef(51,"3"), KeyDef(52,"4"), KeyDef(53,"5"), KeyDef(54,"6"), KeyDef(55,"7"), KeyDef(56,"8"), KeyDef(57,"9"), KeyDef(48,"0",edgeFlags=2))),
+    RowDef(listOf(KeyDef(113,"q",edgeFlags=1), KeyDef(119,"w"), KeyDef(101,"e"), KeyDef(114,"r"), KeyDef(116,"t"), KeyDef(121,"y"), KeyDef(117,"u"), KeyDef(105,"i"), KeyDef(111,"o"), KeyDef(112,"p",edgeFlags=2))),
+    RowDef(listOf(KeyDef(97,"a",11f,edgeFlags=1), KeyDef(115,"s"), KeyDef(100,"d"), KeyDef(102,"f"), KeyDef(103,"g"), KeyDef(104,"h"), KeyDef(106,"j"), KeyDef(107,"k"), KeyDef(108,"l",11f,edgeFlags=2))),
+    RowDef(listOf(KeyDef(-1,"⇧",14f,KeyType.STICKY,edgeFlags=1), KeyDef(122,"z"), KeyDef(120,"x"), KeyDef(99,"c"), KeyDef(118,"v"), KeyDef(98,"b"), KeyDef(110,"n"), KeyDef(109,"m"), KeyDef(-5,"⌫",14f,KeyType.REPEATABLE,edgeFlags=2))),
+    RowDef(listOf(KeyDef(-2,"?123",14f,KeyType.ACTION,edgeFlags=1), KeyDef(44,","), KeyDef(32,"",42f,KeyType.SPACE), KeyDef(46,"."), KeyDef(-4,"⏎",14f,KeyType.ACTION,edgeFlags=2)))
+))
 
-val symbolLayout = KeyboardLayoutData(
-    rows = listOf(
-        KeyboardRowData(listOf(
-            KeyData(49, "1", 10f, edgeFlags = 4),
-            KeyData(50, "2", 10f),
-            KeyData(51, "3", 10f),
-            KeyData(52, "4", 10f),
-            KeyData(53, "5", 10f),
-            KeyData(54, "6", 10f),
-            KeyData(55, "7", 10f),
-            KeyData(56, "8", 10f),
-            KeyData(57, "9", 10f),
-            KeyData(48, "0", 10f, edgeFlags = 2)
-        )),
-        KeyboardRowData(listOf(
-            KeyData(64, "@", 10f, edgeFlags = 1),
-            KeyData(35, "#", 10f),
-            KeyData(36, "$", 10f),
-            KeyData(37, "%", 10f),
-            KeyData(38, "&", 10f),
-            KeyData(45, "-", 10f),
-            KeyData(43, "+", 10f),
-            KeyData(40, "(", 10f),
-            KeyData(41, ")", 10f),
-            KeyData(47, "/", 10f, edgeFlags = 2)
-        )),
-        KeyboardRowData(listOf(
-            KeyData(33, "!", 11f, edgeFlags = 1),
-            KeyData(34, "\"", 10f),
-            KeyData(39, "'", 10f),
-            KeyData(58, ":", 10f),
-            KeyData(59, ";", 10f),
-            KeyData(47, "/", 10f),
-            KeyData(63, "?", 10f),
-            KeyData(126, "~", 10f),
-            KeyData(96, "`", 11f, edgeFlags = 2)
-        )),
-        KeyboardRowData(listOf(
-            KeyData(-8, "ABC", 14f, KeyType.ACTION, edgeFlags = 1),
-            KeyData(92, "\\", 10f),
-            KeyData(124, "|", 10f),
-            KeyData(60, "<", 10f),
-            KeyData(62, ">", 10f),
-            KeyData(123, "{", 10f),
-            KeyData(125, "}", 10f),
-            KeyData(-5, "⌫", 14f, KeyType.REPEATABLE, edgeFlags = 2)
-        )),
-        KeyboardRowData(listOf(
-            KeyData(-2, "?123", 14f, KeyType.ACTION, edgeFlags = 1),
-            KeyData(44, ",", 10f),
-            KeyData(32, "", 42f, KeyType.SPACE),
-            KeyData(46, ".", 10f),
-            KeyData(-4, "⏎", 14f, KeyType.ACTION, edgeFlags = 2)
-        ))
-    )
-)
+val symbolDef = LayoutDef(rows = listOf(
+    RowDef(listOf(KeyDef(49,"1",edgeFlags=4), KeyDef(50,"2"), KeyDef(51,"3"), KeyDef(52,"4"), KeyDef(53,"5"), KeyDef(54,"6"), KeyDef(55,"7"), KeyDef(56,"8"), KeyDef(57,"9"), KeyDef(48,"0",edgeFlags=2))),
+    RowDef(listOf(KeyDef(64,"@",edgeFlags=1), KeyDef(35,"#"), KeyDef(36,"$"), KeyDef(37,"%"), KeyDef(38,"&"), KeyDef(45,"-"), KeyDef(43,"+"), KeyDef(40,"("), KeyDef(41,")"), KeyDef(47,"/",edgeFlags=2))),
+    RowDef(listOf(KeyDef(33,"!",11f,edgeFlags=1), KeyDef(34,"\""), KeyDef(39,"'"), KeyDef(58,":"), KeyDef(59,";"), KeyDef(47,"/"), KeyDef(63,"?"), KeyDef(126,"~"), KeyDef(96,"`",11f,edgeFlags=2))),
+    RowDef(listOf(KeyDef(-8,"ABC",14f,KeyType.ACTION,edgeFlags=1), KeyDef(92,"\\"), KeyDef(124,"|"), KeyDef(60,"<"), KeyDef(62,">"), KeyDef(123,"{"), KeyDef(125,"}"), KeyDef(-5,"⌫",14f,KeyType.REPEATABLE,edgeFlags=2))),
+    RowDef(listOf(KeyDef(-2,"?123",14f,KeyType.ACTION,edgeFlags=1), KeyDef(44,","), KeyDef(32,"",42f,KeyType.SPACE), KeyDef(46,"."), KeyDef(-4,"⏎",14f,KeyType.ACTION,edgeFlags=2)))
+))
 
-class KeyboardState {
-    var currentLayout by mutableStateOf(qwertyLayout)
-    var isShifted by mutableStateOf(false)
-    val pressedKeys = mutableStateMapOf<Int, Boolean>()
-    var inputConnection: InputConnection? = null
+// ── Keyboard Model ─────────────────────────────────────────────────────────
 
-    fun onKeyDown(key: KeyData) {
-        pressedKeys[key.hashCode()] = true
-    }
-
-    fun onKeyUp(key: KeyData) {
-        pressedKeys[key.hashCode()] = false
-        handleKeyAction(key)
-    }
-
-    fun onKeyCancel(key: KeyData) {
-        pressedKeys[key.hashCode()] = false
-    }
-
-    private fun handleKeyAction(key: KeyData) {
-        val ic = inputConnection ?: return
-        when (key.code) {
-            -5 -> ic.deleteSurroundingText(1, 0)
-            -1 -> isShifted = !isShifted
-            -2 -> currentLayout = if (currentLayout == qwertyLayout) symbolLayout else qwertyLayout
-            -4 -> {
-                ic.sendKeyEvent(KeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_ENTER))
-                ic.sendKeyEvent(KeyEvent(KeyEvent.ACTION_UP, KeyEvent.KEYCODE_ENTER))
-            }
-            -8 -> currentLayout = qwertyLayout
-            -99 -> {}
-            else -> {
-                var ch = key.code.toChar()
-                if (isShifted && ch.isLowerCase()) {
-                    ch = ch.uppercaseChar()
-                }
-                ic.commitText(ch.toString(), 1)
-                if (isShifted) {
-                    isShifted = false
-                }
-            }
-        }
-    }
-
-    fun getDisplayLabel(key: KeyData): String {
-        if (key.code == 32) return ""
-        if (key.code < 0) return key.label
-        var ch = key.code.toChar()
-        if (isShifted && ch.isLowerCase()) {
-            ch = ch.uppercaseChar()
-        }
-        return if (ch.isLetter()) ch.toString() else key.label
+class Key(
+    var x: Int = 0, var y: Int = 0,
+    var width: Int = 0, var height: Int = 0,
+    var code: Int = 0, var label: String = "",
+    var keyType: KeyType = KeyType.REGULAR,
+    var isPressed: Boolean = false, var isStickyOn: Boolean = false
+) {
+    val isSticky get() = keyType == KeyType.STICKY
+    val isRepeatable get() = keyType == KeyType.REPEATABLE
+    
+    fun isInside(tx: Int, ty: Int) = tx in x..(x+width) && ty in y..(y+height)
+    
+    fun displayLabel(shifted: Boolean): String {
+        if (code == 32) return ""
+        if (code < 0) return label
+        val ch = if (shifted && code.toChar().isLowerCase()) code.toChar().uppercaseChar() else code.toChar()
+        return ch.toString()
     }
 }
 
-@androidx.compose.runtime.Composable
-fun KeyboardScreen(state: KeyboardState) {
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .background(Color(0x801A1A1A))
-            .padding(horizontal = 4.dp, vertical = 2.dp),
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-        state.currentLayout.rows.forEach { row ->
-            KeyboardRow(row, state)
+class KeyboardLayout {
+    val keys = mutableListOf<Key>()
+    var width = 0
+    var height = 0
+    
+    companion object {
+        fun from(def: LayoutDef, screenW: Int, keyH: Int): KeyboardLayout {
+            val layout = KeyboardLayout()
+            var y = 0
+            val gap = 2
+            for (row in def.rows) {
+                val totalPercent = row.keys.sumOf { it.widthPercent }
+                val scale = screenW / totalPercent
+                var x = 0
+                for (k in row.keys) {
+                    val kw = (k.widthPercent * scale).toInt() - gap
+                    layout.keys.add(Key(x, y, kw, keyH - gap, k.code, k.label, k.keyType))
+                    x += (k.widthPercent * scale).toInt()
+                }
+                y += keyH
+            }
+            layout.width = screenW
+            layout.height = y
+            return layout
         }
     }
 }
 
-@androidx.compose.runtime.Composable
-fun KeyboardRow(row: KeyboardRowData, state: KeyboardState) {
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.Center
-    ) {
-        row.keys.forEach { key ->
-            KeyboardKey(key, state)
-        }
+// ── KeyboardView ───────────────────────────────────────────────────────────
+
+class KeyboardView @JvmOverloads constructor(
+    context: Context, attrs: AttributeSet? = null
+) : View(context, attrs) {
+
+    var onKeyListener: ((Int) -> Unit)? = null
+    var layout: KeyboardLayout? = null
+    var isShifted = false
+    
+    private val paint = Paint().apply { isAntiAlias = true; textAlign = Paint.Align.CENTER; typeface = Typeface.DEFAULT }
+    private var currentKey: Key? = null
+    private var repeatRunnable: Runnable? = null
+    
+    private val keyBgNormal = Color.argb(128, 42, 42, 42)
+    private val keyBgPressed = Color.argb(128, 180, 180, 170)
+    private val keyTextColor = Color.argb(128, 220, 220, 215)
+    private val bgColor = Color.argb(128, 26, 26, 26)
+
+    fun setLayout(def: LayoutDef) {
+        layout = KeyboardLayout.from(def, resources.displayMetrics.widthPixels, 96)
+        requestLayout()
+        invalidate()
     }
-}
 
-@androidx.compose.runtime.Composable
-fun KeyboardKey(key: KeyData, state: KeyboardState) {
-    val isPressed = state.pressedKeys[key.hashCode()] ?: false
-    val interactionSource = remember { MutableInteractionSource() }
+    override fun onMeasure(wSpec: Int, hSpec: Int) {
+        val l = layout
+        if (l != null) setMeasuredDimension(l.width, l.height)
+        else super.onMeasure(wSpec, hSpec)
+    }
 
-    LaunchedEffect(interactionSource) {
-        interactionSource.interactions.collect { interaction ->
-            when (interaction) {
-                is PressInteraction.Press -> {
-                    state.onKeyDown(key)
-                    if (key.keyType == KeyType.REPEATABLE) {
-                        state.onKeyUp(key)
-                        while (isActive) {
-                            delay(50)
-                            state.onKeyUp(key)
-                        }
-                    }
-                }
-                is PressInteraction.Release -> {
-                    if (key.keyType != KeyType.REPEATABLE) {
-                        state.onKeyUp(key)
-                    }
-                }
-                is PressInteraction.Cancel -> {
-                    state.onKeyCancel(key)
-                }
+    override fun onDraw(canvas: Canvas) {
+        super.onDraw(canvas)
+        canvas.drawColor(bgColor)
+        val l = layout ?: return
+        val padding = 2f
+        for (key in l.keys) {
+            val bg = when {
+                key.isSticky && isShifted -> keyBgPressed
+                key.isPressed -> keyBgPressed
+                else -> keyBgNormal
             }
-        }
-    }
-
-    Box(
-        modifier = Modifier
-            .width((key.width * 3.6).dp)
-            .height(48.dp)
-            .padding(1.dp)
-            .clip(RoundedCornerShape(4.dp))
-            .background(
-                when {
-                    key.keyType == KeyType.STICKY && state.isShifted -> Color(0x80B4B4AA)
-                    isPressed -> Color(0x80B4B4AA)
-                    else -> Color(0x802A2A2A)
-                }
+            paint.color = bg
+            canvas.drawRoundRect(
+                key.x + padding, key.y + padding,
+                (key.x + key.width) - padding, (key.y + key.height) - padding,
+                8f, 8f, paint
             )
-            .clickable(
-                interactionSource = interactionSource,
-                indication = null
-            ) { },
-        contentAlignment = Alignment.Center
-    ) {
-        Text(
-            text = state.getDisplayLabel(key),
-            color = Color(0x80DCDCD7),
-            fontSize = if (key.code < 0 && key.code != 32) 14.sp else 16.sp,
-            textAlign = TextAlign.Center
-        )
+            val label = key.displayLabel(isShifted)
+            if (label.isNotEmpty()) {
+                paint.color = keyTextColor
+                paint.textSize = if (key.code < 0 && key.code != 32) 28f else 32f
+                canvas.drawText(label, key.x + key.width / 2f, key.y + key.height / 2f + paint.textSize / 3f, paint)
+            }
+        }
+    }
+
+    override fun onTouchEvent(event: MotionEvent): Boolean {
+        val l = layout ?: return true
+        val x = event.x.toInt(); val y = event.y.toInt()
+        when (event.action) {
+            MotionEvent.ACTION_DOWN -> {
+                currentKey = l.keys.find { it.isInside(x, y) }
+                currentKey?.isPressed = true
+                if (currentKey?.isRepeatable == true) {
+                    triggerKey()
+                    repeatRunnable = object : Runnable {
+                        override fun run() { triggerKey(); postDelayed(this, 50) }
+                    }
+                    postDelayed(repeatRunnable!!, 400)
+                }
+                invalidate()
+            }
+            MotionEvent.ACTION_MOVE -> {
+                val inside = currentKey?.isInside(x, y) == true
+                if (!inside) { currentKey?.isPressed = false; currentKey = null; removeCallbacks(repeatRunnable) }
+                invalidate()
+            }
+            MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
+                removeCallbacks(repeatRunnable)
+                currentKey?.let { key ->
+                    if (key.isInside(x, y) && !key.isRepeatable) triggerKey()
+                    key.isPressed = false
+                }
+                currentKey = null
+                invalidate()
+            }
+        }
+        return true
+    }
+
+    private fun triggerKey() {
+        val key = currentKey ?: return
+        onKeyListener?.invoke(key.code)
     }
 }
+
+// ── IME Service ────────────────────────────────────────────────────────────
 
 class GreyBIME : InputMethodService() {
-    private val keyboardState = KeyboardState()
-
-    override fun onCreate() {
-        super.onCreate()
-    }
+    
+    private lateinit var keyboardView: KeyboardView
+    private var currentDef = qwertyDef
 
     override fun onCreateInputView(): View {
-        return ComposeView(this).apply {
-            setContent {
-                KeyboardScreen(keyboardState)
-            }
-        }
+        keyboardView = KeyboardView(this)
+        keyboardView.setLayout(currentDef)
+        keyboardView.onKeyListener = { code -> handleKey(code) }
+        return keyboardView
     }
 
     override fun onStartInputView(info: EditorInfo?, restarting: Boolean) {
         super.onStartInputView(info, restarting)
-        keyboardState.inputConnection = currentInputConnection
+        keyboardView.setLayout(currentDef)
     }
 
     override fun onEvaluateFullscreenMode(): Boolean = false
+
+    private fun handleKey(code: Int) {
+        val ic = currentInputConnection ?: return
+        when (code) {
+            -5 -> ic.deleteSurroundingText(1, 0)
+            -1 -> { keyboardView.isShifted = !keyboardView.isShifted; keyboardView.invalidate() }
+            -2 -> {
+                currentDef = if (currentDef == qwertyDef) symbolDef else qwertyDef
+                keyboardView.setLayout(currentDef)
+            }
+            -4 -> {
+                ic.sendKeyEvent(android.view.KeyEvent(android.view.KeyEvent.ACTION_DOWN, android.view.KeyEvent.KEYCODE_ENTER))
+                ic.sendKeyEvent(android.view.KeyEvent(android.view.KeyEvent.ACTION_UP, android.view.KeyEvent.KEYCODE_ENTER))
+            }
+            -8 -> { currentDef = qwertyDef; keyboardView.setLayout(currentDef) }
+            else -> {
+                var ch = code.toChar()
+                if (keyboardView.isShifted && ch.isLowerCase()) ch = ch.uppercaseChar()
+                ic.commitText(ch.toString(), 1)
+                if (keyboardView.isShifted) { keyboardView.isShifted = false; keyboardView.invalidate() }
+            }
+        }
+    }
 }
