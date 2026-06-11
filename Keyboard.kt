@@ -516,8 +516,8 @@ class GreyBIME : InputMethodService() {
 
     override fun onCreate() {
         super.onCreate()
-        qwertyKeyboard = Keyboard(this, R.xml.keyboard_qwerty)
-        symbolKeyboard = Keyboard(this, R.xml.keyboard_symbol)
+        qwertyKeyboard = Keyboard(this, R.xml.qwerty)
+        symbolKeyboard = Keyboard(this, R.xml.symbols)
     }
 
     override fun onCreateInputView(): View {
