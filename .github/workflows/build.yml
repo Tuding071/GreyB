@@ -5,11 +5,13 @@ on:
     branches: [ main, master ]
     paths:
       - 'Keyboard.kt'
+      - 'keyboard_layout.xml'
       - '.github/workflows/build.yml'
   pull_request:
     branches: [ main, master ]
     paths:
       - 'Keyboard.kt'
+      - 'keyboard_layout.xml'
       - '.github/workflows/build.yml'
   workflow_dispatch:
 
@@ -51,6 +53,7 @@ jobs:
           mkdir -p gradle/wrapper
 
           cp Keyboard.kt $PKG/
+          cp keyboard_layout.xml app/src/main/res/xml/
 
           cat > settings.gradle.kts << 'EOF'
           pluginManagement {
@@ -66,9 +69,8 @@ jobs:
 
           cat > build.gradle.kts << 'EOF'
           plugins {
-              id("com.android.application")             version "8.9.1" apply false
-              id("org.jetbrains.kotlin.android")        version "2.2.0" apply false
-              id("org.jetbrains.kotlin.plugin.compose") version "2.2.0" apply false
+              id("com.android.application") version "8.9.1" apply false
+              id("org.jetbrains.kotlin.android") version "2.2.0" apply false
           }
           EOF
 
@@ -76,7 +78,6 @@ jobs:
           plugins {
               id("com.android.application")
               id("org.jetbrains.kotlin.android")
-              id("org.jetbrains.kotlin.plugin.compose")
           }
 
           android {
@@ -113,7 +114,6 @@ jobs:
                   targetCompatibility = JavaVersion.VERSION_17
               }
               kotlinOptions { jvmTarget = "17" }
-              buildFeatures { compose = true }
 
               splits {
                   abi {
@@ -127,17 +127,6 @@ jobs:
 
           dependencies {
               implementation("androidx.core:core-ktx:1.15.0")
-              implementation("androidx.activity:activity-compose:1.10.1")
-              implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.9.0")
-
-              val bom = platform("androidx.compose:compose-bom:2025.05.00")
-              implementation(bom)
-              implementation("androidx.compose.ui:ui")
-              implementation("androidx.compose.ui:ui-graphics")
-              implementation("androidx.compose.foundation:foundation")
-              implementation("androidx.compose.material3:material3")
-              implementation("androidx.compose.material:material-icons-extended")
-              implementation("androidx.compose.animation:animation")
           }
           EOF
 
@@ -197,6 +186,12 @@ jobs:
 
           cat > app/src/main/res/values/strings.xml << 'EOF'
           <resources><string name="app_name">GreyB Keyboard</string></resources>
+          EOF
+
+          cat > app/src/main/res/values/dimens.xml << 'EOF'
+          <resources>
+              <dimen name="key_height">16.67%p</dimen>
+          </resources>
           EOF
 
           cat > app/src/main/res/values/themes.xml << 'EOF'
@@ -310,6 +305,7 @@ jobs:
           mkdir -p GreyB-release
           cp app/build/outputs/apk/release/app-arm64-v8a-release.apk GreyB-release/GreyB.apk
           cp Keyboard.kt GreyB-release/
+          cp keyboard_layout.xml GreyB-release/
           cp .github/workflows/build.yml GreyB-release/
 
           APK_SIZE=$(ls -lh app/build/outputs/apk/release/app-arm64-v8a-release.apk | awk '{print $5}')
