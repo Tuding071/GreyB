@@ -21,12 +21,8 @@ import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.lifecycle.ViewModel
-import androidx.lifecycle.viewmodel.compose.viewModel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
-
-// ─── Keyboard Data Models ─────────────────────────────────────────────────
 
 enum class KeyType {
     REGULAR, MODIFIER, STICKY, REPEATABLE, ACTION, SPACE
@@ -47,8 +43,6 @@ data class KeyboardRowData(
 data class KeyboardLayoutData(
     val rows: List<KeyboardRowData>
 )
-
-// ─── Predefined Layouts ───────────────────────────────────────────────────
 
 val qwertyLayout = KeyboardLayoutData(
     rows = listOf(
@@ -165,53 +159,45 @@ val symbolLayout = KeyboardLayoutData(
     )
 )
 
-// ─── ViewModel ──────────────────────────────────────────────────────────────
-
-class KeyboardViewModel : ViewModel() {
-    private val _currentLayout = mutableStateOf(qwertyLayout)
-    val currentLayout: KeyboardLayoutData by _currentLayout
-
-    private val _isShifted = mutableStateOf(false)
-    val isShifted: Boolean by _isShifted
-
-    private val _pressedKeys = mutableStateMapOf<Int, Boolean>()
-    val pressedKeys: Map<Int, Boolean> = _pressedKeys
-
+class KeyboardState {
+    var currentLayout by mutableStateOf(qwertyLayout)
+    var isShifted by mutableStateOf(false)
+    val pressedKeys = mutableStateMapOf<Int, Boolean>()
     var inputConnection: InputConnection? = null
 
     fun onKeyDown(key: KeyData) {
-        _pressedKeys[key.hashCode()] = true
+        pressedKeys[key.hashCode()] = true
     }
 
     fun onKeyUp(key: KeyData) {
-        _pressedKeys[key.hashCode()] = false
+        pressedKeys[key.hashCode()] = false
         handleKeyAction(key)
     }
 
     fun onKeyCancel(key: KeyData) {
-        _pressedKeys[key.hashCode()] = false
+        pressedKeys[key.hashCode()] = false
     }
 
     private fun handleKeyAction(key: KeyData) {
         val ic = inputConnection ?: return
         when (key.code) {
             -5 -> ic.deleteSurroundingText(1, 0)
-            -1 -> _isShifted.value = !_isShifted.value
-            -2 -> _currentLayout.value = if (_currentLayout.value == qwertyLayout) symbolLayout else qwertyLayout
+            -1 -> isShifted = !isShifted
+            -2 -> currentLayout = if (currentLayout == qwertyLayout) symbolLayout else qwertyLayout
             -4 -> {
                 ic.sendKeyEvent(KeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_ENTER))
                 ic.sendKeyEvent(KeyEvent(KeyEvent.ACTION_UP, KeyEvent.KEYCODE_ENTER))
             }
-            -8 -> _currentLayout.value = qwertyLayout
+            -8 -> currentLayout = qwertyLayout
             -99 -> {}
             else -> {
                 var ch = key.code.toChar()
-                if (_isShifted.value && ch.isLowerCase()) {
+                if (isShifted && ch.isLowerCase()) {
                     ch = ch.uppercaseChar()
                 }
                 ic.commitText(ch.toString(), 1)
-                if (_isShifted.value) {
-                    _isShifted.value = false
+                if (isShifted) {
+                    isShifted = false
                 }
             }
         }
@@ -221,17 +207,15 @@ class KeyboardViewModel : ViewModel() {
         if (key.code == 32) return ""
         if (key.code < 0) return key.label
         var ch = key.code.toChar()
-        if (_isShifted.value && ch.isLowerCase()) {
+        if (isShifted && ch.isLowerCase()) {
             ch = ch.uppercaseChar()
         }
         return if (ch.isLetter()) ch.toString() else key.label
     }
 }
 
-// ─── Composable Keyboard ───────────────────────────────────────────────────
-
 @androidx.compose.runtime.Composable
-fun KeyboardScreen(viewModel: KeyboardViewModel = viewModel()) {
+fun KeyboardScreen(state: KeyboardState) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -239,49 +223,49 @@ fun KeyboardScreen(viewModel: KeyboardViewModel = viewModel()) {
             .padding(horizontal = 4.dp, vertical = 2.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        viewModel.currentLayout.rows.forEach { row ->
-            KeyboardRow(row, viewModel)
+        state.currentLayout.rows.forEach { row ->
+            KeyboardRow(row, state)
         }
     }
 }
 
 @androidx.compose.runtime.Composable
-fun KeyboardRow(row: KeyboardRowData, viewModel: KeyboardViewModel) {
+fun KeyboardRow(row: KeyboardRowData, state: KeyboardState) {
     Row(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.Center
     ) {
         row.keys.forEach { key ->
-            KeyboardKey(key, viewModel)
+            KeyboardKey(key, state)
         }
     }
 }
 
 @androidx.compose.runtime.Composable
-fun KeyboardKey(key: KeyData, viewModel: KeyboardViewModel) {
-    val isPressed = viewModel.pressedKeys[key.hashCode()] ?: false
+fun KeyboardKey(key: KeyData, state: KeyboardState) {
+    val isPressed = state.pressedKeys[key.hashCode()] ?: false
     val interactionSource = remember { MutableInteractionSource() }
 
     LaunchedEffect(interactionSource) {
         interactionSource.interactions.collect { interaction ->
             when (interaction) {
                 is PressInteraction.Press -> {
-                    viewModel.onKeyDown(key)
+                    state.onKeyDown(key)
                     if (key.keyType == KeyType.REPEATABLE) {
-                        viewModel.onKeyUp(key)
+                        state.onKeyUp(key)
                         while (isActive) {
                             delay(50)
-                            viewModel.onKeyUp(key)
+                            state.onKeyUp(key)
                         }
                     }
                 }
                 is PressInteraction.Release -> {
                     if (key.keyType != KeyType.REPEATABLE) {
-                        viewModel.onKeyUp(key)
+                        state.onKeyUp(key)
                     }
                 }
                 is PressInteraction.Cancel -> {
-                    viewModel.onKeyCancel(key)
+                    state.onKeyCancel(key)
                 }
             }
         }
@@ -295,7 +279,7 @@ fun KeyboardKey(key: KeyData, viewModel: KeyboardViewModel) {
             .clip(RoundedCornerShape(4.dp))
             .background(
                 when {
-                    key.keyType == KeyType.STICKY && viewModel.isShifted -> Color(0x80B4B4AA)
+                    key.keyType == KeyType.STICKY && state.isShifted -> Color(0x80B4B4AA)
                     isPressed -> Color(0x80B4B4AA)
                     else -> Color(0x802A2A2A)
                 }
@@ -307,7 +291,7 @@ fun KeyboardKey(key: KeyData, viewModel: KeyboardViewModel) {
         contentAlignment = Alignment.Center
     ) {
         Text(
-            text = viewModel.getDisplayLabel(key),
+            text = state.getDisplayLabel(key),
             color = Color(0x80DCDCD7),
             fontSize = if (key.code < 0 && key.code != 32) 14.sp else 16.sp,
             textAlign = TextAlign.Center
@@ -315,10 +299,8 @@ fun KeyboardKey(key: KeyData, viewModel: KeyboardViewModel) {
     }
 }
 
-// ─── IME Service ────────────────────────────────────────────────────────────
-
 class GreyBIME : InputMethodService() {
-    private lateinit var keyboardViewModel: KeyboardViewModel
+    private val keyboardState = KeyboardState()
 
     override fun onCreate() {
         super.onCreate()
@@ -327,15 +309,14 @@ class GreyBIME : InputMethodService() {
     override fun onCreateInputView(): View {
         return ComposeView(this).apply {
             setContent {
-                keyboardViewModel = viewModel()
-                KeyboardScreen(keyboardViewModel)
+                KeyboardScreen(keyboardState)
             }
         }
     }
 
     override fun onStartInputView(info: EditorInfo?, restarting: Boolean) {
         super.onStartInputView(info, restarting)
-        keyboardViewModel.inputConnection = currentInputConnection
+        keyboardState.inputConnection = currentInputConnection
     }
 
     override fun onEvaluateFullscreenMode(): Boolean = false
