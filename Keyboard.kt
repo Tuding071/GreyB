@@ -4,6 +4,8 @@ import android.content.Context
 import android.inputmethodservice.InputMethodService
 import android.util.AttributeSet
 import android.view.View
+import android.view.ViewGroup
+import android.widget.FrameLayout
 import android.view.inputmethod.EditorInfo
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -108,11 +110,11 @@ object SymbolLayout {
 
 // ── Colors ───────────────────────────────────────────────────────────────────
 
-private val BG         = Color(0xFF1A1A1A)
-private val KEY_BG     = Color(0xFF2A2A2A)
-private val KEY_TEXT   = Color(0xFFDCDCD7)
-private val ACCENT     = Color(0xFFB4B4AA)
-private val ENTER_BG   = Color(0xFF3A3A3A)
+private val BG       = Color(0xFF1A1A1A)
+private val KEY_BG   = Color(0xFF2A2A2A)
+private val KEY_TEXT = Color(0xFFDCDCD7)
+private val ACCENT   = Color(0xFFB4B4AA)
+private val ENTER_BG = Color(0xFF3A3A3A)
 
 // ── Compose UI ───────────────────────────────────────────────────────────────
 
@@ -164,21 +166,19 @@ fun KeyButton(
     modifier: Modifier = Modifier
 ) {
     val displayLabel = when {
-        key.type == KeyType.CHAR && isShifted && key.label.length == 1 ->
-            key.label.uppercase()
+        key.type == KeyType.CHAR && isShifted && key.label.length == 1 -> key.label.uppercase()
         key.type == KeyType.SPACE -> "space"
         else -> key.label
     }
 
     val bgColor = when (key.type) {
-        KeyType.SHIFT  -> if (isShifted) ACCENT else KEY_BG
-        KeyType.ENTER  -> ENTER_BG
-        else           -> KEY_BG
+        KeyType.SHIFT -> if (isShifted) ACCENT else KEY_BG
+        KeyType.ENTER -> ENTER_BG
+        else          -> KEY_BG
     }
 
     val textColor = when (key.type) {
         KeyType.SYMBOLS, KeyType.BACK_TO_ALPHA -> ACCENT
-        KeyType.ENTER -> KEY_TEXT
         else -> KEY_TEXT
     }
 
@@ -204,32 +204,40 @@ fun KeyButton(
     }
 }
 
-// ── KeyboardView (View wrapper for ComposeView) ───────────────────────────────
+// ── KeyboardView ──────────────────────────────────────────────────────────────
 
 class KeyboardView @JvmOverloads constructor(
     context: Context,
     attrs: AttributeSet? = null,
     defStyleAttr: Int = 0
-) : androidx.widget.FrameLayout(context, attrs, defStyleAttr) {
+) : FrameLayout(context, attrs, defStyleAttr) {
 
     interface KeyboardActionListener {
         fun onKey(code: Int, type: KeyType)
     }
 
     private var listener: KeyboardActionListener? = null
-    private var isShifted = false
+    internal var isShifted = false
     private var isSymbol = false
 
-    private val composeView = ComposeView(context).also { addView(it) }
+    private val composeView = ComposeView(context)
 
     init {
+        addView(
+            composeView,
+            LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT)
+        )
         renderKeyboard()
     }
 
     fun setListener(l: KeyboardActionListener) { listener = l }
 
+    fun setShifted(state: Boolean) {
+        isShifted = state
+        renderKeyboard()
+    }
+
     private fun renderKeyboard() {
-        val rows = if (isSymbol) SymbolLayout.rows else QwertyLayout.rows
         composeView.setContent {
             var shifted by remember { mutableStateOf(isShifted) }
             var symbol by remember { mutableStateOf(isSymbol) }
@@ -264,11 +272,6 @@ class KeyboardView @JvmOverloads constructor(
             )
         }
     }
-
-    fun setShifted(state: Boolean) {
-        isShifted = state
-        renderKeyboard()
-    }
 }
 
 // ── IME Service ──────────────────────────────────────────────────────────────
@@ -278,7 +281,12 @@ class GreyBIME : InputMethodService() {
     private lateinit var keyboardView: KeyboardView
 
     override fun onCreateInputView(): View {
-        keyboardView = KeyboardView(this)
+        keyboardView = KeyboardView(this).apply {
+            layoutParams = ViewGroup.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.WRAP_CONTENT
+            )
+        }
         keyboardView.setListener(object : KeyboardView.KeyboardActionListener {
             override fun onKey(code: Int, type: KeyType) {
                 val ic = currentInputConnection ?: return
@@ -288,8 +296,8 @@ class GreyBIME : InputMethodService() {
                         ic.sendKeyEvent(android.view.KeyEvent(android.view.KeyEvent.ACTION_DOWN, android.view.KeyEvent.KEYCODE_ENTER))
                         ic.sendKeyEvent(android.view.KeyEvent(android.view.KeyEvent.ACTION_UP, android.view.KeyEvent.KEYCODE_ENTER))
                     }
-                    KeyType.SPACE  -> ic.commitText(" ", 1)
-                    KeyType.CHAR   -> {
+                    KeyType.SPACE -> ic.commitText(" ", 1)
+                    KeyType.CHAR  -> {
                         val ch = if (keyboardView.isShifted) code.toChar().uppercaseChar() else code.toChar()
                         ic.commitText(ch.toString(), 1)
                     }
