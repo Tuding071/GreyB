@@ -88,8 +88,7 @@ jobs:
                       }
                       Keyboard.KEYCODE_SHIFT -> {
                           caps = !caps
-                          keyboard.isShifted = caps
-                          keyboardView.invalidateAllKeys()
+                          keyboardView.isShifted = caps
                       }
                       Keyboard.KEYCODE_DONE -> {
                           ic.sendKeyEvent(KeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_ENTER))
@@ -100,8 +99,7 @@ jobs:
                           if (caps) {
                               code = code.uppercaseChar()
                               caps = false
-                              keyboard.isShifted = false
-                              keyboardView.invalidateAllKeys()
+                              keyboardView.isShifted = false
                           }
                           ic.commitText(code.toString(), 1)
                       }
@@ -235,8 +233,9 @@ jobs:
 
               buildTypes {
                   release {
-                      isMinifyEnabled = false
-                      isShrinkResources = false
+                      isMinifyEnabled = true
+                      isShrinkResources = true
+                      proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"))
                       signingConfig  = signingConfigs.getByName("release")
                   }
               }
@@ -246,18 +245,6 @@ jobs:
                   targetCompatibility = JavaVersion.VERSION_17
               }
               kotlinOptions { jvmTarget = "17" }
-
-              splits {
-                  abi {
-                      isEnable       = true
-                      reset()
-                      include("arm64-v8a")
-                      isUniversalApk = false
-                  }
-              }
-          }
-
-          dependencies {
           }
           EOF
 
@@ -307,7 +294,7 @@ jobs:
 
           cat > app/src/main/res/values/dimens.xml << 'EOF'
           <resources>
-              <dimen name="key_height">16.67%p</dimen>
+              <dimen name="key_height">48dp</dimen>
           </resources>
           EOF
 
@@ -376,7 +363,7 @@ jobs:
 
       - name: Verify APK signing
         run: |
-          APK_PATH="app/build/outputs/apk/release/app-arm64-v8a-release.apk"
+          APK_PATH="app/build/outputs/apk/release/app-release.apk"
           if [ -f "$APK_PATH" ]; then
               echo "✅ Release APK generated"
               echo "📦 APK size: $(ls -lh "$APK_PATH" | awk '{print $5}')"
@@ -389,9 +376,9 @@ jobs:
       - name: Bundle APK
         run: |
           mkdir -p GreyB-release
-          cp app/build/outputs/apk/release/app-arm64-v8a-release.apk GreyB-release/GreyB.apk
+          cp app/build/outputs/apk/release/app-release.apk GreyB-release/GreyB.apk
 
-          APK_SIZE=$(ls -lh app/build/outputs/apk/release/app-arm64-v8a-release.apk | awk '{print $5}')
+          APK_SIZE=$(ls -lh app/build/outputs/apk/release/app-release.apk | awk '{print $5}')
 
           cat > GreyB-release/BUILD_INFO.txt << EOF
           Build:      #${{ github.run_number }}
