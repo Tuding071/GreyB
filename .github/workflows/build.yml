@@ -48,229 +48,374 @@ jobs:
           mkdir -p $PKG
           mkdir -p app/src/main/res/values
           mkdir -p app/src/main/res/xml
-          mkdir -p app/src/main/res/layout
           mkdir -p app/src/main/res/drawable
           mkdir -p gradle/wrapper
 
-          cp Keyboard.kt $PKG/
+          cat > $PKG/Keyboard.kt << 'KOTLINEOF'
+          package com.greyb.keyboard
 
-          cat > app/src/main/res/values/attrs.xml << 'EOF'
-          <?xml version="1.0" encoding="utf-8"?>
-          <resources>
-              <declare-styleable name="Keyboard">
-                  <attr name="keyWidth" format="dimension|fraction"/>
-                  <attr name="keyHeight" format="dimension|fraction"/>
-                  <attr name="keyHorizontalGap" format="dimension|fraction"/>
-                  <attr name="keyVerticalGap" format="dimension|fraction"/>
-              </declare-styleable>
-              <declare-styleable name="Keyboard_Row">
-                  <attr name="rowEdgeFlags" format="integer"/>
-                  <attr name="keyboardMode" format="reference"/>
-              </declare-styleable>
-              <declare-styleable name="Keyboard_Key">
-                  <attr name="codes" format="integer|string"/>
-                  <attr name="keyLabel" format="string|reference"/>
-                  <attr name="keyIcon" format="reference"/>
-                  <attr name="keyEdgeFlags" format="integer"/>
-                  <attr name="isSticky" format="boolean"/>
-                  <attr name="isRepeatable" format="boolean"/>
-                  <attr name="isModifier" format="boolean"/>
-                  <attr name="keyOutputText" format="string"/>
-                  <attr name="popupCharacters" format="string"/>
-                  <attr name="iconPreview" format="reference"/>
-              </declare-styleable>
-              <declare-styleable name="KeyboardView">
-                  <attr name="keyBackground" format="reference"/>
-                  <attr name="keyTextColorPrimary" format="color"/>
-                  <attr name="keyTextColorSecondary" format="color"/>
-                  <attr name="labelTextSize" format="dimension"/>
-                  <attr name="keyTextSize" format="dimension"/>
-                  <attr name="useKeyPreview" format="boolean"/>
-                  <attr name="useKeyTextColorSecondary" format="boolean"/>
-                  <attr name="fontFamily" format="string"/>
-                  <attr name="textStyle" format="integer"/>
-              </declare-styleable>
-          </resources>
-          EOF
+          import android.inputmethodservice.InputMethodService
+          import android.view.KeyEvent
+          import android.view.View
+          import android.view.inputmethod.EditorInfo
+          import android.view.inputmethod.InputConnection
+          import androidx.compose.foundation.background
+          import androidx.compose.foundation.clickable
+          import androidx.compose.foundation.interaction.MutableInteractionSource
+          import androidx.compose.foundation.interaction.PressInteraction
+          import androidx.compose.foundation.layout.*
+          import androidx.compose.foundation.shape.RoundedCornerShape
+          import androidx.compose.material3.Text
+          import androidx.compose.runtime.*
+          import androidx.compose.ui.Alignment
+          import androidx.compose.ui.Modifier
+          import androidx.compose.ui.draw.clip
+          import androidx.compose.ui.graphics.Color
+          import androidx.compose.ui.platform.ComposeView
+          import androidx.compose.ui.text.style.TextAlign
+          import androidx.compose.ui.unit.dp
+          import androidx.compose.ui.unit.sp
+          import androidx.lifecycle.Lifecycle
+          import androidx.lifecycle.LifecycleOwner
+          import androidx.lifecycle.LifecycleRegistry
+          import androidx.lifecycle.ViewModel
+          import androidx.lifecycle.viewmodel.compose.viewModel
+          import kotlinx.coroutines.delay
+          import kotlinx.coroutines.isActive
 
-          cat > app/src/main/res/layout/input.xml << 'EOF'
-          <?xml version="1.0" encoding="utf-8"?>
-          <com.greyb.keyboard.KeyboardView
-              xmlns:android="http://schemas.android.com/apk/res/android"
-              xmlns:app="http://schemas.android.com/apk/res-auto"
-              android:id="@+id/keyboard"
-              android:layout_width="wrap_content"
-              android:layout_height="wrap_content"
-              android:layout_centerHorizontal="true"
-              android:layout_alignParentBottom="true"
-              android:background="#801A1A1A"
-              app:keyBackground="@drawable/key_bg"
-              app:keyTextColorPrimary="#80DCDCD7"
-              app:labelTextSize="16sp"/>
-          EOF
+          // ─── Keyboard Data Models ─────────────────────────────────────────────────
 
-          cat > app/src/main/res/drawable/key_bg.xml << 'EOF'
-          <?xml version="1.0" encoding="utf-8"?>
-          <selector xmlns:android="http://schemas.android.com/apk/res/android">
-              <item android:state_pressed="true">
-                  <shape android:shape="rectangle">
-                      <solid android:color="#80B4B4AA"/>
-                      <corners android:radius="4dp"/>
-                  </shape>
-              </item>
-              <item android:state_checkable="true" android:state_checked="true">
-                  <shape android:shape="rectangle">
-                      <solid android:color="#80B4B4AA"/>
-                      <corners android:radius="4dp"/>
-                  </shape>
-              </item>
-              <item>
-                  <shape android:shape="rectangle">
-                      <solid android:color="#802A2A2A"/>
-                      <corners android:radius="4dp"/>
-                  </shape>
-              </item>
-          </selector>
-          EOF
+          enum class KeyType {
+              REGULAR, MODIFIER, STICKY, REPEATABLE, ACTION, SPACE
+          }
 
-          cat > app/src/main/res/xml/keyboard_qwerty.xml << 'EOF'
-          <?xml version="1.0" encoding="utf-8"?>
-          <Keyboard xmlns:android="http://schemas.android.com/apk/res/android"
-              xmlns:app="http://schemas.android.com/apk/res-auto"
-              app:keyWidth="10%p"
-              app:keyHeight="48dp"
-              app:keyHorizontalGap="1dp"
-              app:keyVerticalGap="1dp">
+          data class KeyData(
+              val code: Int,
+              val label: String,
+              val width: Float,
+              val keyType: KeyType = KeyType.REGULAR,
+              val edgeFlags: Int = 0
+          )
 
-              <Row>
-                  <Key app:codes="49" app:keyLabel="1" app:keyEdgeFlags="4"/>
-                  <Key app:codes="50" app:keyLabel="2"/>
-                  <Key app:codes="51" app:keyLabel="3"/>
-                  <Key app:codes="52" app:keyLabel="4"/>
-                  <Key app:codes="53" app:keyLabel="5"/>
-                  <Key app:codes="54" app:keyLabel="6"/>
-                  <Key app:codes="55" app:keyLabel="7"/>
-                  <Key app:codes="56" app:keyLabel="8"/>
-                  <Key app:codes="57" app:keyLabel="9"/>
-                  <Key app:codes="48" app:keyLabel="0" app:keyEdgeFlags="2"/>
-              </Row>
+          data class KeyboardRowData(
+              val keys: List<KeyData>
+          )
 
-              <Row>
-                  <Key app:codes="113" app:keyLabel="q" app:keyEdgeFlags="1"/>
-                  <Key app:codes="119" app:keyLabel="w"/>
-                  <Key app:codes="101" app:keyLabel="e"/>
-                  <Key app:codes="114" app:keyLabel="r"/>
-                  <Key app:codes="116" app:keyLabel="t"/>
-                  <Key app:codes="121" app:keyLabel="y"/>
-                  <Key app:codes="117" app:keyLabel="u"/>
-                  <Key app:codes="105" app:keyLabel="i"/>
-                  <Key app:codes="111" app:keyLabel="o"/>
-                  <Key app:codes="112" app:keyLabel="p" app:keyEdgeFlags="2"/>
-              </Row>
+          data class KeyboardLayoutData(
+              val rows: List<KeyboardRowData>
+          )
 
-              <Row>
-                  <Key app:codes="97"  app:keyLabel="a" app:keyWidth="11%p" app:keyEdgeFlags="1"/>
-                  <Key app:codes="115" app:keyLabel="s"/>
-                  <Key app:codes="100" app:keyLabel="d"/>
-                  <Key app:codes="102" app:keyLabel="f"/>
-                  <Key app:codes="103" app:keyLabel="g"/>
-                  <Key app:codes="104" app:keyLabel="h"/>
-                  <Key app:codes="106" app:keyLabel="j"/>
-                  <Key app:codes="107" app:keyLabel="k"/>
-                  <Key app:codes="108" app:keyLabel="l" app:keyWidth="11%p" app:keyEdgeFlags="2"/>
-              </Row>
+          // ─── Predefined Layouts ───────────────────────────────────────────────────
 
-              <Row>
-                  <Key app:codes="-1"  app:keyLabel="⇧" app:keyWidth="14%p" app:isSticky="true" app:isModifier="true" app:keyEdgeFlags="1"/>
-                  <Key app:codes="122" app:keyLabel="z"/>
-                  <Key app:codes="120" app:keyLabel="x"/>
-                  <Key app:codes="99"  app:keyLabel="c"/>
-                  <Key app:codes="118" app:keyLabel="v"/>
-                  <Key app:codes="98"  app:keyLabel="b"/>
-                  <Key app:codes="110" app:keyLabel="n"/>
-                  <Key app:codes="109" app:keyLabel="m"/>
-                  <Key app:codes="-5"  app:keyLabel="⌫" app:keyWidth="14%p" app:isRepeatable="true" app:keyEdgeFlags="2"/>
-              </Row>
+          val qwertyLayout = KeyboardLayoutData(
+              rows = listOf(
+                  KeyboardRowData(listOf(
+                      KeyData(49, "1", 10f, edgeFlags = 4),
+                      KeyData(50, "2", 10f),
+                      KeyData(51, "3", 10f),
+                      KeyData(52, "4", 10f),
+                      KeyData(53, "5", 10f),
+                      KeyData(54, "6", 10f),
+                      KeyData(55, "7", 10f),
+                      KeyData(56, "8", 10f),
+                      KeyData(57, "9", 10f),
+                      KeyData(48, "0", 10f, edgeFlags = 2)
+                  )),
+                  KeyboardRowData(listOf(
+                      KeyData(113, "q", 10f, edgeFlags = 1),
+                      KeyData(119, "w", 10f),
+                      KeyData(101, "e", 10f),
+                      KeyData(114, "r", 10f),
+                      KeyData(116, "t", 10f),
+                      KeyData(121, "y", 10f),
+                      KeyData(117, "u", 10f),
+                      KeyData(105, "i", 10f),
+                      KeyData(111, "o", 10f),
+                      KeyData(112, "p", 10f, edgeFlags = 2)
+                  )),
+                  KeyboardRowData(listOf(
+                      KeyData(97, "a", 11f, edgeFlags = 1),
+                      KeyData(115, "s", 10f),
+                      KeyData(100, "d", 10f),
+                      KeyData(102, "f", 10f),
+                      KeyData(103, "g", 10f),
+                      KeyData(104, "h", 10f),
+                      KeyData(106, "j", 10f),
+                      KeyData(107, "k", 10f),
+                      KeyData(108, "l", 11f, edgeFlags = 2)
+                  )),
+                  KeyboardRowData(listOf(
+                      KeyData(-1, "⇧", 14f, KeyType.STICKY, edgeFlags = 1),
+                      KeyData(122, "z", 10f),
+                      KeyData(120, "x", 10f),
+                      KeyData(99, "c", 10f),
+                      KeyData(118, "v", 10f),
+                      KeyData(98, "b", 10f),
+                      KeyData(110, "n", 10f),
+                      KeyData(109, "m", 10f),
+                      KeyData(-5, "⌫", 14f, KeyType.REPEATABLE, edgeFlags = 2)
+                  )),
+                  KeyboardRowData(listOf(
+                      KeyData(-2, "?123", 14f, KeyType.ACTION, edgeFlags = 1),
+                      KeyData(44, ",", 10f),
+                      KeyData(32, "", 42f, KeyType.SPACE),
+                      KeyData(46, ".", 10f),
+                      KeyData(-4, "⏎", 14f, KeyType.ACTION, edgeFlags = 2)
+                  ))
+              )
+          )
 
-              <Row>
-                  <Key app:codes="-2"  app:keyLabel="@string/label_symbols" app:keyWidth="14%p" app:keyEdgeFlags="1"/>
-                  <Key app:codes="44"  app:keyLabel=","/>
-                  <Key app:codes="32"  app:keyLabel="" app:keyWidth="42%p"/>
-                  <Key app:codes="46"  app:keyLabel="."/>
-                  <Key app:codes="-4"  app:keyLabel="⏎" app:keyWidth="14%p" app:keyEdgeFlags="2"/>
-              </Row>
+          val symbolLayout = KeyboardLayoutData(
+              rows = listOf(
+                  KeyboardRowData(listOf(
+                      KeyData(49, "1", 10f, edgeFlags = 4),
+                      KeyData(50, "2", 10f),
+                      KeyData(51, "3", 10f),
+                      KeyData(52, "4", 10f),
+                      KeyData(53, "5", 10f),
+                      KeyData(54, "6", 10f),
+                      KeyData(55, "7", 10f),
+                      KeyData(56, "8", 10f),
+                      KeyData(57, "9", 10f),
+                      KeyData(48, "0", 10f, edgeFlags = 2)
+                  )),
+                  KeyboardRowData(listOf(
+                      KeyData(64, "@", 10f, edgeFlags = 1),
+                      KeyData(35, "#", 10f),
+                      KeyData(36, "$", 10f),
+                      KeyData(37, "%", 10f),
+                      KeyData(38, "&", 10f),
+                      KeyData(45, "-", 10f),
+                      KeyData(43, "+", 10f),
+                      KeyData(40, "(", 10f),
+                      KeyData(41, ")", 10f),
+                      KeyData(47, "/", 10f, edgeFlags = 2)
+                  )),
+                  KeyboardRowData(listOf(
+                      KeyData(33, "!", 11f, edgeFlags = 1),
+                      KeyData(34, "\"", 10f),
+                      KeyData(39, "'", 10f),
+                      KeyData(58, ":", 10f),
+                      KeyData(59, ";", 10f),
+                      KeyData(47, "/", 10f),
+                      KeyData(63, "?", 10f),
+                      KeyData(126, "~", 10f),
+                      KeyData(96, "`", 11f, edgeFlags = 2)
+                  )),
+                  KeyboardRowData(listOf(
+                      KeyData(-8, "ABC", 14f, KeyType.ACTION, edgeFlags = 1),
+                      KeyData(92, "\\", 10f),
+                      KeyData(124, "|", 10f),
+                      KeyData(60, "<", 10f),
+                      KeyData(62, ">", 10f),
+                      KeyData(123, "{", 10f),
+                      KeyData(125, "}", 10f),
+                      KeyData(-5, "⌫", 14f, KeyType.REPEATABLE, edgeFlags = 2)
+                  )),
+                  KeyboardRowData(listOf(
+                      KeyData(-2, "?123", 14f, KeyType.ACTION, edgeFlags = 1),
+                      KeyData(44, ",", 10f),
+                      KeyData(32, "", 42f, KeyType.SPACE),
+                      KeyData(46, ".", 10f),
+                      KeyData(-4, "⏎", 14f, KeyType.ACTION, edgeFlags = 2)
+                  ))
+              )
+          )
 
-          </Keyboard>
-          EOF
+          // ─── ViewModel ──────────────────────────────────────────────────────────────
 
-          cat > app/src/main/res/xml/keyboard_symbol.xml << 'EOF'
-          <?xml version="1.0" encoding="utf-8"?>
-          <Keyboard xmlns:android="http://schemas.android.com/apk/res/android"
-              xmlns:app="http://schemas.android.com/apk/res-auto"
-              app:keyWidth="10%p"
-              app:keyHeight="48dp"
-              app:keyHorizontalGap="1dp"
-              app:keyVerticalGap="1dp">
+          class KeyboardViewModel : ViewModel() {
+              private val _currentLayout = mutableStateOf(qwertyLayout)
+              val currentLayout: KeyboardLayoutData by _currentLayout
 
-              <Row>
-                  <Key app:codes="49"  app:keyLabel="1" app:keyEdgeFlags="4"/>
-                  <Key app:codes="50"  app:keyLabel="2"/>
-                  <Key app:codes="51"  app:keyLabel="3"/>
-                  <Key app:codes="52"  app:keyLabel="4"/>
-                  <Key app:codes="53"  app:keyLabel="5"/>
-                  <Key app:codes="54"  app:keyLabel="6"/>
-                  <Key app:codes="55"  app:keyLabel="7"/>
-                  <Key app:codes="56"  app:keyLabel="8"/>
-                  <Key app:codes="57"  app:keyLabel="9"/>
-                  <Key app:codes="48"  app:keyLabel="0" app:keyEdgeFlags="2"/>
-              </Row>
+              private val _isShifted = mutableStateOf(false)
+              val isShifted: Boolean by _isShifted
 
-              <Row>
-                  <Key app:codes="64"  app:keyLabel="@" app:keyEdgeFlags="1"/>
-                  <Key app:codes="35"  app:keyLabel="#"/>
-                  <Key app:codes="36"  app:keyLabel="$"/>
-                  <Key app:codes="37"  app:keyLabel="%"/>
-                  <Key app:codes="38"  app:keyLabel="&amp;"/>
-                  <Key app:codes="45"  app:keyLabel="-"/>
-                  <Key app:codes="43"  app:keyLabel="+"/>
-                  <Key app:codes="40"  app:keyLabel="("/>
-                  <Key app:codes="41"  app:keyLabel=")"/>
-                  <Key app:codes="47"  app:keyLabel="/" app:keyEdgeFlags="2"/>
-              </Row>
+              private val _pressedKeys = mutableStateMapOf<Int, Boolean>()
+              val pressedKeys: Map<Int, Boolean> = _pressedKeys
 
-              <Row>
-                  <Key app:codes="33"  app:keyLabel="!" app:keyWidth="11%p" app:keyEdgeFlags="1"/>
-                  <Key app:codes="34"  app:keyLabel="&quot;"/>
-                  <Key app:codes="39"  app:keyLabel="'"/>
-                  <Key app:codes="58"  app:keyLabel=":"/>
-                  <Key app:codes="59"  app:keyLabel=";"/>
-                  <Key app:codes="47"  app:keyLabel="/"/>
-                  <Key app:codes="63"  app:keyLabel="@string/label_question"/>
-                  <Key app:codes="126" app:keyLabel="~"/>
-                  <Key app:codes="96"  app:keyLabel="`" app:keyWidth="11%p" app:keyEdgeFlags="2"/>
-              </Row>
+              var inputConnection: InputConnection? = null
 
-              <Row>
-                  <Key app:codes="-8"  app:keyLabel="ABC" app:keyWidth="14%p" app:keyEdgeFlags="1"/>
-                  <Key app:codes="92"  app:keyLabel="\\"/>
-                  <Key app:codes="124" app:keyLabel="|"/>
-                  <Key app:codes="60"  app:keyLabel="&lt;"/>
-                  <Key app:codes="62"  app:keyLabel="&gt;"/>
-                  <Key app:codes="123" app:keyLabel="{"/>
-                  <Key app:codes="125" app:keyLabel="}"/>
-                  <Key app:codes="-5"  app:keyLabel="⌫" app:keyWidth="14%p" app:isRepeatable="true" app:keyEdgeFlags="2"/>
-              </Row>
+              fun onKeyDown(key: KeyData) {
+                  _pressedKeys[key.hashCode()] = true
+              }
 
-              <Row>
-                  <Key app:codes="-2"  app:keyLabel="@string/label_symbols" app:keyWidth="14%p" app:keyEdgeFlags="1"/>
-                  <Key app:codes="44"  app:keyLabel=","/>
-                  <Key app:codes="32"  app:keyLabel="" app:keyWidth="42%p"/>
-                  <Key app:codes="46"  app:keyLabel="."/>
-                  <Key app:codes="-4"  app:keyLabel="⏎" app:keyWidth="14%p" app:keyEdgeFlags="2"/>
-              </Row>
+              fun onKeyUp(key: KeyData) {
+                  _pressedKeys[key.hashCode()] = false
+                  handleKeyAction(key)
+              }
 
-          </Keyboard>
-          EOF
+              fun onKeyCancel(key: KeyData) {
+                  _pressedKeys[key.hashCode()] = false
+              }
+
+              private fun handleKeyAction(key: KeyData) {
+                  val ic = inputConnection ?: return
+                  when (key.code) {
+                      -5 -> ic.deleteSurroundingText(1, 0) // Delete
+                      -1 -> { // Shift
+                          _isShifted.value = !_isShifted.value
+                      }
+                      -2 -> { // Mode change
+                          _currentLayout.value = if (_currentLayout.value == qwertyLayout)
+                              symbolLayout else qwertyLayout
+                      }
+                      -4 -> { // Enter
+                          ic.sendKeyEvent(KeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_ENTER))
+                          ic.sendKeyEvent(KeyEvent(KeyEvent.ACTION_UP, KeyEvent.KEYCODE_ENTER))
+                      }
+                      -8 -> { // Back to ABC
+                          _currentLayout.value = qwertyLayout
+                      }
+                      else -> {
+                          var ch = key.code.toChar()
+                          if (_isShifted.value && ch.isLowerCase()) {
+                              ch = ch.uppercaseChar()
+                          }
+                          ic.commitText(ch.toString(), 1)
+                          if (_isShifted.value) {
+                              _isShifted.value = false
+                          }
+                      }
+                  }
+              }
+
+              fun getDisplayLabel(key: KeyData): String {
+                  if (key.code == 32) return "" // Space
+                  if (key.code < 0) return key.label // Special keys
+                  
+                  var ch = key.code.toChar()
+                  if (_isShifted.value && ch.isLowerCase()) {
+                      ch = ch.uppercaseChar()
+                  }
+                  return if (ch.isLetter()) ch.toString() else key.label
+              }
+          }
+
+          // ─── Composable Keyboard ───────────────────────────────────────────────────
+
+          @androidx.compose.runtime.Composable
+          fun KeyboardScreen(viewModel: KeyboardViewModel = viewModel()) {
+              Column(
+                  modifier = Modifier
+                      .fillMaxWidth()
+                      .background(Color(0x801A1A1A))
+                      .padding(horizontal = 4.dp, vertical = 2.dp),
+                  horizontalAlignment = Alignment.CenterHorizontally
+              ) {
+                  viewModel.currentLayout.rows.forEach { row ->
+                      KeyboardRow(row, viewModel)
+                  }
+              }
+          }
+
+          @androidx.compose.runtime.Composable
+          fun KeyboardRow(row: KeyboardRowData, viewModel: KeyboardViewModel) {
+              Row(
+                  modifier = Modifier.fillMaxWidth(),
+                  horizontalArrangement = Arrangement.Center
+              ) {
+                  row.keys.forEach { key ->
+                      KeyboardKey(key, viewModel)
+                  }
+              }
+          }
+
+          @androidx.compose.runtime.Composable
+          fun KeyboardKey(key: KeyData, viewModel: KeyboardViewModel) {
+              val isPressed = viewModel.pressedKeys[key.hashCode()] ?: false
+              val interactionSource = remember { MutableInteractionSource() }
+
+              LaunchedEffect(interactionSource) {
+                  interactionSource.interactions.collect { interaction ->
+                      when (interaction) {
+                          is PressInteraction.Press -> {
+                              viewModel.onKeyDown(key)
+                              if (key.keyType == KeyType.REPEATABLE) {
+                                  viewModel.onKeyUp(key)
+                                  while (isActive) {
+                                      delay(50)
+                                      viewModel.onKeyUp(key)
+                                  }
+                              }
+                          }
+                          is PressInteraction.Release -> {
+                              if (key.keyType != KeyType.REPEATABLE) {
+                                  viewModel.onKeyUp(key)
+                              }
+                          }
+                          is PressInteraction.Cancel -> {
+                              viewModel.onKeyCancel(key)
+                          }
+                      }
+                  }
+              }
+
+              Box(
+                  modifier = Modifier
+                      .width((key.width * 3.6).dp)
+                      .height(48.dp)
+                      .padding(1.dp)
+                      .clip(RoundedCornerShape(4.dp))
+                      .background(
+                          when {
+                              key.keyType == KeyType.STICKY && viewModel.isShifted -> Color(0x80B4B4AA)
+                              isPressed -> Color(0x80B4B4AA)
+                              else -> Color(0x802A2A2A)
+                          }
+                      )
+                      .clickable(
+                          interactionSource = interactionSource,
+                          indication = null
+                      ) { },
+                  contentAlignment = Alignment.Center
+              ) {
+                  Text(
+                      text = viewModel.getDisplayLabel(key),
+                      color = Color(0x80DCDCD7),
+                      fontSize = if (key.code < 0 && key.code != 32) 14.sp else 16.sp,
+                      textAlign = TextAlign.Center
+                  )
+              }
+          }
+
+          // ─── IME Service ────────────────────────────────────────────────────────────
+
+          class GreyBIME : InputMethodService(), LifecycleOwner {
+              private val lifecycleRegistry = LifecycleRegistry(this)
+              private lateinit var keyboardViewModel: KeyboardViewModel
+
+              override fun getLifecycle(): Lifecycle = lifecycleRegistry
+
+              override fun onCreate() {
+                  super.onCreate()
+                  lifecycleRegistry.currentState = Lifecycle.State.CREATED
+              }
+
+              override fun onCreateInputView(): View {
+                  lifecycleRegistry.currentState = Lifecycle.State.STARTED
+                  
+                  return ComposeView(this).apply {
+                      setContent {
+                          keyboardViewModel = viewModel()
+                          KeyboardScreen(keyboardViewModel)
+                      }
+                  }
+              }
+
+              override fun onStartInputView(info: EditorInfo?, restarting: Boolean) {
+                  super.onStartInputView(info, restarting)
+                  keyboardViewModel.inputConnection = currentInputConnection
+              }
+
+              override fun onEvaluateFullscreenMode(): Boolean = false
+
+              override fun onDestroy() {
+                  lifecycleRegistry.currentState = Lifecycle.State.DESTROYED
+                  super.onDestroy()
+              }
+          }
+          KOTLINEOF
 
           cat > settings.gradle.kts << 'EOF'
           pluginManagement {
@@ -288,6 +433,7 @@ jobs:
           plugins {
               id("com.android.application") version "8.9.1" apply false
               id("org.jetbrains.kotlin.android") version "2.2.0" apply false
+              id("org.jetbrains.kotlin.plugin.compose") version "2.2.0" apply false
           }
           EOF
 
@@ -295,6 +441,7 @@ jobs:
           plugins {
               id("com.android.application")
               id("org.jetbrains.kotlin.android")
+              id("org.jetbrains.kotlin.plugin.compose")
           }
 
           android {
@@ -332,6 +479,22 @@ jobs:
                   targetCompatibility = JavaVersion.VERSION_17
               }
               kotlinOptions { jvmTarget = "17" }
+              buildFeatures { compose = true }
+          }
+
+          dependencies {
+              implementation("androidx.core:core-ktx:1.15.0")
+              implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.9.0")
+              implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.9.0")
+              implementation("androidx.activity:activity-compose:1.10.1")
+              
+              val composeBom = platform("androidx.compose:compose-bom:2025.05.00")
+              implementation(composeBom)
+              implementation("androidx.compose.ui:ui")
+              implementation("androidx.compose.foundation:foundation")
+              implementation("androidx.compose.material3:material3")
+              implementation("androidx.compose.ui:ui-graphics")
+              implementation("androidx.compose.animation:animation")
           }
           APP
 
@@ -377,8 +540,6 @@ jobs:
           <?xml version="1.0" encoding="utf-8"?>
           <resources>
               <string name="ime_name">GreyB Keyboard</string>
-              <string name="label_symbols">\?123</string>
-              <string name="label_question">?</string>
           </resources>
           EOF
 
@@ -477,7 +638,7 @@ jobs:
         run: |
           mkdir -p GreyB-release
           cp app/build/outputs/apk/release/app-release.apk GreyB-release/GreyB.apk
-          cp Keyboard.kt GreyB-release/
+          cp app/src/main/java/com/greyb/keyboard/Keyboard.kt GreyB-release/
           cp .github/workflows/build.yml GreyB-release/
 
           APK_SIZE=$(ls -lh app/build/outputs/apk/release/app-release.apk | awk '{print $5}')
@@ -489,6 +650,7 @@ jobs:
           Signed:     Yes (fixed key)
           APK Size:   $APK_SIZE
           Optimized:  Yes (ProGuard/R8 enabled)
+          Framework:  Jetpack Compose
           EOF
 
       - name: Upload artifact
