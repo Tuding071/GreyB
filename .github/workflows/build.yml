@@ -1,0 +1,332 @@
+name: Build GreyB Keyboard
+
+on:
+  push:
+    branches: [ main, master ]
+    paths:
+      - 'Keyboard.kt'
+      - '.github/workflows/build-keyboard.yml'
+  pull_request:
+    branches: [ main, master ]
+    paths:
+      - 'Keyboard.kt'
+      - '.github/workflows/build-keyboard.yml'
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Set Android SDK path
+        run: echo "sdk.dir=/usr/local/lib/android/sdk" > local.properties
+
+      - name: Cache Gradle packages
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
+          restore-keys: |
+            ${{ runner.os }}-gradle-
+
+      - name: Generate project structure
+        env:
+          BUILD_NUMBER: ${{ github.run_number }}
+        run: |
+          PKG=app/src/main/java/com/greyb/keyboard
+          mkdir -p $PKG
+          mkdir -p app/src/main/res/values
+          mkdir -p app/src/main/res/xml
+          mkdir -p gradle/wrapper
+
+          cp Keyboard.kt $PKG/
+
+          cat > settings.gradle.kts << 'EOF'
+          pluginManagement {
+              repositories { google(); mavenCentral(); gradlePluginPortal() }
+          }
+          dependencyResolutionManagement {
+              repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
+              repositories { google(); mavenCentral() }
+          }
+          rootProject.name = "GreyB"
+          include(":app")
+          EOF
+
+          cat > build.gradle.kts << 'EOF'
+          plugins {
+              id("com.android.application")             version "8.9.1" apply false
+              id("org.jetbrains.kotlin.android")        version "2.2.0" apply false
+              id("org.jetbrains.kotlin.plugin.compose") version "2.2.0" apply false
+          }
+          EOF
+
+          cat > app/build.gradle.kts << EOF
+          plugins {
+              id("com.android.application")
+              id("org.jetbrains.kotlin.android")
+              id("org.jetbrains.kotlin.plugin.compose")
+          }
+
+          android {
+              namespace  = "com.greyb.keyboard"
+              compileSdk = 36
+
+              defaultConfig {
+                  applicationId = "com.greyb.keyboard"
+                  minSdk        = 26
+                  targetSdk     = 36
+                  versionCode   = ${BUILD_NUMBER}
+                  versionName   = "${BUILD_NUMBER}"
+              }
+
+              signingConfigs {
+                  create("release") {
+                      storeFile     = file("dummy.keystore")
+                      storePassword = "password"
+                      keyAlias      = "dummy"
+                      keyPassword   = "password"
+                  }
+              }
+
+              buildTypes {
+                  release {
+                      isMinifyEnabled = false
+                      isShrinkResources = false
+                      signingConfig  = signingConfigs.getByName("release")
+                  }
+              }
+
+              compileOptions {
+                  sourceCompatibility = JavaVersion.VERSION_17
+                  targetCompatibility = JavaVersion.VERSION_17
+              }
+              kotlinOptions { jvmTarget = "17" }
+              buildFeatures { compose = true }
+
+              splits {
+                  abi {
+                      isEnable       = true
+                      reset()
+                      include("arm64-v8a")
+                      isUniversalApk = false
+                  }
+              }
+          }
+
+          dependencies {
+              implementation("androidx.core:core-ktx:1.15.0")
+              implementation("androidx.activity:activity-compose:1.10.1")
+              implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.9.0")
+
+              val bom = platform("androidx.compose:compose-bom:2025.05.00")
+              implementation(bom)
+              implementation("androidx.compose.ui:ui")
+              implementation("androidx.compose.ui:ui-graphics")
+              implementation("androidx.compose.foundation:foundation")
+              implementation("androidx.compose.material3:material3")
+              implementation("androidx.compose.material:material-icons-extended")
+              implementation("androidx.compose.animation:animation")
+          }
+          EOF
+
+          cat > gradle.properties << 'EOF'
+          android.useAndroidX=true
+          android.enableJetifier=true
+          org.gradle.jvmargs=-Xmx4g -XX:MaxMetaspaceSize=512m -XX:+UseParallelGC
+          kotlin.code.style=official
+          android.suppressUnsupportedCompileSdk=36
+          EOF
+
+          cat > app/src/main/AndroidManifest.xml << 'EOF'
+          <?xml version="1.0" encoding="utf-8"?>
+          <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+              <uses-permission android:name="android.permission.VIBRATE" />
+              <uses-permission android:name="android.permission.INTERNET" />
+              
+              <application
+                  android:allowBackup="false"
+                  android:label="@string/app_name"
+                  android:icon="@mipmap/ic_launcher"
+                  android:roundIcon="@mipmap/ic_launcher_round"
+                  android:theme="@style/AppTheme">
+                  
+                  <activity
+                      android:name=".MainActivity"
+                      android:exported="true"
+                      android:configChanges="orientation|screenSize|keyboardHidden">
+                      <intent-filter>
+                          <action android:name="android.intent.action.MAIN" />
+                          <category android:name="android.intent.category.LAUNCHER" />
+                      </intent-filter>
+                  </activity>
+
+                  <service
+                      android:name=".GreyBIME"
+                      android:label="@string/app_name"
+                      android:permission="android.permission.BIND_INPUT_METHOD"
+                      android:exported="true">
+                      <intent-filter>
+                          <action android:name="android.view.InputMethod" />
+                      </intent-filter>
+                      <meta-data
+                          android:name="android.view.im"
+                          android:resource="@xml/method" />
+                  </service>
+              </application>
+          </manifest>
+          EOF
+
+          cat > app/src/main/res/xml/method.xml << 'EOF'
+          <?xml version="1.0" encoding="utf-8"?>
+          <input-method xmlns:android="http://schemas.android.com/apk/res/android"
+              android:supportsSwitchingToNextInputMethod="true"
+              android:isDefault="false"
+              android:settingsActivity="com.greyb.keyboard.MainActivity" />
+          EOF
+
+          cat > app/src/main/res/values/strings.xml << 'EOF'
+          <resources><string name="app_name">GreyB Keyboard</string></resources>
+          EOF
+
+          cat > app/src/main/res/values/themes.xml << 'EOF'
+          <resources>
+              <style name="AppTheme" parent="android:Theme.Material.Light.NoActionBar">
+                  <item name="android:windowBackground">#1A1A1A</item>
+                  <item name="android:statusBarColor">#1A1A1A</item>
+                  <item name="android:navigationBarColor">#1A1A1A</item>
+                  <item name="android:windowLightStatusBar">false</item>
+              </style>
+          </resources>
+          EOF
+
+      - name: Generate dummy keystore
+        run: |
+          keytool -genkey -v \
+            -keystore app/dummy.keystore \
+            -alias dummy \
+            -keyalg RSA \
+            -keysize 2048 \
+            -validity 10000 \
+            -storepass password \
+            -keypass password \
+            -dname "CN=Dummy, OU=GreyB, O=GreyB Keyboard, L=Test, S=Test, C=US"
+
+      - name: Generate launcher icons
+        run: |
+          rm -rf app/src/main/res/mipmap-*
+          
+          pip install Pillow --quiet
+          python3 << 'PYEOF'
+          from PIL import Image, ImageDraw
+          import os
+
+          def make_icon(size):
+              BG = (26, 26, 26, 255)
+              ACCENT = (180, 180, 170, 255)
+              WHITE = (220, 220, 215, 255)
+
+              img = Image.new('RGBA', (size, size), BG)
+              d = ImageDraw.Draw(img)
+
+              margin = size // 5
+              key_w = (size - 2 * margin) // 4
+              key_h = (size - 2 * margin) // 5
+              gap = max(1, size // 40)
+              start_y = margin + key_h
+
+              for row in range(3):
+                  y = start_y + row * (key_h + gap)
+                  keys_in_row = [4, 4, 3]
+                  row_margin = (size - keys_in_row[row] * (key_w + gap) + gap) // 2
+                  for col in range(keys_in_row[row]):
+                      x = row_margin + col * (key_w + gap)
+                      color = ACCENT if (row == 0 and col == 0) else WHITE
+                      d.rounded_rectangle(
+                          [x, y, x + key_w, y + key_h],
+                          radius=key_w // 5,
+                          fill=color
+                      )
+
+              space_y = start_y + 3 * (key_h + gap)
+              space_w = key_w * 2 + gap
+              space_x = (size - space_w) // 2
+              d.rounded_rectangle(
+                  [space_x, space_y, space_x + space_w, space_y + key_h],
+                  radius=key_w // 5,
+                  fill=ACCENT
+              )
+
+              return img
+
+          sizes = {'mdpi': 48, 'hdpi': 72, 'xhdpi': 96, 'xxhdpi': 144, 'xxxhdpi': 192}
+          for density, s in sizes.items():
+              path = f'app/src/main/res/mipmap-{density}'
+              os.makedirs(path, exist_ok=True)
+              icon = make_icon(s)
+              icon.save(f'{path}/ic_launcher.png')
+              icon.save(f'{path}/ic_launcher_round.png')
+
+          print("Icons generated!")
+          PYEOF
+
+      - name: Setup Gradle Wrapper
+        run: |
+          gradle wrapper --gradle-version=8.11.1 --distribution-type=bin
+          chmod +x gradlew
+
+      - name: Clean build
+        run: |
+          rm -rf app/build
+          ./gradlew clean --no-daemon
+
+      - name: Build signed release APK
+        run: ./gradlew assembleRelease --no-daemon
+
+      - name: Verify APK signing
+        run: |
+          APK_PATH="app/build/outputs/apk/release/app-arm64-v8a-release.apk"
+          if [ -f "$APK_PATH" ]; then
+              echo "✅ Release APK generated"
+              echo "📦 APK size: $(ls -lh "$APK_PATH" | awk '{print $5}')"
+              $ANDROID_HOME/build-tools/36.0.0/apksigner verify --print-certs "$APK_PATH"
+          else
+              echo "❌ Release APK not found"
+              exit 1
+          fi
+
+      - name: Bundle APK + source
+        run: |
+          mkdir -p GreyB-release
+          cp app/build/outputs/apk/release/app-arm64-v8a-release.apk GreyB-release/GreyB.apk
+          cp Keyboard.kt GreyB-release/
+          cp .github/workflows/build-keyboard.yml GreyB-release/
+
+          APK_SIZE=$(ls -lh app/build/outputs/apk/release/app-arm64-v8a-release.apk | awk '{print $5}')
+
+          cat > GreyB-release/BUILD_INFO.txt << EOF
+          Build:      #${{ github.run_number }}
+          Commit:     ${{ github.sha }}
+          Timestamp:  $(date -u '+%Y-%m-%d %H:%M:%S UTC')
+          Signed:     Yes (dummy keys)
+          APK Size:   $APK_SIZE
+          Optimized:  No (ProGuard/R8 disabled)
+          EOF
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: GreyB-${{ github.run_number }}
+          path: GreyB-release/
+          retention-days: 30
