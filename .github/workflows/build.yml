@@ -1,15 +1,9 @@
-name: Build GreyB Keyboard
+name: Build GreyB Keyboard (Phase 1)
 
 on:
-  push:
-    branches: [ main, master ]
-    paths:
-      - '.github/workflows/build.yml'
-  pull_request:
-    branches: [ main, master ]
-    paths:
-      - '.github/workflows/build.yml'
   workflow_dispatch:
+  push:
+    branches: [ main ]
 
 jobs:
   build:
@@ -25,496 +19,279 @@ jobs:
           distribution: temurin
           java-version: '17'
 
-      - name: Set Android SDK path
+      - name: Setup Android SDK path
         run: echo "sdk.dir=/usr/local/lib/android/sdk" > local.properties
 
-      - name: Cache Gradle packages
+      - name: Cache Gradle
         uses: actions/cache@v4
         with:
           path: |
             ~/.gradle/caches
             ~/.gradle/wrapper
           key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
-          restore-keys: |
-            ${{ runner.os }}-gradle-
 
-      - name: Generate project structure
-        env:
-          BUILD_NUMBER: ${{ github.run_number }}
+      - name: Create GreyB Keyboard Project
         run: |
-          PKG=app/src/main/java/com/greyb/keyboard
+          PKG=app/src/main/java/rkr/tinykeyboard/inputmethod
           mkdir -p $PKG
-          mkdir -p app/src/main/res/values
           mkdir -p app/src/main/res/xml
+          mkdir -p app/src/main/res/values
           mkdir -p app/src/main/res/layout
-          mkdir -p app/src/main/res/drawable
           mkdir -p gradle/wrapper
 
-          cat > $PKG/LatinKeyboard.kt << 'LATIN'
-          package com.greyb.keyboard
+# =========================
+# KEYBOARD SERVICE (JAVA)
+# =========================
+          cat > $PKG/SoftKeyboard.java << 'EOF'
+package rkr.tinykeyboard.inputmethod;
 
-          import android.content.Context
-          import android.content.res.Resources
-          import android.content.res.XmlResourceParser
-          import android.inputmethodservice.Keyboard
+import android.inputmethodservice.InputMethodService;
+import android.inputmethodservice.Keyboard;
+import android.inputmethodservice.KeyboardView;
+import android.view.View;
+import android.view.inputmethod.InputConnection;
 
-          class LatinKeyboard : Keyboard {
+public class SoftKeyboard extends InputMethodService
+        implements KeyboardView.OnKeyboardActionListener {
 
-              private var enterKey: Key? = null
-              private var savedEnterKey: Key? = null
+    private KeyboardView kv;
+    private Keyboard keyboard;
 
-              constructor(context: Context, xmlLayoutResId: Int) : super(context, xmlLayoutResId)
+    private static final int KEY_CLIPBOARD = -110;
+    private static final int KEY_EMOJI = -111;
 
-              override fun createKeyFromXml(
-                  res: Resources,
-                  parent: Row,
-                  x: Int,
-                  y: Int,
-                  parser: XmlResourceParser
-              ): Key {
-                  val key = Key(res, parent, x, y, parser)
-                  if (key.codes[0] == KEYCODE_DONE) {
-                      enterKey = key
-                      savedEnterKey = Key(res, parent, x, y, parser)
-                  }
-                  return key
-              }
+    @Override
+    public View onCreateInputView() {
+        kv = (KeyboardView) getLayoutInflater().inflate(R.layout.input, null);
+        keyboard = new Keyboard(this, R.xml.qwerty);
+        kv.setKeyboard(keyboard);
+        kv.setOnKeyboardActionListener(this);
+        kv.setPreviewEnabled(false);
+        return kv;
+    }
 
-              fun setImeOptions(res: Resources, options: Int) {
-                  if (enterKey == null) return
-                  when (options and (android.view.inputmethod.EditorInfo.IME_MASK_ACTION or android.view.inputmethod.EditorInfo.IME_FLAG_NO_ENTER_ACTION)) {
-                      android.view.inputmethod.EditorInfo.IME_ACTION_GO -> enterKey!!.label = res.getText(R.string.label_go)
-                      android.view.inputmethod.EditorInfo.IME_ACTION_NEXT -> enterKey!!.label = res.getText(R.string.label_next)
-                      android.view.inputmethod.EditorInfo.IME_ACTION_SEARCH -> enterKey!!.label = res.getText(R.string.label_search)
-                      android.view.inputmethod.EditorInfo.IME_ACTION_SEND -> enterKey!!.label = res.getText(R.string.label_send)
-                      else -> enterKey!!.label = res.getText(R.string.label_enter)
-                  }
-              }
-          }
-          LATIN
+    @Override
+    public void onKey(int primaryCode, int[] keyCodes) {
+        InputConnection ic = getCurrentInputConnection();
+        if (ic == null) return;
 
-          cat > $PKG/GreyBIME.kt << 'KOTLIN'
-          package com.greyb.keyboard
+        switch (primaryCode) {
 
-          import android.inputmethodservice.InputMethodService
-          import android.inputmethodservice.Keyboard
-          import android.inputmethodservice.KeyboardView
-          import android.text.InputType
-          import android.view.KeyEvent
-          import android.view.View
-          import android.view.inputmethod.EditorInfo
+            case Keyboard.KEYCODE_DELETE:
+                ic.deleteSurroundingText(1, 0);
+                break;
 
-          class GreyBIME : InputMethodService(), KeyboardView.OnKeyboardActionListener {
+            case Keyboard.KEYCODE_SHIFT:
+                break;
 
-              private lateinit var keyboardView: KeyboardView
-              private lateinit var qwertyKeyboard: LatinKeyboard
-              private var capsLock = false
-              private var lastShiftTime: Long = 0
+            case Keyboard.KEYCODE_DONE:
+                ic.commitText("\n", 1);
+                break;
 
-              override fun onCreateInputView(): View {
-                  keyboardView = layoutInflater.inflate(R.layout.input, null) as KeyboardView
-                  keyboardView.setOnKeyboardActionListener(this)
-                  keyboardView.isPreviewEnabled = false
-                  qwertyKeyboard = LatinKeyboard(this, R.xml.qwerty)
-                  keyboardView.setKeyboard(qwertyKeyboard)
-                  return keyboardView
-              }
+            case KEY_CLIPBOARD:
+                break;
 
-              override fun onEvaluateFullscreenMode(): Boolean = false
+            case KEY_EMOJI:
+                break;
 
-              override fun onStartInput(attribute: EditorInfo?, restarting: Boolean) {
-                  super.onStartInput(attribute, restarting)
-                  qwertyKeyboard.setImeOptions(resources, attribute?.imeOptions ?: 0)
-              }
+            default:
+                char code = (char) primaryCode;
+                ic.commitText(String.valueOf(code), 1);
+        }
+    }
 
-              override fun onStartInputView(attribute: EditorInfo?, restarting: Boolean) {
-                  super.onStartInputView(attribute, restarting)
-                  keyboardView.setKeyboard(qwertyKeyboard)
-                  keyboardView.closing()
-              }
+    @Override public void onPress(int i) {}
+    @Override public void onRelease(int i) {}
+    @Override public void onText(CharSequence charSequence) {}
+    @Override public void swipeLeft() {}
+    @Override public void swipeRight() {}
+    @Override public void swipeDown() {}
+    @Override public void swipeUp() {}
+}
+EOF
 
-              override fun onFinishInput() {
-                  super.onFinishInput()
-                  keyboardView.closing()
-              }
+# =========================
+# KEYBOARD XML (PHASE 1)
+# =========================
+          cat > app/src/main/res/xml/qwerty.xml << 'EOF'
+<Keyboard xmlns:android="http://schemas.android.com/apk/res/android"
+    android:keyWidth="10%p"
+    android:keyHeight="56dp">
 
-              override fun onKey(primaryCode: Int, keyCodes: IntArray?) {
-                  val ic = currentInputConnection ?: return
-                  when (primaryCode) {
-                      Keyboard.KEYCODE_DELETE -> {
-                          keyDownUp(KeyEvent.KEYCODE_DEL)
-                      }
-                      Keyboard.KEYCODE_SHIFT -> {
-                          handleShift()
-                      }
-                      Keyboard.KEYCODE_DONE -> {
-                          keyDownUp(KeyEvent.KEYCODE_ENTER)
-                      }
-                      else -> {
-                          var code = primaryCode.toChar()
-                          if (keyboardView.isShifted) {
-                              code = code.uppercaseChar()
-                          }
-                          ic.commitText(code.toString(), 1)
-                          if (keyboardView.isShifted && !capsLock) {
-                              keyboardView.isShifted = false
-                          }
-                      }
-                  }
-              }
+    <!-- NUMBER ROW -->
+    <Row>
+        <Key android:codes="49" android:keyLabel="1"/>
+        <Key android:codes="50" android:keyLabel="2"/>
+        <Key android:codes="51" android:keyLabel="3"/>
+        <Key android:codes="52" android:keyLabel="4"/>
+        <Key android:codes="53" android:keyLabel="5"/>
+        <Key android:codes="54" android:keyLabel="6"/>
+        <Key android:codes="55" android:keyLabel="7"/>
+        <Key android:codes="56" android:keyLabel="8"/>
+        <Key android:codes="57" android:keyLabel="9"/>
+        <Key android:codes="48" android:keyLabel="0"/>
+    </Row>
 
-              private fun handleShift() {
-                  val now = System.currentTimeMillis()
-                  if (lastShiftTime + 800 > now) {
-                      capsLock = !capsLock
-                      lastShiftTime = 0
-                  } else {
-                      lastShiftTime = now
-                  }
-                  keyboardView.isShifted = capsLock || !keyboardView.isShifted
-              }
+    <!-- QWERTY -->
+    <Row>
+        <Key android:codes="113" android:keyLabel="q"/>
+        <Key android:codes="119" android:keyLabel="w"/>
+        <Key android:codes="101" android:keyLabel="e"/>
+        <Key android:codes="114" android:keyLabel="r"/>
+        <Key android:codes="116" android:keyLabel="t"/>
+        <Key android:codes="121" android:keyLabel="y"/>
+        <Key android:codes="117" android:keyLabel="u"/>
+        <Key android:codes="105" android:keyLabel="i"/>
+        <Key android:codes="111" android:keyLabel="o"/>
+        <Key android:codes="112" android:keyLabel="p"/>
+    </Row>
 
-              private fun keyDownUp(keyEventCode: Int) {
-                  currentInputConnection?.sendKeyEvent(KeyEvent(KeyEvent.ACTION_DOWN, keyEventCode))
-                  currentInputConnection?.sendKeyEvent(KeyEvent(KeyEvent.ACTION_UP, keyEventCode))
-              }
+    <!-- ASDF -->
+    <Row>
+        <Key android:codes="97" android:keyLabel="a"/>
+        <Key android:codes="115" android:keyLabel="s"/>
+        <Key android:codes="100" android:keyLabel="d"/>
+        <Key android:codes="102" android:keyLabel="f"/>
+        <Key android:codes="103" android:keyLabel="g"/>
+        <Key android:codes="104" android:keyLabel="h"/>
+        <Key android:codes="106" android:keyLabel="j"/>
+        <Key android:codes="107" android:keyLabel="k"/>
+        <Key android:codes="108" android:keyLabel="l"/>
+    </Row>
 
-              override fun onPress(primaryCode: Int) {}
-              override fun onRelease(primaryCode: Int) {}
-              override fun onText(text: CharSequence?) {}
-              override fun swipeLeft() {}
-              override fun swipeRight() {}
-              override fun swipeDown() {}
-              override fun swipeUp() {}
-          }
-          KOTLIN
+    <!-- ZXCV -->
+    <Row>
+        <Key android:codes="-1" android:keyLabel="⇧" android:keyWidth="14%p"/>
+        <Key android:codes="122" android:keyLabel="z"/>
+        <Key android:codes="120" android:keyLabel="x"/>
+        <Key android:codes="99" android:keyLabel="c"/>
+        <Key android:codes="118" android:keyLabel="v"/>
+        <Key android:codes="98" android:keyLabel="b"/>
+        <Key android:codes="110" android:keyLabel="n"/>
+        <Key android:codes="109" android:keyLabel="m"/>
+        <Key android:codes="-5" android:keyLabel="⌫" android:keyWidth="14%p"/>
+    </Row>
 
-          cat > app/src/main/res/layout/input.xml << 'INPUT'
-          <?xml version="1.0" encoding="utf-8"?>
-          <android.inputmethodservice.KeyboardView
-              xmlns:android="http://schemas.android.com/apk/res/android"
-              android:id="@+id/keyboard"
-              android:layout_alignParentBottom="true"
-              android:layout_width="match_parent"
-              android:layout_height="wrap_content"
-              android:keyBackground="@drawable/key_bg"
-              android:keyTextColor="#DCDCD7"
-              android:keyTextSize="@dimen/key_text_size"
-              android:labelTextSize="@dimen/key_text_size"
-              android:background="#1A1A1A"
-              android:verticalCorrection="0dp"/>
-          INPUT
+    <!-- ACTION ROW -->
+    <Row>
+        <Key android:codes="-110" android:keyLabel="📋" android:keyWidth="15%p"/>
+        <Key android:codes="-111" android:keyLabel="😊" android:keyWidth="10%p"/>
+        <Key android:codes="32" android:keyLabel=" " android:keyWidth="50%p"/>
+        <Key android:codes="46" android:keyLabel="." android:keyWidth="10%p"/>
+        <Key android:codes="-4" android:keyLabel="⏎" android:keyWidth="15%p"/>
+    </Row>
 
-          cat > app/src/main/res/drawable/key_bg.xml << 'KEYBG'
-          <?xml version="1.0" encoding="utf-8"?>
-          <selector xmlns:android="http://schemas.android.com/apk/res/android">
-              <item android:state_pressed="true">
-                  <shape android:shape="rectangle">
-                      <solid android:color="#B4B4AA"/>
-                      <corners android:radius="4dp"/>
-                  </shape>
-              </item>
-              <item android:state_checkable="true" android:state_checked="true">
-                  <shape android:shape="rectangle">
-                      <solid android:color="#B4B4AA"/>
-                      <corners android:radius="4dp"/>
-                  </shape>
-              </item>
-              <item>
-                  <shape android:shape="rectangle">
-                      <solid android:color="#2A2A2A"/>
-                      <corners android:radius="4dp"/>
-                  </shape>
-              </item>
-          </selector>
-          KEYBG
+</Keyboard>
+EOF
 
-          cat > app/src/main/res/xml/qwerty.xml << 'QWERTY'
-          <?xml version="1.0" encoding="utf-8"?>
-          <Keyboard xmlns:android="http://schemas.android.com/apk/res/android"
-              android:keyWidth="@dimen/key_width"
-              android:keyHeight="@dimen/key_height">
+# =========================
+# INPUT VIEW
+# =========================
+          cat > app/src/main/res/layout/input.xml << 'EOF'
+<?xml version="1.0" encoding="utf-8"?>
+<android.inputmethodservice.KeyboardView
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/keyboard"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:keyTextSize="18sp"
+    android:background="#1A1A1A"/>
+EOF
 
-              <Row>
-                  <Key android:codes="49" android:keyLabel="1"/>
-                  <Key android:codes="50" android:keyLabel="2"/>
-                  <Key android:codes="51" android:keyLabel="3"/>
-                  <Key android:codes="52" android:keyLabel="4"/>
-                  <Key android:codes="53" android:keyLabel="5"/>
-                  <Key android:codes="54" android:keyLabel="6"/>
-                  <Key android:codes="55" android:keyLabel="7"/>
-                  <Key android:codes="56" android:keyLabel="8"/>
-                  <Key android:codes="57" android:keyLabel="9"/>
-                  <Key android:codes="48" android:keyLabel="0"/>
-              </Row>
+# =========================
+# MANIFEST
+# =========================
+          cat > app/src/main/AndroidManifest.xml << 'EOF'
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
-              <Row>
-                  <Key android:codes="113" android:keyLabel="q"/>
-                  <Key android:codes="119" android:keyLabel="w"/>
-                  <Key android:codes="101" android:keyLabel="e"/>
-                  <Key android:codes="114" android:keyLabel="r"/>
-                  <Key android:codes="116" android:keyLabel="t"/>
-                  <Key android:codes="121" android:keyLabel="y"/>
-                  <Key android:codes="117" android:keyLabel="u"/>
-                  <Key android:codes="105" android:keyLabel="i"/>
-                  <Key android:codes="111" android:keyLabel="o"/>
-                  <Key android:codes="112" android:keyLabel="p"/>
-              </Row>
+    <application
+        android:label="GreyB Keyboard"
+        android:theme="@android:style/Theme.DeviceDefault">
 
-              <Row>
-                  <Key android:codes="97" android:keyLabel="a" android:horizontalGap="5%p"/>
-                  <Key android:codes="115" android:keyLabel="s"/>
-                  <Key android:codes="100" android:keyLabel="d"/>
-                  <Key android:codes="102" android:keyLabel="f"/>
-                  <Key android:codes="103" android:keyLabel="g"/>
-                  <Key android:codes="104" android:keyLabel="h"/>
-                  <Key android:codes="106" android:keyLabel="j"/>
-                  <Key android:codes="107" android:keyLabel="k"/>
-                  <Key android:codes="108" android:keyLabel="l"/>
-              </Row>
+        <service
+            android:name=".SoftKeyboard"
+            android:permission="android.permission.BIND_INPUT_METHOD"
+            android:exported="true">
 
-              <Row>
-                  <Key android:codes="-1" android:keyLabel="@string/shift" android:keyWidth="@dimen/key_width_action" android:isModifier="true" android:isSticky="true"/>
-                  <Key android:codes="122" android:keyLabel="z"/>
-                  <Key android:codes="120" android:keyLabel="x"/>
-                  <Key android:codes="99" android:keyLabel="c"/>
-                  <Key android:codes="118" android:keyLabel="v"/>
-                  <Key android:codes="98" android:keyLabel="b"/>
-                  <Key android:codes="110" android:keyLabel="n"/>
-                  <Key android:codes="109" android:keyLabel="m"/>
-                  <Key android:codes="-5" android:keyLabel="@string/backspace" android:keyWidth="@dimen/key_width_action" android:isRepeatable="true"/>
-              </Row>
+            <intent-filter>
+                <action android:name="android.view.InputMethod"/>
+            </intent-filter>
 
-              <Row android:rowEdgeFlags="bottom">
-                  <Key android:codes="-2" android:keyLabel="?123" android:keyWidth="@dimen/key_width_action"/>
-                  <Key android:codes="44" android:keyLabel=","/>
-                  <Key android:codes="46" android:keyLabel="." android:keyWidth="10%p"/>
-                  <Key android:codes="32" android:keyWidth="@dimen/key_width_space"/>
-                  <Key android:codes="47" android:keyLabel="/"/>
-                  <Key android:codes="-4" android:keyLabel="@string/enter" android:keyWidth="@dimen/key_width_action"/>
-              </Row>
+            <meta-data
+                android:name="android.view.im"
+                android:resource="@xml/method"/>
+        </service>
 
-          </Keyboard>
-          QWERTY
+    </application>
+</manifest>
+EOF
 
-          cat > settings.gradle.kts << 'SETTINGS'
-          pluginManagement {
-              repositories { google(); mavenCentral(); gradlePluginPortal() }
-          }
-          dependencyResolutionManagement {
-              repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
-              repositories { google(); mavenCentral() }
-          }
-          rootProject.name = "GreyB"
-          include(":app")
-          SETTINGS
+# =========================
+# METHOD XML
+# =========================
+          cat > app/src/main/res/xml/method.xml << 'EOF'
+<input-method xmlns:android="http://schemas.android.com/apk/res/android"
+    android:supportsSwitchingToNextInputMethod="true"/>
+EOF
 
-          cat > build.gradle.kts << 'ROOT'
-          plugins {
-              id("com.android.application") version "8.9.1" apply false
-              id("org.jetbrains.kotlin.android") version "2.2.0" apply false
-          }
-          ROOT
+# =========================
+# STRINGS
+# =========================
+          cat > app/src/main/res/values/strings.xml << 'EOF'
+<resources>
+    <string name="app_name">GreyB Keyboard</string>
+</resources>
+EOF
 
-          cat > app/build.gradle.kts << APP
-          plugins {
-              id("com.android.application")
-              id("org.jetbrains.kotlin.android")
-          }
+# =========================
+# GRADLE FILES
+# =========================
+          cat > settings.gradle << 'EOF'
+include ':app'
+EOF
 
-          android {
-              namespace  = "com.greyb.keyboard"
-              compileSdk = 36
+          cat > build.gradle << 'EOF'
+buildscript {
+    repositories {
+        google()
+        mavenCentral()
+    }
+    dependencies {
+        classpath 'com.android.tools.build:gradle:8.2.2'
+    }
+}
+EOF
 
-              defaultConfig {
-                  applicationId = "com.greyb.keyboard"
-                  minSdk        = 26
-                  targetSdk     = 36
-                  versionCode   = ${BUILD_NUMBER}
-                  versionName   = "${BUILD_NUMBER}"
-              }
+          cat > app/build.gradle << 'EOF'
+apply plugin: 'com.android.application'
 
-              signingConfigs {
-                  create("release") {
-                      storeFile     = file("dummy.keystore")
-                      storePassword = "password"
-                      keyAlias      = "dummy"
-                      keyPassword   = "password"
-                  }
-              }
+android {
+    compileSdkVersion 34
 
-              buildTypes {
-                  release {
-                      isMinifyEnabled = true
-                      isShrinkResources = true
-                      proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"))
-                      signingConfig  = signingConfigs.getByName("release")
-                  }
-              }
+    defaultConfig {
+        applicationId "rkr.tinykeyboard.inputmethod"
+        minSdkVersion 26
+        targetSdkVersion 34
+        versionCode 1
+        versionName "1.0"
+    }
 
-              compileOptions {
-                  sourceCompatibility = JavaVersion.VERSION_17
-                  targetCompatibility = JavaVersion.VERSION_17
-              }
-              kotlinOptions { jvmTarget = "17" }
-          }
-          APP
-
-          cat > gradle.properties << 'PROPS'
-          android.useAndroidX=true
-          android.enableJetifier=true
-          org.gradle.jvmargs=-Xmx4g -XX:MaxMetaspaceSize=512m -XX:+UseParallelGC
-          kotlin.code.style=official
-          android.suppressUnsupportedCompileSdk=36
-          PROPS
-
-          cat > app/src/main/AndroidManifest.xml << 'MANIFEST'
-          <?xml version="1.0" encoding="utf-8"?>
-          <manifest xmlns:android="http://schemas.android.com/apk/res/android">
-              <application
-                  android:allowBackup="false"
-                  android:label="@string/ime_name"
-                  android:icon="@mipmap/ic_launcher"
-                  android:roundIcon="@mipmap/ic_launcher_round">
-                  <service
-                      android:name=".GreyBIME"
-                      android:label="@string/ime_name"
-                      android:permission="android.permission.BIND_INPUT_METHOD"
-                      android:exported="true">
-                      <intent-filter>
-                          <action android:name="android.view.InputMethod" />
-                      </intent-filter>
-                      <meta-data
-                          android:name="android.view.im"
-                          android:resource="@xml/method" />
-                  </service>
-              </application>
-          </manifest>
-          MANIFEST
-
-          cat > app/src/main/res/xml/method.xml << 'METHOD'
-          <?xml version="1.0" encoding="utf-8"?>
-          <input-method xmlns:android="http://schemas.android.com/apk/res/android"
-              android:supportsSwitchingToNextInputMethod="true" />
-          METHOD
-
-          cat > app/src/main/res/values/strings.xml << 'STRINGS'
-          <?xml version="1.0" encoding="utf-8"?>
-          <resources>
-              <string name="ime_name">GreyB Keyboard</string>
-              <string name="shift">⇧</string>
-              <string name="backspace">⌫</string>
-              <string name="enter">⏎</string>
-              <string name="label_go">Go</string>
-              <string name="label_next">Next</string>
-              <string name="label_search">🔍</string>
-              <string name="label_send">Send</string>
-              <string name="label_enter">⏎</string>
-          </resources>
-          STRINGS
-
-          cat > app/src/main/res/values/dimens.xml << 'DIMENS'
-          <?xml version="1.0" encoding="utf-8"?>
-          <resources>
-              <dimen name="key_height">48dp</dimen>
-              <dimen name="key_width">10%p</dimen>
-              <dimen name="key_width_action">14%p</dimen>
-              <dimen name="key_width_space">40%p</dimen>
-              <dimen name="key_text_size">16sp</dimen>
-          </resources>
-          DIMENS
-
-      - name: Generate dummy keystore
-        run: |
-          keytool -genkey -v \
-            -keystore app/dummy.keystore \
-            -alias dummy \
-            -keyalg RSA \
-            -keysize 2048 \
-            -validity 10000 \
-            -storepass password \
-            -keypass password \
-            -dname "CN=Dummy, OU=GreyB, O=GreyB Keyboard, L=Test, S=Test, C=US"
-
-      - name: Generate launcher icons
-        run: |
-          rm -rf app/src/main/res/mipmap-*
-          pip install Pillow --quiet
-          python3 << 'PYEOF'
-          from PIL import Image, ImageDraw
-          import os
-
-          def make_icon(size):
-              BG = (26, 26, 26, 255)
-              ACCENT = (180, 180, 170, 255)
-              WHITE = (220, 220, 215, 255)
-              img = Image.new('RGBA', (size, size), BG)
-              d = ImageDraw.Draw(img)
-              margin = size // 5
-              key_w = (size - 2 * margin) // 4
-              key_h = (size - 2 * margin) // 5
-              gap = max(1, size // 40)
-              start_y = margin + key_h
-              for row in range(3):
-                  y = start_y + row * (key_h + gap)
-                  keys_in_row = [4, 4, 3]
-                  row_margin = (size - keys_in_row[row] * (key_w + gap) + gap) // 2
-                  for col in range(keys_in_row[row]):
-                      x = row_margin + col * (key_w + gap)
-                      color = ACCENT if (row == 0 and col == 0) else WHITE
-                      d.rounded_rectangle([x, y, x + key_w, y + key_h], radius=key_w // 5, fill=color)
-              space_y = start_y + 3 * (key_h + gap)
-              space_w = key_w * 2 + gap
-              space_x = (size - space_w) // 2
-              d.rounded_rectangle([space_x, space_y, space_x + space_w, space_y + key_h], radius=key_w // 5, fill=ACCENT)
-              return img
-
-          sizes = {'mdpi': 48, 'hdpi': 72, 'xhdpi': 96, 'xxhdpi': 144, 'xxxhdpi': 192}
-          for density, s in sizes.items():
-              path = f'app/src/main/res/mipmap-{density}'
-              os.makedirs(path, exist_ok=True)
-              icon = make_icon(s)
-              icon.save(f'{path}/ic_launcher.png')
-              icon.save(f'{path}/ic_launcher_round.png')
-          print("Icons generated!")
-          PYEOF
+    buildTypes {
+        release {
+            minifyEnabled false
+        }
+    }
+}
+EOF
 
       - name: Setup Gradle Wrapper
-        run: |
-          gradle wrapper --gradle-version=8.11.1 --distribution-type=bin
-          chmod +x gradlew
+        run: gradle wrapper --gradle-version 8.7
 
-      - name: Build signed release APK
-        run: ./gradlew assembleRelease --no-daemon
+      - name: Build APK
+        run: ./gradlew assembleRelease
 
-      - name: Verify APK signing
-        run: |
-          APK_PATH="app/build/outputs/apk/release/app-release.apk"
-          if [ -f "$APK_PATH" ]; then
-              echo "✅ Release APK generated"
-              echo "📦 APK size: $(ls -lh "$APK_PATH" | awk '{print $5}')"
-              $ANDROID_HOME/build-tools/36.0.0/apksigner verify --print-certs "$APK_PATH"
-          else
-              echo "❌ Release APK not found"
-              exit 1
-          fi
-
-      - name: Bundle APK
-        run: |
-          mkdir -p GreyB-release
-          cp app/build/outputs/apk/release/app-release.apk GreyB-release/GreyB.apk
-          APK_SIZE=$(ls -lh app/build/outputs/apk/release/app-release.apk | awk '{print $5}')
-          cat > GreyB-release/BUILD_INFO.txt << EOF
-          Build:      #${{ github.run_number }}
-          Commit:     ${{ github.sha }}
-          Timestamp:  $(date -u '+%Y-%m-%d %H:%M:%S UTC')
-          Signed:     Yes (dummy keys)
-          APK Size:   $APK_SIZE
-          EOF
-
-      - name: Upload artifact
+      - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: GreyB-${{ github.run_number }}
-          path: GreyB-release/
-          retention-days: 30
+          name: GreyB-Phase1
+          path: app/build/outputs/apk/release/
