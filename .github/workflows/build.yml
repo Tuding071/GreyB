@@ -5,11 +5,13 @@ on:
     branches: [ main, master ]
     paths:
       - 'Keyboard.kt'
+      - 'LifecycleOwnerIME.kt'
       - '.github/workflows/build.yml'
   pull_request:
     branches: [ main, master ]
     paths:
       - 'Keyboard.kt'
+      - 'LifecycleOwnerIME.kt'
       - '.github/workflows/build.yml'
   workflow_dispatch:
 
@@ -51,6 +53,7 @@ jobs:
           mkdir -p gradle/wrapper
 
           cp Keyboard.kt $PKG/
+          cp LifecycleOwnerIME.kt $PKG/
 
           cat > settings.gradle.kts << 'EOF'
           pluginManagement {
@@ -157,14 +160,14 @@ jobs:
           <?xml version="1.0" encoding="utf-8"?>
           <manifest xmlns:android="http://schemas.android.com/apk/res/android">
               <uses-permission android:name="android.permission.VIBRATE" />
-              
+
               <application
                   android:allowBackup="false"
                   android:label="@string/app_name"
                   android:icon="@mipmap/ic_launcher"
                   android:roundIcon="@mipmap/ic_launcher_round"
                   android:theme="@style/AppTheme">
-                  
+
                   <activity
                       android:name=".MainActivity"
                       android:exported="true"
@@ -229,7 +232,7 @@ jobs:
       - name: Generate launcher icons
         run: |
           rm -rf app/src/main/res/mipmap-*
-          
+
           pip install Pillow --quiet
           python3 << 'PYEOF'
           from PIL import Image, ImageDraw
@@ -314,6 +317,7 @@ jobs:
           mkdir -p GreyB-release
           cp app/build/outputs/apk/release/app-arm64-v8a-release.apk GreyB-release/GreyB.apk
           cp Keyboard.kt GreyB-release/
+          cp LifecycleOwnerIME.kt GreyB-release/
           cp .github/workflows/build.yml GreyB-release/
 
           APK_SIZE=$(ls -lh app/build/outputs/apk/release/app-arm64-v8a-release.apk | awk '{print $5}')
