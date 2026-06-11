@@ -99,8 +99,9 @@ jobs:
               xmlns:android="http://schemas.android.com/apk/res/android"
               xmlns:app="http://schemas.android.com/apk/res-auto"
               android:id="@+id/keyboard"
-              android:layout_width="match_parent"
+              android:layout_width="wrap_content"
               android:layout_height="wrap_content"
+              android:layout_centerHorizontal="true"
               android:layout_alignParentBottom="true"
               android:background="#801A1A1A"
               app:keyBackground="@drawable/key_bg"
@@ -310,10 +311,10 @@ jobs:
 
               signingConfigs {
                   create("release") {
-                      storeFile     = file("dummy.keystore")
-                      storePassword = "password"
-                      keyAlias      = "dummy"
-                      keyPassword   = "password"
+                      storeFile     = file("release.keystore")
+                      storePassword = "greyb2024"
+                      keyAlias      = "greyb"
+                      keyPassword   = "greyb2024"
                   }
               }
 
@@ -392,17 +393,17 @@ jobs:
           </resources>
           EOF
 
-      - name: Generate dummy keystore
+      - name: Generate fixed keystore
         run: |
           keytool -genkey -v \
-            -keystore app/dummy.keystore \
-            -alias dummy \
+            -keystore app/release.keystore \
+            -alias greyb \
             -keyalg RSA \
             -keysize 2048 \
             -validity 10000 \
-            -storepass password \
-            -keypass password \
-            -dname "CN=Dummy, OU=GreyB, O=GreyB Keyboard, L=Test, S=Test, C=US"
+            -storepass greyb2024 \
+            -keypass greyb2024 \
+            -dname "CN=GreyB, OU=GreyB, O=GreyB Keyboard, L=Test, S=Test, C=US"
 
       - name: Generate launcher icons
         run: |
@@ -485,7 +486,7 @@ jobs:
           Build:      #${{ github.run_number }}
           Commit:     ${{ github.sha }}
           Timestamp:  $(date -u '+%Y-%m-%d %H:%M:%S UTC')
-          Signed:     Yes (dummy keys)
+          Signed:     Yes (fixed key)
           APK Size:   $APK_SIZE
           Optimized:  Yes (ProGuard/R8 enabled)
           EOF
