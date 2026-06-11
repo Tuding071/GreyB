@@ -55,6 +55,7 @@ jobs:
           mkdir -p gradle/wrapper
 
           cp Keyboard.kt $PKG/
+          cp attrs.xml app/src/main/res/values/
           cp qwerty.xml app/src/main/res/xml/
           cp symbols.xml app/src/main/res/xml/
           cp input.xml app/src/main/res/layout/
