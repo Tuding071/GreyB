@@ -52,7 +52,7 @@ jobs:
           mkdir -p app/src/main/res/drawable
           mkdir -p gradle/wrapper
 
-          //PART 1.1 START
+          #PART 1.1 START
           cat > app/src/main/res/values/strings.xml << 'EOF'
           <?xml version="1.0" encoding="utf-8"?>
           <resources>
@@ -62,9 +62,9 @@ jobs:
               <string name="shift">⇧</string>
           </resources>
           EOF
-          //PART 1.1 END
+          #PART 1.1 END
 
-          //PART 1.2 START
+          #PART 1.2 START
           cat > app/src/main/res/values/dimens.xml << 'EOF'
           <?xml version="1.0" encoding="utf-8"?>
           <resources>
@@ -72,17 +72,17 @@ jobs:
               <dimen name="key_text_size">16sp</dimen>
           </resources>
           EOF
-          //PART 1.2 END
+          #PART 1.2 END
 
-          //PART 1.3 START
+          #PART 1.3 START
           cat > app/src/main/res/xml/method.xml << 'EOF'
           <?xml version="1.0" encoding="utf-8"?>
           <input-method xmlns:android="http://schemas.android.com/apk/res/android"
               android:supportsSwitchingToNextInputMethod="true"/>
           EOF
-          //PART 1.3 END
+          #PART 1.3 END
 
-          //PART 1.4 START
+          #PART 1.4 START
           cat > app/src/main/res/drawable/key_bg.xml << 'EOF'
           <?xml version="1.0" encoding="utf-8"?>
           <selector xmlns:android="http://schemas.android.com/apk/res/android">
@@ -106,9 +106,9 @@ jobs:
               </item>
           </selector>
           EOF
-          //PART 1.4 END
+          #PART 1.4 END
 
-          //PART 1.5 START
+          #PART 1.5 START
           cat > app/src/main/res/layout/input.xml << 'EOF'
           <?xml version="1.0" encoding="utf-8"?>
           <android.inputmethodservice.KeyboardView
@@ -123,9 +123,9 @@ jobs:
               android:keyTextSize="16sp"
               android:labelTextSize="16sp"/>
           EOF
-          //PART 1.5 END
+          #PART 1.5 END
 
-          //PART 2.1 START
+          #PART 2.1 START
           cat > app/src/main/res/xml/qwerty.xml << 'EOF'
           <?xml version="1.0" encoding="utf-8"?>
           <Keyboard xmlns:android="http://schemas.android.com/apk/res/android"
@@ -194,9 +194,9 @@ jobs:
 
           </Keyboard>
           EOF
-          //PART 2.1 END
+          #PART 2.1 END
 
-          //PART 2.2 START
+          #PART 2.2 START
           cat > app/src/main/res/xml/symbols.xml << 'EOF'
           <?xml version="1.0" encoding="utf-8"?>
           <Keyboard xmlns:android="http://schemas.android.com/apk/res/android"
@@ -266,9 +266,9 @@ jobs:
 
           </Keyboard>
           EOF
-          //PART 2.2 END
+          #PART 2.2 END
 
-          //PART 3.1 START
+          #PART 3.1 START
           cat > $PKG/SoftKeyboard.kt << 'KOTLINEOF'
           package com.greyb.keyboard
 
@@ -290,9 +290,9 @@ jobs:
               private var mCapsLock = false
               private var mLastShiftTime = 0L
           KOTLINEOF
-          //PART 3.1 END
+          #PART 3.1 END
 
-          //PART 3.2 START
+          #PART 3.2 START
           cat >> $PKG/SoftKeyboard.kt << 'KOTLINEOF'
 
               override fun onCreate() {
@@ -317,9 +317,9 @@ jobs:
                   mInputView?.setKeyboard(nextKeyboard)
               }
           KOTLINEOF
-          //PART 3.2 END
+          #PART 3.2 END
 
-          //PART 3.3 START
+          #PART 3.3 START
           cat >> $PKG/SoftKeyboard.kt << 'KOTLINEOF'
 
               override fun onStartInput(attribute: EditorInfo?, restarting: Boolean) {
@@ -351,9 +351,9 @@ jobs:
                   }
               }
           KOTLINEOF
-          //PART 3.3 END
+          #PART 3.3 END
 
-          //PART 3.4 START
+          #PART 3.4 START
           cat >> $PKG/SoftKeyboard.kt << 'KOTLINEOF'
 
               override fun onKey(primaryCode: Int, keyCodes: IntArray?) {
@@ -418,9 +418,9 @@ jobs:
                   updateShiftKeyState(currentInputEditorInfo)
               }
           KOTLINEOF
-          //PART 3.4 END
+          #PART 3.4 END
 
-          //PART 3.5 START
+          #PART 3.5 START
           cat >> $PKG/SoftKeyboard.kt << 'KOTLINEOF'
 
               private fun checkToggleCapsLock() {
@@ -445,9 +445,9 @@ jobs:
               override fun onEvaluateFullscreenMode(): Boolean = false
           }
           KOTLINEOF
-          //PART 3.5 END
+          #PART 3.5 END
 
-          //PART 4.1 START
+          #PART 4.1 START
           cat > settings.gradle.kts << 'EOF'
           pluginManagement {
               repositories { google(); mavenCentral(); gradlePluginPortal() }
@@ -459,18 +459,18 @@ jobs:
           rootProject.name = "GreyB"
           include(":app")
           EOF
-          //PART 4.1 END
+          #PART 4.1 END
 
-          //PART 4.2 START
+          #PART 4.2 START
           cat > build.gradle.kts << 'EOF'
           plugins {
               id("com.android.application") version "8.9.1" apply false
               id("org.jetbrains.kotlin.android") version "2.2.0" apply false
           }
           EOF
-          //PART 4.2 END
+          #PART 4.2 END
 
-          //PART 4.3 START
+          #PART 4.3 START
           cat > app/build.gradle.kts << APP
           plugins {
               id("com.android.application")
@@ -514,9 +514,9 @@ jobs:
               kotlinOptions { jvmTarget = "17" }
           }
           APP
-          //PART 4.3 END
+          #PART 4.3 END
 
-          //PART 4.4 START
+          #PART 4.4 START
           cat > gradle.properties << 'EOF'
           android.useAndroidX=true
           android.enableJetifier=true
@@ -524,9 +524,9 @@ jobs:
           kotlin.code.style=official
           android.suppressUnsupportedCompileSdk=36
           EOF
-          //PART 4.4 END
+          #PART 4.4 END
 
-          //PART 4.5 START
+          #PART 4.5 START
           cat > app/src/main/AndroidManifest.xml << 'EOF'
           <?xml version="1.0" encoding="utf-8"?>
           <manifest xmlns:android="http://schemas.android.com/apk/res/android">
@@ -550,7 +550,7 @@ jobs:
               </application>
           </manifest>
           EOF
-          //PART 4.5 END
+          #PART 4.5 END
 
       - name: Generate fixed keystore
         run: |
