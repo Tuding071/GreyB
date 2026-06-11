@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <declare-styleable name="Keyboard">
+        <attr name="keyWidth" format="dimension|fraction"/>
+        <attr name="keyHeight" format="dimension|fraction"/>
+        <attr name="keyHorizontalGap" format="dimension|fraction"/>
+        <attr name="keyVerticalGap" format="dimension|fraction"/>
+    </declare-styleable>
+    <declare-styleable name="Keyboard_Row">
+        <attr name="rowEdgeFlags" format="integer"/>
+        <attr name="keyboardMode" format="reference"/>
+    </declare-styleable>
+    <declare-styleable name="Keyboard_Key">
+        <attr name="codes" format="integer|string"/>
+        <attr name="keyLabel" format="string|reference"/>
+        <attr name="keyIcon" format="reference"/>
+        <attr name="keyEdgeFlags" format="integer"/>
+        <attr name="isSticky" format="boolean"/>
+        <attr name="isRepeatable" format="boolean"/>
+        <attr name="isModifier" format="boolean"/>
+        <attr name="keyOutputText" format="string"/>
+        <attr name="popupCharacters" format="string"/>
+        <attr name="iconPreview" format="reference"/>
+    </declare-styleable>
+    <declare-styleable name="KeyboardView">
+        <attr name="keyBackground" format="reference"/>
+        <attr name="keyTextColorPrimary" format="color"/>
+        <attr name="keyTextColorSecondary" format="color"/>
+        <attr name="labelTextSize" format="dimension"/>
+        <attr name="keyTextSize" format="dimension"/>
+        <attr name="useKeyPreview" format="boolean"/>
+        <attr name="useKeyTextColorSecondary" format="boolean"/>
+        <attr name="fontFamily" format="string"/>
+        <attr name="textStyle" format="integer"/>
+    </declare-styleable>
+</resources>
