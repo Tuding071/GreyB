@@ -5,12 +5,12 @@ on:
     branches: [ main, master ]
     paths:
       - 'Keyboard.kt'
-      - '.github/workflows/build-keyboard.yml'
+      - '.github/workflows/build.yml'
   pull_request:
     branches: [ main, master ]
     paths:
       - 'Keyboard.kt'
-      - '.github/workflows/build-keyboard.yml'
+      - '.github/workflows/build.yml'
   workflow_dispatch:
 
 jobs:
@@ -310,7 +310,7 @@ jobs:
           mkdir -p GreyB-release
           cp app/build/outputs/apk/release/app-arm64-v8a-release.apk GreyB-release/GreyB.apk
           cp Keyboard.kt GreyB-release/
-          cp .github/workflows/build-keyboard.yml GreyB-release/
+          cp .github/workflows/build.yml GreyB-release/
 
           APK_SIZE=$(ls -lh app/build/outputs/apk/release/app-arm64-v8a-release.apk | awk '{print $5}')
 
