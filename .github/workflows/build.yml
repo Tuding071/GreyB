@@ -24,7 +24,7 @@ jobs:
       - name: Set up JDK 17
         uses: actions/setup-java@v4
         with:
-          distribution: temurin
+          distribution: temuron
           java-version: '17'
 
       - name: Set Android SDK path
@@ -49,227 +49,9 @@ jobs:
           mkdir -p app/src/main/res/values
           mkdir -p app/src/main/res/xml
           mkdir -p app/src/main/res/layout
-          mkdir -p app/src/main/res/drawable
           mkdir -p gradle/wrapper
 
           cp Keyboard.kt $PKG/
-
-          cat > app/src/main/res/values/attrs.xml << 'EOF'
-          <?xml version="1.0" encoding="utf-8"?>
-          <resources>
-              <declare-styleable name="Keyboard">
-                  <attr name="keyWidth" format="dimension|fraction"/>
-                  <attr name="keyHeight" format="dimension|fraction"/>
-                  <attr name="keyHorizontalGap" format="dimension|fraction"/>
-                  <attr name="keyVerticalGap" format="dimension|fraction"/>
-              </declare-styleable>
-              <declare-styleable name="Keyboard_Row">
-                  <attr name="rowEdgeFlags" format="integer"/>
-                  <attr name="keyboardMode" format="reference"/>
-              </declare-styleable>
-              <declare-styleable name="Keyboard_Key">
-                  <attr name="codes" format="integer|string"/>
-                  <attr name="keyLabel" format="string|reference"/>
-                  <attr name="keyIcon" format="reference"/>
-                  <attr name="keyEdgeFlags" format="integer"/>
-                  <attr name="isSticky" format="boolean"/>
-                  <attr name="isRepeatable" format="boolean"/>
-                  <attr name="isModifier" format="boolean"/>
-                  <attr name="keyOutputText" format="string"/>
-                  <attr name="popupCharacters" format="string"/>
-                  <attr name="iconPreview" format="reference"/>
-              </declare-styleable>
-              <declare-styleable name="KeyboardView">
-                  <attr name="keyBackground" format="reference"/>
-                  <attr name="keyTextColorPrimary" format="color"/>
-                  <attr name="keyTextColorSecondary" format="color"/>
-                  <attr name="labelTextSize" format="dimension"/>
-                  <attr name="keyTextSize" format="dimension"/>
-                  <attr name="useKeyPreview" format="boolean"/>
-                  <attr name="useKeyTextColorSecondary" format="boolean"/>
-                  <attr name="fontFamily" format="string"/>
-                  <attr name="textStyle" format="integer"/>
-              </declare-styleable>
-          </resources>
-          EOF
-
-          cat > app/src/main/res/layout/input.xml << 'EOF'
-          <?xml version="1.0" encoding="utf-8"?>
-          <com.greyb.keyboard.KeyboardView
-              xmlns:android="http://schemas.android.com/apk/res/android"
-              xmlns:app="http://schemas.android.com/apk/res-auto"
-              android:id="@+id/keyboard"
-              android:layout_width="match_parent"
-              android:layout_height="wrap_content"
-              android:layout_alignParentBottom="true"
-              android:background="#1A1A1A"
-              app:keyBackground="@drawable/key_bg"
-              app:keyTextColorPrimary="#DCDCD7"
-              app:labelTextSize="16sp"/>
-          EOF
-
-          cat > app/src/main/res/drawable/key_bg.xml << 'EOF'
-          <?xml version="1.0" encoding="utf-8"?>
-          <selector xmlns:android="http://schemas.android.com/apk/res/android">
-              <item android:state_pressed="true">
-                  <shape android:shape="rectangle">
-                      <solid android:color="#B4B4AA"/>
-                      <corners android:radius="4dp"/>
-                  </shape>
-              </item>
-              <item android:state_checkable="true" android:state_checked="true">
-                  <shape android:shape="rectangle">
-                      <solid android:color="#B4B4AA"/>
-                      <corners android:radius="4dp"/>
-                  </shape>
-              </item>
-              <item>
-                  <shape android:shape="rectangle">
-                      <solid android:color="#2A2A2A"/>
-                      <corners android:radius="4dp"/>
-                  </shape>
-              </item>
-          </selector>
-          EOF
-
-          cat > app/src/main/res/xml/keyboard_qwerty.xml << 'EOF'
-          <?xml version="1.0" encoding="utf-8"?>
-          <Keyboard xmlns:android="http://schemas.android.com/apk/res/android"
-              xmlns:app="http://schemas.android.com/apk/res-auto"
-              app:keyWidth="10%p"
-              app:keyHeight="48dp"
-              app:keyHorizontalGap="1dp"
-              app:keyVerticalGap="1dp">
-
-              <Row>
-                  <Key app:codes="49" app:keyLabel="1" app:keyEdgeFlags="4"/>
-                  <Key app:codes="50" app:keyLabel="2"/>
-                  <Key app:codes="51" app:keyLabel="3"/>
-                  <Key app:codes="52" app:keyLabel="4"/>
-                  <Key app:codes="53" app:keyLabel="5"/>
-                  <Key app:codes="54" app:keyLabel="6"/>
-                  <Key app:codes="55" app:keyLabel="7"/>
-                  <Key app:codes="56" app:keyLabel="8"/>
-                  <Key app:codes="57" app:keyLabel="9"/>
-                  <Key app:codes="48" app:keyLabel="0" app:keyEdgeFlags="2"/>
-              </Row>
-
-              <Row>
-                  <Key app:codes="113" app:keyLabel="q" app:keyEdgeFlags="1"/>
-                  <Key app:codes="119" app:keyLabel="w"/>
-                  <Key app:codes="101" app:keyLabel="e"/>
-                  <Key app:codes="114" app:keyLabel="r"/>
-                  <Key app:codes="116" app:keyLabel="t"/>
-                  <Key app:codes="121" app:keyLabel="y"/>
-                  <Key app:codes="117" app:keyLabel="u"/>
-                  <Key app:codes="105" app:keyLabel="i"/>
-                  <Key app:codes="111" app:keyLabel="o"/>
-                  <Key app:codes="112" app:keyLabel="p" app:keyEdgeFlags="2"/>
-              </Row>
-
-              <Row>
-                  <Key app:codes="97"  app:keyLabel="a" app:keyWidth="11%p" app:keyEdgeFlags="1"/>
-                  <Key app:codes="115" app:keyLabel="s"/>
-                  <Key app:codes="100" app:keyLabel="d"/>
-                  <Key app:codes="102" app:keyLabel="f"/>
-                  <Key app:codes="103" app:keyLabel="g"/>
-                  <Key app:codes="104" app:keyLabel="h"/>
-                  <Key app:codes="106" app:keyLabel="j"/>
-                  <Key app:codes="107" app:keyLabel="k"/>
-                  <Key app:codes="108" app:keyLabel="l" app:keyWidth="11%p" app:keyEdgeFlags="2"/>
-              </Row>
-
-              <Row>
-                  <Key app:codes="-1"  app:keyLabel="⇧" app:keyWidth="14%p" app:isSticky="true" app:isModifier="true" app:keyEdgeFlags="1"/>
-                  <Key app:codes="122" app:keyLabel="z"/>
-                  <Key app:codes="120" app:keyLabel="x"/>
-                  <Key app:codes="99"  app:keyLabel="c"/>
-                  <Key app:codes="118" app:keyLabel="v"/>
-                  <Key app:codes="98"  app:keyLabel="b"/>
-                  <Key app:codes="110" app:keyLabel="n"/>
-                  <Key app:codes="109" app:keyLabel="m"/>
-                  <Key app:codes="-5"  app:keyLabel="⌫" app:keyWidth="14%p" app:isRepeatable="true" app:keyEdgeFlags="2"/>
-              </Row>
-
-              <Row>
-                  <Key app:codes="-2"  app:keyLabel="@string/label_symbols" app:keyWidth="14%p" app:keyEdgeFlags="1"/>
-                  <Key app:codes="44"  app:keyLabel=","/>
-                  <Key app:codes="32"  app:keyLabel="" app:keyWidth="42%p"/>
-                  <Key app:codes="46"  app:keyLabel="."/>
-                  <Key app:codes="-4"  app:keyLabel="⏎" app:keyWidth="14%p" app:keyEdgeFlags="2"/>
-              </Row>
-
-          </Keyboard>
-          EOF
-
-          cat > app/src/main/res/xml/keyboard_symbol.xml << 'EOF'
-          <?xml version="1.0" encoding="utf-8"?>
-          <Keyboard xmlns:android="http://schemas.android.com/apk/res/android"
-              xmlns:app="http://schemas.android.com/apk/res-auto"
-              app:keyWidth="10%p"
-              app:keyHeight="48dp"
-              app:keyHorizontalGap="1dp"
-              app:keyVerticalGap="1dp">
-
-              <Row>
-                  <Key app:codes="49"  app:keyLabel="1" app:keyEdgeFlags="4"/>
-                  <Key app:codes="50"  app:keyLabel="2"/>
-                  <Key app:codes="51"  app:keyLabel="3"/>
-                  <Key app:codes="52"  app:keyLabel="4"/>
-                  <Key app:codes="53"  app:keyLabel="5"/>
-                  <Key app:codes="54"  app:keyLabel="6"/>
-                  <Key app:codes="55"  app:keyLabel="7"/>
-                  <Key app:codes="56"  app:keyLabel="8"/>
-                  <Key app:codes="57"  app:keyLabel="9"/>
-                  <Key app:codes="48"  app:keyLabel="0" app:keyEdgeFlags="2"/>
-              </Row>
-
-              <Row>
-                  <Key app:codes="64"  app:keyLabel="@" app:keyEdgeFlags="1"/>
-                  <Key app:codes="35"  app:keyLabel="#"/>
-                  <Key app:codes="36"  app:keyLabel="$"/>
-                  <Key app:codes="37"  app:keyLabel="%"/>
-                  <Key app:codes="38"  app:keyLabel="&amp;"/>
-                  <Key app:codes="45"  app:keyLabel="-"/>
-                  <Key app:codes="43"  app:keyLabel="+"/>
-                  <Key app:codes="40"  app:keyLabel="("/>
-                  <Key app:codes="41"  app:keyLabel=")"/>
-                  <Key app:codes="47"  app:keyLabel="/" app:keyEdgeFlags="2"/>
-              </Row>
-
-              <Row>
-                  <Key app:codes="33"  app:keyLabel="!" app:keyWidth="11%p" app:keyEdgeFlags="1"/>
-                  <Key app:codes="34"  app:keyLabel="&quot;"/>
-                  <Key app:codes="39"  app:keyLabel="'"/>
-                  <Key app:codes="58"  app:keyLabel=":"/>
-                  <Key app:codes="59"  app:keyLabel=";"/>
-                  <Key app:codes="47"  app:keyLabel="/"/>
-                  <Key app:codes="63"  app:keyLabel="@string/label_question"/>
-                  <Key app:codes="126" app:keyLabel="~"/>
-                  <Key app:codes="96"  app:keyLabel="`" app:keyWidth="11%p" app:keyEdgeFlags="2"/>
-              </Row>
-
-              <Row>
-                  <Key app:codes="-8"  app:keyLabel="ABC" app:keyWidth="14%p" app:keyEdgeFlags="1"/>
-                  <Key app:codes="92"  app:keyLabel="\\"/>
-                  <Key app:codes="124" app:keyLabel="|"/>
-                  <Key app:codes="60"  app:keyLabel="&lt;"/>
-                  <Key app:codes="62"  app:keyLabel="&gt;"/>
-                  <Key app:codes="123" app:keyLabel="{"/>
-                  <Key app:codes="125" app:keyLabel="}"/>
-                  <Key app:codes="-5"  app:keyLabel="⌫" app:keyWidth="14%p" app:isRepeatable="true" app:keyEdgeFlags="2"/>
-              </Row>
-
-              <Row>
-                  <Key app:codes="-2"  app:keyLabel="@string/label_symbols" app:keyWidth="14%p" app:keyEdgeFlags="1"/>
-                  <Key app:codes="44"  app:keyLabel=","/>
-                  <Key app:codes="32"  app:keyLabel="" app:keyWidth="42%p"/>
-                  <Key app:codes="46"  app:keyLabel="."/>
-                  <Key app:codes="-4"  app:keyLabel="⏎" app:keyWidth="14%p" app:keyEdgeFlags="2"/>
-              </Row>
-
-          </Keyboard>
-          EOF
 
           cat > settings.gradle.kts << 'EOF'
           pluginManagement {
@@ -285,8 +67,9 @@ jobs:
 
           cat > build.gradle.kts << 'EOF'
           plugins {
-              id("com.android.application") version "8.9.1" apply false
-              id("org.jetbrains.kotlin.android") version "2.2.0" apply false
+              id("com.android.application")             version "8.9.1" apply false
+              id("org.jetbrains.kotlin.android")        version "2.2.0" apply false
+              id("org.jetbrains.kotlin.plugin.compose") version "2.2.0" apply false
           }
           EOF
 
@@ -294,6 +77,7 @@ jobs:
           plugins {
               id("com.android.application")
               id("org.jetbrains.kotlin.android")
+              id("org.jetbrains.kotlin.plugin.compose")
           }
 
           android {
@@ -319,9 +103,8 @@ jobs:
 
               buildTypes {
                   release {
-                      isMinifyEnabled = true
-                      isShrinkResources = true
-                      proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"))
+                      isMinifyEnabled = false
+                      isShrinkResources = false
                       signingConfig = signingConfigs.getByName("release")
                   }
               }
@@ -331,6 +114,19 @@ jobs:
                   targetCompatibility = JavaVersion.VERSION_17
               }
               kotlinOptions { jvmTarget = "17" }
+              buildFeatures { compose = true }
+          }
+
+          dependencies {
+              implementation("androidx.core:core-ktx:1.15.0")
+              implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.9.0")
+
+              val bom = platform("androidx.compose:compose-bom:2025.05.00")
+              implementation(bom)
+              implementation("androidx.compose.ui:ui")
+              implementation("androidx.compose.foundation:foundation")
+              implementation("androidx.compose.material3:material3")
+              implementation("androidx.compose.runtime:runtime")
           }
           APP
 
@@ -349,7 +145,8 @@ jobs:
                   android:allowBackup="false"
                   android:label="@string/ime_name"
                   android:icon="@mipmap/ic_launcher"
-                  android:roundIcon="@mipmap/ic_launcher_round">
+                  android:roundIcon="@mipmap/ic_launcher_round"
+                  android:theme="@style/AppTheme">
                   <service
                       android:name=".GreyBIME"
                       android:label="@string/ime_name"
@@ -376,8 +173,6 @@ jobs:
           <?xml version="1.0" encoding="utf-8"?>
           <resources>
               <string name="ime_name">GreyB Keyboard</string>
-              <string name="label_symbols">\?123</string>
-              <string name="label_question">?</string>
           </resources>
           EOF
 
