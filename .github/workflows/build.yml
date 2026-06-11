@@ -65,12 +65,11 @@ jobs:
               private var caps = false
 
               override fun onCreateInputView(): View {
-                  keyboardView = KeyboardView(this).apply {
-                      keyboard = Keyboard(this@GreyBIME, R.xml.keyboard_layout)
-                      setKeyboard(keyboard)
-                      isPreviewEnabled = false
-                      setOnKeyboardActionListener(this@GreyBIME)
-                  }
+                  keyboardView = KeyboardView(this, null)
+                  keyboard = Keyboard(this, R.xml.keyboard_layout)
+                  keyboardView.setKeyboard(keyboard)
+                  keyboardView.isPreviewEnabled = false
+                  keyboardView.setOnKeyboardActionListener(this)
                   return keyboardView
               }
 
@@ -78,7 +77,7 @@ jobs:
 
               override fun onStartInputView(info: EditorInfo?, restarting: Boolean) {
                   super.onStartInputView(info, restarting)
-                  keyboardView.closing = false
+                  keyboardView.closing()
               }
 
               override fun onKey(primaryCode: Int, keyCodes: IntArray?) {
@@ -154,7 +153,7 @@ jobs:
               </Row>
 
               <Row>
-                  <Key android:codes="97" android:keyLabel="a" android:keyEdgeFlags="left" android:horizontalGap="5%p"/>
+                  <Key android:codes="97" android:keyLabel="a" android:keyEdgeFlags="left"/>
                   <Key android:codes="115" android:keyLabel="s"/>
                   <Key android:codes="100" android:keyLabel="d"/>
                   <Key android:codes="102" android:keyLabel="f"/>
@@ -162,7 +161,7 @@ jobs:
                   <Key android:codes="104" android:keyLabel="h"/>
                   <Key android:codes="106" android:keyLabel="j"/>
                   <Key android:codes="107" android:keyLabel="k"/>
-                  <Key android:codes="108" android:keyLabel="l" android:keyEdgeFlags="right" android:horizontalGap="5%p"/>
+                  <Key android:codes="108" android:keyLabel="l" android:keyEdgeFlags="right"/>
               </Row>
 
               <Row>
@@ -259,7 +258,6 @@ jobs:
           }
 
           dependencies {
-              implementation("androidx.core:core-ktx:1.15.0")
           }
           EOF
 
