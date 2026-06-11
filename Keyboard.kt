@@ -275,6 +275,7 @@ class KeyboardView @JvmOverloads constructor(
     private val dirtyRect = Rect()
     private var buffer: Bitmap? = null
     private var bitmapCanvas: Canvas? = Canvas()
+    private var keyboardOffsetX = 0
 
     private val paint = Paint().apply {
         isAntiAlias = true
@@ -316,6 +317,7 @@ class KeyboardView @JvmOverloads constructor(
         abortKey = true
         keyboardChanged = true
         currentKeyIndex = Keyboard.NOT_A_KEY
+        updateKeyboardOffset()
         invalidateAllKeys()
     }
 
@@ -327,13 +329,28 @@ class KeyboardView @JvmOverloads constructor(
     fun isShifted() = keyboard?.isShifted ?: false
     fun getLocale(): Locale = resources.configuration.locales[0]
 
-    override fun onMeasure(wSpec: Int, hSpec: Int) {
-        val kb = keyboard
-        if (kb == null) setMeasuredDimension(paddingLeft + paddingRight, paddingTop + paddingBottom)
-        else setMeasuredDimension(kb.keyboardWidth + paddingLeft + paddingRight, kb.keyboardHeight + paddingTop + paddingBottom)
+    private fun updateKeyboardOffset() {
+        val kb = keyboard ?: return
+        val viewWidth = width - paddingLeft - paddingRight
+        keyboardOffsetX = max(0, (viewWidth - kb.keyboardWidth) / 2)
     }
 
-    override fun onSizeChanged(w: Int, h: Int, oldw: Int, oldh: Int) { super.onSizeChanged(w, h, oldw, oldh); invalidateAllKeys() }
+    override fun onMeasure(wSpec: Int, hSpec: Int) {
+        val kb = keyboard
+        if (kb == null) {
+            setMeasuredDimension(paddingLeft + paddingRight, paddingTop + paddingBottom)
+        } else {
+            val width = kb.keyboardWidth + paddingLeft + paddingRight
+            val height = kb.keyboardHeight + paddingTop + paddingBottom
+            setMeasuredDimension(width, height)
+        }
+    }
+
+    override fun onSizeChanged(w: Int, h: Int, oldw: Int, oldh: Int) {
+        super.onSizeChanged(w, h, oldw, oldh)
+        updateKeyboardOffset()
+        invalidateAllKeys()
+    }
 
     override fun onDraw(canvas: Canvas) {
         super.onDraw(canvas)
@@ -342,20 +359,23 @@ class KeyboardView @JvmOverloads constructor(
     }
 
     private fun onBufferDraw(invalidatedKey: Keyboard.Key?) {
+        val kb = keyboard ?: return
+        
         if (buffer == null || keyboardChanged && (buffer?.width != width || buffer?.height != height)) {
             buffer = Bitmap.createBitmap(max(1, width), max(1, height), Bitmap.Config.ARGB_8888)
             bitmapCanvas?.setBitmap(buffer)
+            updateKeyboardOffset()
         }
         keyboardChanged = false
-        val kb = keyboard ?: return
         val canvas = bitmapCanvas ?: return
         canvas.setBitmap(buffer)
         canvas.clipRect(dirtyRect)
         canvas.drawColor(0x00000000, PorterDuff.Mode.CLEAR)
-        canvas.translate(0f, 0f)
-        canvas.drawRect(0f, 0f, width.toFloat(), height.toFloat(), paint)
+        canvas.save()
+        canvas.translate(keyboardOffsetX.toFloat() + paddingLeft.toFloat(), paddingTop.toFloat())
         if (invalidatedKey != null) onKeyDraw(invalidatedKey)
         else kb.keys.forEach { onKeyDraw(it) }
+        canvas.restore()
         drawPending = false
         dirtyRect.setEmpty()
     }
@@ -369,7 +389,7 @@ class KeyboardView @JvmOverloads constructor(
         if (key.width != bounds?.right || key.height != bounds.bottom)
             keyBackground?.setBounds(0, 0, key.width, key.height)
         canvas.save()
-        canvas.translate((key.x + paddingLeft).toFloat(), (key.y + paddingTop).toFloat())
+        canvas.translate(key.x.toFloat(), key.y.toFloat())
         keyBackground?.draw(canvas)
         val lbl = key.adjustLabelCase(getLocale())
         if (lbl.isNotEmpty()) {
@@ -400,8 +420,10 @@ class KeyboardView @JvmOverloads constructor(
         val kb = keyboard ?: return
         if (drawPending || idx < 0 || idx >= kb.keys.size) return
         val key = kb.keys[idx]
-        val l = key.x + paddingLeft; val t = key.y + paddingTop
-        val r = key.x + key.width + paddingLeft; val b = key.y + key.height + paddingTop
+        val l = keyboardOffsetX + key.x + paddingLeft
+        val t = key.y + paddingTop
+        val r = keyboardOffsetX + key.x + key.width + paddingLeft
+        val b = key.y + key.height + paddingTop
         dirtyRect.union(l, t, r, b)
         onBufferDraw(key)
         postInvalidate(l, t, r, b)
@@ -411,14 +433,20 @@ class KeyboardView @JvmOverloads constructor(
         val pointerCount = event.pointerCount
         val result: Boolean
         if (pointerCount == lastPointerCount) {
-            result = if (pointerCount == 1) { val r = handleTouchEvent(event); lastPointerX = event.x; lastPointerY = event.y; r } else true
+            result = if (pointerCount == 1) {
+                val adjustedEvent = MotionEvent.obtain(event)
+                adjustedEvent.offsetLocation(-keyboardOffsetX.toFloat() - paddingLeft.toFloat(), -paddingTop.toFloat())
+                val r = handleTouchEvent(adjustedEvent)
+                adjustedEvent.recycle()
+                lastPointerX = event.x; lastPointerY = event.y; r
+            } else true
         } else {
             result = if (pointerCount == 1) {
-                val down = MotionEvent.obtain(event.eventTime, event.eventTime, MotionEvent.ACTION_DOWN, event.x, event.y, event.metaState)
+                val down = MotionEvent.obtain(event.eventTime, event.eventTime, MotionEvent.ACTION_DOWN, event.x - keyboardOffsetX - paddingLeft, event.y - paddingTop, event.metaState)
                 val r = handleTouchEvent(down); down.recycle()
                 if (event.action == MotionEvent.ACTION_UP) handleTouchEvent(event) else r
             } else {
-                val up = MotionEvent.obtain(event.eventTime, event.eventTime, MotionEvent.ACTION_UP, lastPointerX, lastPointerY, event.metaState)
+                val up = MotionEvent.obtain(event.eventTime, event.eventTime, MotionEvent.ACTION_UP, lastPointerX - keyboardOffsetX - paddingLeft, lastPointerY - paddingTop, event.metaState)
                 val r = handleTouchEvent(up); up.recycle(); r
             }
         }
@@ -430,8 +458,8 @@ class KeyboardView @JvmOverloads constructor(
     private fun handleTouchEvent(event: MotionEvent): Boolean {
         val kb = keyboard ?: return true
         if (abortKey && event.action != MotionEvent.ACTION_DOWN && event.action != MotionEvent.ACTION_CANCEL) return true
-        val touchX = (event.x - paddingLeft).toInt()
-        val touchY = (event.y - paddingTop).toInt()
+        val touchX = event.x.toInt()
+        val touchY = event.y.toInt()
         when (event.action) {
             MotionEvent.ACTION_DOWN -> {
                 abortKey = false
