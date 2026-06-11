@@ -451,6 +451,11 @@ jobs:
           gradle wrapper --gradle-version=8.11.1 --distribution-type=bin
           chmod +x gradlew
 
+      - name: Clean build
+        run: |
+          rm -rf app/build
+          ./gradlew clean --no-daemon
+
       - name: Build signed release APK
         run: ./gradlew assembleRelease --no-daemon
 
@@ -466,18 +471,22 @@ jobs:
               exit 1
           fi
 
-      - name: Bundle APK
+      - name: Bundle APK + source
         run: |
           mkdir -p GreyB-release
           cp app/build/outputs/apk/release/app-release.apk GreyB-release/GreyB.apk
           cp Keyboard.kt GreyB-release/
+          cp .github/workflows/build.yml GreyB-release/
+
           APK_SIZE=$(ls -lh app/build/outputs/apk/release/app-release.apk | awk '{print $5}')
+
           cat > GreyB-release/BUILD_INFO.txt << EOF
           Build:      #${{ github.run_number }}
           Commit:     ${{ github.sha }}
           Timestamp:  $(date -u '+%Y-%m-%d %H:%M:%S UTC')
           Signed:     Yes (dummy keys)
           APK Size:   $APK_SIZE
+          Optimized:  Yes (ProGuard/R8 enabled)
           EOF
 
       - name: Upload artifact
