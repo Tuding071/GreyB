@@ -27,6 +27,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.*
 import androidx.lifecycle.setViewTreeLifecycleOwner
+import androidx.lifecycle.setViewTreeViewModelStoreOwner
 import androidx.savedstate.SavedStateRegistry
 import androidx.savedstate.SavedStateRegistryController
 import androidx.savedstate.SavedStateRegistryOwner
@@ -60,7 +61,7 @@ class GreyBIME : InputMethodService(),
         composeView = ComposeView(this).apply {
             setViewTreeLifecycleOwner(this@GreyBIME)
             setViewTreeSavedStateRegistryOwner(this@GreyBIME)
-            androidx.lifecycle.ViewTreeViewModelStoreOwner.set(this, this@GreyBIME)
+            setViewTreeViewModelStoreOwner(this@GreyBIME)
             setContent {
                 GreyBTheme {
                     GreyBKeyboard(onKeyPress = { key -> handleKeyPress(key) })
