@@ -13,36 +13,29 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Set up JDK 17
+      - name: Setup JDK
         uses: actions/setup-java@v4
         with:
           distribution: temurin
-          java-version: '17'
+          java-version: 17
 
-      - name: Setup Android SDK path
+      - name: Setup Android SDK
         run: echo "sdk.dir=/usr/local/lib/android/sdk" > local.properties
 
-      - name: Cache Gradle
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/.gradle/caches
-            ~/.gradle/wrapper
-          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
-
-      - name: Create GreyB Keyboard Project
+      - name: Create project
+        shell: bash
         run: |
-          PKG=app/src/main/java/rkr/tinykeyboard/inputmethod
-          mkdir -p $PKG
-          mkdir -p app/src/main/res/xml
-          mkdir -p app/src/main/res/values
-          mkdir -p app/src/main/res/layout
-          mkdir -p gradle/wrapper
+          set -e
 
-# =========================
-# KEYBOARD SERVICE (JAVA)
-# =========================
-          cat > $PKG/SoftKeyboard.java << 'EOF'
+          PKG="app/src/main/java/rkr/tinykeyboard/inputmethod"
+
+          mkdir -p "$PKG"
+          mkdir -p app/src/main/res/xml
+          mkdir -p app/src/main/res/layout
+          mkdir -p app/src/main/res/values
+
+# ---------------- JAVA ----------------
+          cat <<'EOF' > $PKG/SoftKeyboard.java
 package rkr.tinykeyboard.inputmethod;
 
 import android.inputmethodservice.InputMethodService;
@@ -76,12 +69,8 @@ public class SoftKeyboard extends InputMethodService
         if (ic == null) return;
 
         switch (primaryCode) {
-
             case Keyboard.KEYCODE_DELETE:
                 ic.deleteSurroundingText(1, 0);
-                break;
-
-            case Keyboard.KEYCODE_SHIFT:
                 break;
 
             case Keyboard.KEYCODE_DONE:
@@ -95,14 +84,13 @@ public class SoftKeyboard extends InputMethodService
                 break;
 
             default:
-                char code = (char) primaryCode;
-                ic.commitText(String.valueOf(code), 1);
+                ic.commitText(String.valueOf((char) primaryCode), 1);
         }
     }
 
     @Override public void onPress(int i) {}
     @Override public void onRelease(int i) {}
-    @Override public void onText(CharSequence charSequence) {}
+    @Override public void onText(CharSequence text) {}
     @Override public void swipeLeft() {}
     @Override public void swipeRight() {}
     @Override public void swipeDown() {}
@@ -110,15 +98,12 @@ public class SoftKeyboard extends InputMethodService
 }
 EOF
 
-# =========================
-# KEYBOARD XML (PHASE 1)
-# =========================
-          cat > app/src/main/res/xml/qwerty.xml << 'EOF'
+# ---------------- XML ----------------
+          cat <<'EOF' > app/src/main/res/xml/qwerty.xml
 <Keyboard xmlns:android="http://schemas.android.com/apk/res/android"
     android:keyWidth="10%p"
     android:keyHeight="56dp">
 
-    <!-- NUMBER ROW -->
     <Row>
         <Key android:codes="49" android:keyLabel="1"/>
         <Key android:codes="50" android:keyLabel="2"/>
@@ -132,7 +117,6 @@ EOF
         <Key android:codes="48" android:keyLabel="0"/>
     </Row>
 
-    <!-- QWERTY -->
     <Row>
         <Key android:codes="113" android:keyLabel="q"/>
         <Key android:codes="119" android:keyLabel="w"/>
@@ -146,7 +130,6 @@ EOF
         <Key android:codes="112" android:keyLabel="p"/>
     </Row>
 
-    <!-- ASDF -->
     <Row>
         <Key android:codes="97" android:keyLabel="a"/>
         <Key android:codes="115" android:keyLabel="s"/>
@@ -159,7 +142,6 @@ EOF
         <Key android:codes="108" android:keyLabel="l"/>
     </Row>
 
-    <!-- ZXCV -->
     <Row>
         <Key android:codes="-1" android:keyLabel="⇧" android:keyWidth="14%p"/>
         <Key android:codes="122" android:keyLabel="z"/>
@@ -172,7 +154,6 @@ EOF
         <Key android:codes="-5" android:keyLabel="⌫" android:keyWidth="14%p"/>
     </Row>
 
-    <!-- ACTION ROW -->
     <Row>
         <Key android:codes="-110" android:keyLabel="📋" android:keyWidth="15%p"/>
         <Key android:codes="-111" android:keyLabel="😊" android:keyWidth="10%p"/>
@@ -184,29 +165,22 @@ EOF
 </Keyboard>
 EOF
 
-# =========================
-# INPUT VIEW
-# =========================
-          cat > app/src/main/res/layout/input.xml << 'EOF'
+# ---------------- INPUT VIEW ----------------
+          cat <<'EOF' > app/src/main/res/layout/input.xml
 <?xml version="1.0" encoding="utf-8"?>
 <android.inputmethodservice.KeyboardView
     xmlns:android="http://schemas.android.com/apk/res/android"
-    android:id="@+id/keyboard"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:keyTextSize="18sp"
-    android:background="#1A1A1A"/>
+    android:keyTextSize="18sp"/>
 EOF
 
-# =========================
-# MANIFEST
-# =========================
-          cat > app/src/main/AndroidManifest.xml << 'EOF'
+# ---------------- MANIFEST ----------------
+          cat <<'EOF' > app/src/main/AndroidManifest.xml
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
     <application
-        android:label="GreyB Keyboard"
-        android:theme="@android:style/Theme.DeviceDefault">
+        android:label="GreyB Keyboard">
 
         <service
             android:name=".SoftKeyboard"
@@ -226,31 +200,20 @@ EOF
 </manifest>
 EOF
 
-# =========================
-# METHOD XML
-# =========================
-          cat > app/src/main/res/xml/method.xml << 'EOF'
+# ---------------- METHOD ----------------
+          mkdir -p app/src/main/res/xml
+
+          cat <<'EOF' > app/src/main/res/xml/method.xml
 <input-method xmlns:android="http://schemas.android.com/apk/res/android"
     android:supportsSwitchingToNextInputMethod="true"/>
 EOF
 
-# =========================
-# STRINGS
-# =========================
-          cat > app/src/main/res/values/strings.xml << 'EOF'
-<resources>
-    <string name="app_name">GreyB Keyboard</string>
-</resources>
-EOF
-
-# =========================
-# GRADLE FILES
-# =========================
-          cat > settings.gradle << 'EOF'
+# ---------------- GRADLE ----------------
+          cat <<'EOF' > settings.gradle
 include ':app'
 EOF
 
-          cat > build.gradle << 'EOF'
+          cat <<'EOF' > build.gradle
 buildscript {
     repositories {
         google()
@@ -262,7 +225,7 @@ buildscript {
 }
 EOF
 
-          cat > app/build.gradle << 'EOF'
+          cat <<'EOF' > app/build.gradle
 apply plugin: 'com.android.application'
 
 android {
