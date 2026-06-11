@@ -200,7 +200,7 @@ jobs:
               <Row>
                   <Key app:codes="-2"  app:keyLabel="@string/label_symbols" app:keyWidth="14%p" app:keyEdgeFlags="1"/>
                   <Key app:codes="44"  app:keyLabel=","/>
-                  <Key app:codes="32"  app:keyLabel="" app:keyWidth="42%p"/>
+                  <Key app:codes="32"  app:keyLabel=" " app:keyWidth="42%p"/>
                   <Key app:codes="46"  app:keyLabel="."/>
                   <Key app:codes="-4"  app:keyLabel="⏎" app:keyWidth="14%p" app:keyEdgeFlags="2"/>
               </Row>
@@ -269,7 +269,7 @@ jobs:
               <Row>
                   <Key app:codes="-2"  app:keyLabel="@string/label_symbols" app:keyWidth="14%p" app:keyEdgeFlags="1"/>
                   <Key app:codes="44"  app:keyLabel=","/>
-                  <Key app:codes="32"  app:keyLabel="" app:keyWidth="42%p"/>
+                  <Key app:codes="32"  app:keyLabel=" " app:keyWidth="42%p"/>
                   <Key app:codes="46"  app:keyLabel="."/>
                   <Key app:codes="-4"  app:keyLabel="⏎" app:keyWidth="14%p" app:keyEdgeFlags="2"/>
               </Row>
