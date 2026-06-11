@@ -4,10 +4,12 @@ on:
   push:
     branches: [ main, master ]
     paths:
+      - 'Keyboard.kt'
       - '.github/workflows/build.yml'
   pull_request:
     branches: [ main, master ]
     paths:
+      - 'Keyboard.kt'
       - '.github/workflows/build.yml'
   workflow_dispatch:
 
@@ -88,14 +90,6 @@ jobs:
                   <attr name="fontFamily" format="string"/>
                   <attr name="textStyle" format="integer"/>
               </declare-styleable>
-          </resources>
-          EOF
-
-          cat > app/src/main/res/values/strings.xml << 'EOF'
-          <?xml version="1.0" encoding="utf-8"?>
-          <resources>
-              <string name="ime_name">GreyB Keyboard</string>
-              <string name="label_symbols">?123</string>
           </resources>
           EOF
 
@@ -200,7 +194,7 @@ jobs:
               <Row>
                   <Key app:codes="-2"  app:keyLabel="@string/label_symbols" app:keyWidth="14%p" app:keyEdgeFlags="1"/>
                   <Key app:codes="44"  app:keyLabel=","/>
-                  <Key app:codes="32"  app:keyLabel=" " app:keyWidth="42%p"/>
+                  <Key app:codes="32"  app:keyLabel="" app:keyWidth="42%p"/>
                   <Key app:codes="46"  app:keyLabel="."/>
                   <Key app:codes="-4"  app:keyLabel="⏎" app:keyWidth="14%p" app:keyEdgeFlags="2"/>
               </Row>
@@ -250,7 +244,7 @@ jobs:
                   <Key app:codes="58"  app:keyLabel=":"/>
                   <Key app:codes="59"  app:keyLabel=";"/>
                   <Key app:codes="47"  app:keyLabel="/"/>
-                  <Key app:codes="63"  app:keyLabel="?"/>
+                  <Key app:codes="63"  app:keyLabel="@string/label_question"/>
                   <Key app:codes="126" app:keyLabel="~"/>
                   <Key app:codes="96"  app:keyLabel="`" app:keyWidth="11%p" app:keyEdgeFlags="2"/>
               </Row>
@@ -269,7 +263,7 @@ jobs:
               <Row>
                   <Key app:codes="-2"  app:keyLabel="@string/label_symbols" app:keyWidth="14%p" app:keyEdgeFlags="1"/>
                   <Key app:codes="44"  app:keyLabel=","/>
-                  <Key app:codes="32"  app:keyLabel=" " app:keyWidth="42%p"/>
+                  <Key app:codes="32"  app:keyLabel="" app:keyWidth="42%p"/>
                   <Key app:codes="46"  app:keyLabel="."/>
                   <Key app:codes="-4"  app:keyLabel="⏎" app:keyWidth="14%p" app:keyEdgeFlags="2"/>
               </Row>
@@ -376,6 +370,15 @@ jobs:
           <?xml version="1.0" encoding="utf-8"?>
           <input-method xmlns:android="http://schemas.android.com/apk/res/android"
               android:supportsSwitchingToNextInputMethod="true"/>
+          EOF
+
+          cat > app/src/main/res/values/strings.xml << 'EOF'
+          <?xml version="1.0" encoding="utf-8"?>
+          <resources>
+              <string name="ime_name">GreyB Keyboard</string>
+              <string name="label_symbols">?123</string>
+              <string name="label_question">?</string>
+          </resources>
           EOF
 
           cat > app/src/main/res/values/themes.xml << 'EOF'
