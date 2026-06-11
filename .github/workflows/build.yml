@@ -4,14 +4,10 @@ on:
   push:
     branches: [ main, master ]
     paths:
-      - 'Keyboard.kt'
-      - 'LifecycleOwnerIME.kt'
       - '.github/workflows/build.yml'
   pull_request:
     branches: [ main, master ]
     paths:
-      - 'Keyboard.kt'
-      - 'LifecycleOwnerIME.kt'
       - '.github/workflows/build.yml'
   workflow_dispatch:
 
@@ -52,8 +48,145 @@ jobs:
           mkdir -p app/src/main/res/xml
           mkdir -p gradle/wrapper
 
-          cp Keyboard.kt $PKG/
-          cp LifecycleOwnerIME.kt $PKG/
+          cat > $PKG/GreyBIME.kt << 'KOTLIN'
+          package com.greyb.keyboard
+
+          import android.inputmethodservice.InputMethodService
+          import android.inputmethodservice.Keyboard
+          import android.inputmethodservice.KeyboardView
+          import android.view.KeyEvent
+          import android.view.View
+          import android.view.inputmethod.EditorInfo
+
+          class GreyBIME : InputMethodService(), KeyboardView.OnKeyboardActionListener {
+
+              private lateinit var keyboardView: KeyboardView
+              private lateinit var keyboard: Keyboard
+              private var caps = false
+
+              override fun onCreateInputView(): View {
+                  keyboardView = KeyboardView(this).apply {
+                      keyboard = Keyboard(this@GreyBIME, R.xml.keyboard_layout)
+                      setKeyboard(keyboard)
+                      isPreviewEnabled = false
+                      setOnKeyboardActionListener(this@GreyBIME)
+                  }
+                  return keyboardView
+              }
+
+              override fun onEvaluateFullscreenMode(): Boolean = false
+
+              override fun onStartInputView(info: EditorInfo?, restarting: Boolean) {
+                  super.onStartInputView(info, restarting)
+                  keyboardView.closing = false
+              }
+
+              override fun onKey(primaryCode: Int, keyCodes: IntArray?) {
+                  val ic = currentInputConnection ?: return
+                  when (primaryCode) {
+                      Keyboard.KEYCODE_DELETE -> {
+                          ic.deleteSurroundingText(1, 0)
+                      }
+                      Keyboard.KEYCODE_SHIFT -> {
+                          caps = !caps
+                          keyboard.isShifted = caps
+                          keyboardView.invalidateAllKeys()
+                      }
+                      Keyboard.KEYCODE_DONE -> {
+                          ic.sendKeyEvent(KeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_ENTER))
+                          ic.sendKeyEvent(KeyEvent(KeyEvent.ACTION_UP, KeyEvent.KEYCODE_ENTER))
+                      }
+                      else -> {
+                          var code = primaryCode.toChar()
+                          if (caps) {
+                              code = code.uppercaseChar()
+                              caps = false
+                              keyboard.isShifted = false
+                              keyboardView.invalidateAllKeys()
+                          }
+                          ic.commitText(code.toString(), 1)
+                      }
+                  }
+              }
+
+              override fun onPress(primaryCode: Int) {}
+              override fun onRelease(primaryCode: Int) {}
+              override fun onText(text: CharSequence?) {}
+              override fun swipeLeft() {}
+              override fun swipeRight() {}
+              override fun swipeDown() {}
+              override fun swipeUp() {}
+          }
+          KOTLIN
+
+          cat > app/src/main/res/xml/keyboard_layout.xml << 'KBXML'
+          <?xml version="1.0" encoding="utf-8"?>
+          <Keyboard xmlns:android="http://schemas.android.com/apk/res/android"
+              android:keyWidth="10%p"
+              android:keyHeight="@dimen/key_height"
+              android:horizontalGap="0px"
+              android:verticalGap="0px">
+
+              <Row>
+                  <Key android:codes="49" android:keyLabel="1" android:keyEdgeFlags="left"/>
+                  <Key android:codes="50" android:keyLabel="2"/>
+                  <Key android:codes="51" android:keyLabel="3"/>
+                  <Key android:codes="52" android:keyLabel="4"/>
+                  <Key android:codes="53" android:keyLabel="5"/>
+                  <Key android:codes="54" android:keyLabel="6"/>
+                  <Key android:codes="55" android:keyLabel="7"/>
+                  <Key android:codes="56" android:keyLabel="8"/>
+                  <Key android:codes="57" android:keyLabel="9"/>
+                  <Key android:codes="48" android:keyLabel="0" android:keyEdgeFlags="right"/>
+              </Row>
+
+              <Row>
+                  <Key android:codes="113" android:keyLabel="q" android:keyEdgeFlags="left"/>
+                  <Key android:codes="119" android:keyLabel="w"/>
+                  <Key android:codes="101" android:keyLabel="e"/>
+                  <Key android:codes="114" android:keyLabel="r"/>
+                  <Key android:codes="116" android:keyLabel="t"/>
+                  <Key android:codes="121" android:keyLabel="y"/>
+                  <Key android:codes="117" android:keyLabel="u"/>
+                  <Key android:codes="105" android:keyLabel="i"/>
+                  <Key android:codes="111" android:keyLabel="o"/>
+                  <Key android:codes="112" android:keyLabel="p" android:keyEdgeFlags="right"/>
+              </Row>
+
+              <Row>
+                  <Key android:codes="97" android:keyLabel="a" android:keyEdgeFlags="left" android:horizontalGap="5%p"/>
+                  <Key android:codes="115" android:keyLabel="s"/>
+                  <Key android:codes="100" android:keyLabel="d"/>
+                  <Key android:codes="102" android:keyLabel="f"/>
+                  <Key android:codes="103" android:keyLabel="g"/>
+                  <Key android:codes="104" android:keyLabel="h"/>
+                  <Key android:codes="106" android:keyLabel="j"/>
+                  <Key android:codes="107" android:keyLabel="k"/>
+                  <Key android:codes="108" android:keyLabel="l" android:keyEdgeFlags="right" android:horizontalGap="5%p"/>
+              </Row>
+
+              <Row>
+                  <Key android:codes="-1" android:keyLabel="\u21E7" android:keyWidth="14%p" android:keyEdgeFlags="left" android:isRepeatable="false"/>
+                  <Key android:codes="122" android:keyLabel="z"/>
+                  <Key android:codes="120" android:keyLabel="x"/>
+                  <Key android:codes="99" android:keyLabel="c"/>
+                  <Key android:codes="118" android:keyLabel="v"/>
+                  <Key android:codes="98" android:keyLabel="b"/>
+                  <Key android:codes="110" android:keyLabel="n"/>
+                  <Key android:codes="109" android:keyLabel="m"/>
+                  <Key android:codes="-5" android:keyLabel="\u232B" android:keyWidth="14%p" android:keyEdgeFlags="right" android:isRepeatable="true"/>
+              </Row>
+
+              <Row>
+                  <Key android:codes="-2" android:keyLabel="\?123" android:keyWidth="13%p" android:keyEdgeFlags="left"/>
+                  <Key android:codes="-3" android:keyLabel="\uD83D\uDE0A" android:keyWidth="10%p"/>
+                  <Key android:codes="32" android:keyWidth="40%p"/>
+                  <Key android:codes="46" android:keyLabel="." android:keyWidth="10%p"/>
+                  <Key android:codes="-4" android:keyLabel="\u23CE" android:keyWidth="13%p" android:keyEdgeFlags="right"/>
+              </Row>
+
+          </Keyboard>
+          KBXML
 
           cat > settings.gradle.kts << 'EOF'
           pluginManagement {
@@ -69,9 +202,8 @@ jobs:
 
           cat > build.gradle.kts << 'EOF'
           plugins {
-              id("com.android.application")             version "8.9.1" apply false
-              id("org.jetbrains.kotlin.android")        version "2.2.0" apply false
-              id("org.jetbrains.kotlin.plugin.compose") version "2.2.0" apply false
+              id("com.android.application") version "8.9.1" apply false
+              id("org.jetbrains.kotlin.android") version "2.2.0" apply false
           }
           EOF
 
@@ -79,7 +211,6 @@ jobs:
           plugins {
               id("com.android.application")
               id("org.jetbrains.kotlin.android")
-              id("org.jetbrains.kotlin.plugin.compose")
           }
 
           android {
@@ -116,7 +247,6 @@ jobs:
                   targetCompatibility = JavaVersion.VERSION_17
               }
               kotlinOptions { jvmTarget = "17" }
-              buildFeatures { compose = true }
 
               splits {
                   abi {
@@ -130,21 +260,6 @@ jobs:
 
           dependencies {
               implementation("androidx.core:core-ktx:1.15.0")
-              implementation("androidx.activity:activity-compose:1.10.1")
-              implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.9.0")
-              implementation("androidx.lifecycle:lifecycle-viewmodel-ktx:2.9.0")
-              implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.9.0")
-              implementation("androidx.savedstate:savedstate:1.2.1")
-              implementation("androidx.savedstate:savedstate-ktx:1.2.1")
-
-              val bom = platform("androidx.compose:compose-bom:2025.05.00")
-              implementation(bom)
-              implementation("androidx.compose.ui:ui")
-              implementation("androidx.compose.ui:ui-graphics")
-              implementation("androidx.compose.foundation:foundation")
-              implementation("androidx.compose.material3:material3")
-              implementation("androidx.compose.material:material-icons-extended")
-              implementation("androidx.compose.animation:animation")
           }
           EOF
 
@@ -159,24 +274,12 @@ jobs:
           cat > app/src/main/AndroidManifest.xml << 'EOF'
           <?xml version="1.0" encoding="utf-8"?>
           <manifest xmlns:android="http://schemas.android.com/apk/res/android">
-              <uses-permission android:name="android.permission.VIBRATE" />
-
+              
               <application
                   android:allowBackup="false"
                   android:label="@string/app_name"
                   android:icon="@mipmap/ic_launcher"
-                  android:roundIcon="@mipmap/ic_launcher_round"
-                  android:theme="@style/AppTheme">
-
-                  <activity
-                      android:name=".MainActivity"
-                      android:exported="true"
-                      android:configChanges="orientation|screenSize|keyboardHidden">
-                      <intent-filter>
-                          <action android:name="android.intent.action.MAIN" />
-                          <category android:name="android.intent.category.LAUNCHER" />
-                      </intent-filter>
-                  </activity>
+                  android:roundIcon="@mipmap/ic_launcher_round">
 
                   <service
                       android:name=".GreyBIME"
@@ -197,23 +300,16 @@ jobs:
           cat > app/src/main/res/xml/method.xml << 'EOF'
           <?xml version="1.0" encoding="utf-8"?>
           <input-method xmlns:android="http://schemas.android.com/apk/res/android"
-              android:supportsSwitchingToNextInputMethod="true"
-              android:isDefault="false"
-              android:settingsActivity="com.greyb.keyboard.MainActivity" />
+              android:supportsSwitchingToNextInputMethod="true" />
           EOF
 
           cat > app/src/main/res/values/strings.xml << 'EOF'
           <resources><string name="app_name">GreyB Keyboard</string></resources>
           EOF
 
-          cat > app/src/main/res/values/themes.xml << 'EOF'
+          cat > app/src/main/res/values/dimens.xml << 'EOF'
           <resources>
-              <style name="AppTheme" parent="android:Theme.Material.Light.NoActionBar">
-                  <item name="android:windowBackground">#1A1A1A</item>
-                  <item name="android:statusBarColor">#1A1A1A</item>
-                  <item name="android:navigationBarColor">#1A1A1A</item>
-                  <item name="android:windowLightStatusBar">false</item>
-              </style>
+              <dimen name="key_height">16.67%p</dimen>
           </resources>
           EOF
 
@@ -232,7 +328,6 @@ jobs:
       - name: Generate launcher icons
         run: |
           rm -rf app/src/main/res/mipmap-*
-
           pip install Pillow --quiet
           python3 << 'PYEOF'
           from PIL import Image, ImageDraw
@@ -242,16 +337,13 @@ jobs:
               BG = (26, 26, 26, 255)
               ACCENT = (180, 180, 170, 255)
               WHITE = (220, 220, 215, 255)
-
               img = Image.new('RGBA', (size, size), BG)
               d = ImageDraw.Draw(img)
-
               margin = size // 5
               key_w = (size - 2 * margin) // 4
               key_h = (size - 2 * margin) // 5
               gap = max(1, size // 40)
               start_y = margin + key_h
-
               for row in range(3):
                   y = start_y + row * (key_h + gap)
                   keys_in_row = [4, 4, 3]
@@ -259,21 +351,11 @@ jobs:
                   for col in range(keys_in_row[row]):
                       x = row_margin + col * (key_w + gap)
                       color = ACCENT if (row == 0 and col == 0) else WHITE
-                      d.rounded_rectangle(
-                          [x, y, x + key_w, y + key_h],
-                          radius=key_w // 5,
-                          fill=color
-                      )
-
+                      d.rounded_rectangle([x, y, x + key_w, y + key_h], radius=key_w // 5, fill=color)
               space_y = start_y + 3 * (key_h + gap)
               space_w = key_w * 2 + gap
               space_x = (size - space_w) // 2
-              d.rounded_rectangle(
-                  [space_x, space_y, space_x + space_w, space_y + key_h],
-                  radius=key_w // 5,
-                  fill=ACCENT
-              )
-
+              d.rounded_rectangle([space_x, space_y, space_x + space_w, space_y + key_h], radius=key_w // 5, fill=ACCENT)
               return img
 
           sizes = {'mdpi': 48, 'hdpi': 72, 'xhdpi': 96, 'xxhdpi': 144, 'xxxhdpi': 192}
@@ -283,7 +365,6 @@ jobs:
               icon = make_icon(s)
               icon.save(f'{path}/ic_launcher.png')
               icon.save(f'{path}/ic_launcher_round.png')
-
           print("Icons generated!")
           PYEOF
 
@@ -291,11 +372,6 @@ jobs:
         run: |
           gradle wrapper --gradle-version=8.11.1 --distribution-type=bin
           chmod +x gradlew
-
-      - name: Clean build
-        run: |
-          rm -rf app/build
-          ./gradlew clean --no-daemon
 
       - name: Build signed release APK
         run: ./gradlew assembleRelease --no-daemon
@@ -312,13 +388,10 @@ jobs:
               exit 1
           fi
 
-      - name: Bundle APK + source
+      - name: Bundle APK
         run: |
           mkdir -p GreyB-release
           cp app/build/outputs/apk/release/app-arm64-v8a-release.apk GreyB-release/GreyB.apk
-          cp Keyboard.kt GreyB-release/
-          cp LifecycleOwnerIME.kt GreyB-release/
-          cp .github/workflows/build.yml GreyB-release/
 
           APK_SIZE=$(ls -lh app/build/outputs/apk/release/app-arm64-v8a-release.apk | awk '{print $5}')
 
@@ -328,7 +401,6 @@ jobs:
           Timestamp:  $(date -u '+%Y-%m-%d %H:%M:%S UTC')
           Signed:     Yes (dummy keys)
           APK Size:   $APK_SIZE
-          Optimized:  No (ProGuard/R8 disabled)
           EOF
 
       - name: Upload artifact
