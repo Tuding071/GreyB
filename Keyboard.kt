@@ -21,9 +21,6 @@ import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.lifecycle.Lifecycle
-import androidx.lifecycle.LifecycleOwner
-import androidx.lifecycle.LifecycleRegistry
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewmodel.compose.viewModel
 import kotlinx.coroutines.delay
@@ -206,7 +203,7 @@ class KeyboardViewModel : ViewModel() {
                 ic.sendKeyEvent(KeyEvent(KeyEvent.ACTION_UP, KeyEvent.KEYCODE_ENTER))
             }
             -8 -> _currentLayout.value = qwertyLayout
-            -99 -> {} // Close keyboard handled by system
+            -99 -> {}
             else -> {
                 var ch = key.code.toChar()
                 if (_isShifted.value && ch.isLowerCase()) {
@@ -320,19 +317,14 @@ fun KeyboardKey(key: KeyData, viewModel: KeyboardViewModel) {
 
 // ─── IME Service ────────────────────────────────────────────────────────────
 
-class GreyBIME : InputMethodService(), LifecycleOwner {
-    private val lifecycleRegistry = LifecycleRegistry(this)
+class GreyBIME : InputMethodService() {
     private lateinit var keyboardViewModel: KeyboardViewModel
-
-    override fun getLifecycle(): Lifecycle = lifecycleRegistry
 
     override fun onCreate() {
         super.onCreate()
-        lifecycleRegistry.currentState = Lifecycle.State.CREATED
     }
 
     override fun onCreateInputView(): View {
-        lifecycleRegistry.currentState = Lifecycle.State.STARTED
         return ComposeView(this).apply {
             setContent {
                 keyboardViewModel = viewModel()
@@ -347,9 +339,4 @@ class GreyBIME : InputMethodService(), LifecycleOwner {
     }
 
     override fun onEvaluateFullscreenMode(): Boolean = false
-
-    override fun onDestroy() {
-        lifecycleRegistry.currentState = Lifecycle.State.DESTROYED
-        super.onDestroy()
-    }
 }
