@@ -154,7 +154,7 @@
         android:layout_width="match_parent"
         android:layout_height="44dp"
         android:orientation="horizontal">
-        <TextView android:id="@+id/btn_symbols" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1.5" android:gravity="center" android:text="\?123" android:textColor="#fff" android:textSize="13sp" android:background="@drawable/key_bg_dark" android:layout_marginEnd="4dp"/>
+        <TextView android:id="@+id/btn_symbols" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1.5" android:gravity="center" android:text="&#63;123" android:textColor="#fff" android:textSize="13sp" android:background="@drawable/key_bg_dark" android:layout_marginEnd="4dp"/>
         <TextView android:id="@+id/btn_emoji" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:textColor="#fff" android:textSize="18sp" android:background="@drawable/key_bg_dark" android:layout_marginEnd="4dp" android:fontFamily="@font/material_symbols"/>
         <TextView android:id="@+id/btn_comma" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="," android:textColor="#fff" android:textSize="16sp" android:background="@drawable/key_bg" android:layout_marginEnd="4dp"/>
         <TextView android:id="@+id/btn_space" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="4" android:gravity="center" android:text="space" android:textColor="#888" android:textSize="13sp" android:background="@drawable/key_bg_dark" android:layout_marginEnd="4dp"/>
