@@ -422,15 +422,20 @@ class Keyboard : InputMethodService() {
 
     override fun onStartInputView(info: EditorInfo, restarting: Boolean) {
         super.onStartInputView(info, restarting)
-        val v = if (mode == Mode.SYMBOLS) symbolsView else qwertyView
-        v.findViewById<TextView>(R.id.btn_enter)?.apply {
-            typeface = msFont
-            text = when (info.imeOptions and EditorInfo.IME_MASK_ACTION) {
-                EditorInfo.IME_ACTION_SEARCH -> "\uE8B6"
-                EditorInfo.IME_ACTION_SEND   -> "\uE163"
-                EditorInfo.IME_ACTION_GO     -> "\uE5C8"
-                EditorInfo.IME_ACTION_DONE   -> "\uE876"
-                else                         -> ICON_ENTER
+        
+        val enterIcon = when (info.imeOptions and EditorInfo.IME_MASK_ACTION) {
+            EditorInfo.IME_ACTION_SEARCH -> "\uE8B6"
+            EditorInfo.IME_ACTION_SEND   -> "\uE163"
+            EditorInfo.IME_ACTION_GO     -> "\uE5C8"
+            EditorInfo.IME_ACTION_DONE   -> "\uE876"
+            else                         -> ICON_ENTER
+        }
+        
+        // Update enter icon on both qwerty and symbols views
+        listOf(qwertyView, symbolsView).forEach { view ->
+            view.findViewById<TextView>(R.id.btn_enter)?.apply {
+                typeface = msFont
+                text = enterIcon
             }
         }
     }
