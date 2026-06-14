@@ -454,7 +454,7 @@ class ClipboardAdapter(
     private val onDelete: (Int) -> Unit
 ) : RecyclerView.Adapter<ClipboardAdapter.VH>() {
 
-    inner class VH(val root: LinearLayout, val text: TextView, val del: TextView)
+    inner class VH(val root: LinearLayout, val tv: TextView, val del: TextView)
         : RecyclerView.ViewHolder(root)
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): VH {
@@ -467,7 +467,7 @@ class ClipboardAdapter(
                 ViewGroup.LayoutParams.WRAP_CONTENT
             )
         }
-        val text = TextView(ctx).apply {
+        val tv = TextView(ctx).apply {
             layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
             setTextColor(0xFFFFFFFF.toInt())
             textSize = 14f
@@ -475,18 +475,18 @@ class ClipboardAdapter(
             ellipsize = android.text.TextUtils.TruncateAt.END
         }
         val del = TextView(ctx).apply {
-            text = "X"
+            text = "✕"
             setTextColor(0xFF888888.toInt())
             textSize = 16f
             setPadding(16, 0, 4, 0)
         }
-        root.addView(text)
+        root.addView(tv)
         root.addView(del)
-        return VH(root, text, del)
+        return VH(root, tv, del)
     }
 
     override fun onBindViewHolder(h: VH, pos: Int) {
-        h.text.text = items[pos]
+        h.tv.text = items[pos]
         h.root.setOnClickListener { onPaste(items[pos]) }
         h.del.setOnClickListener  { onDelete(h.adapterPosition) }
     }
