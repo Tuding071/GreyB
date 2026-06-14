@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/clipboard_root"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:background="#1e1e1e"
+    android:padding="8dp">
+
+    <!-- TOP BAR -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="36dp"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:layout_marginBottom="6dp">
+
+        <TextView
+            android:id="@+id/btn_clipboard_active"
+            android:layout_width="42dp"
+            android:layout_height="32dp"
+            android:gravity="center"
+            android:background="@drawable/key_bg_accent"
+            android:textColor="#ffffff"
+            android:textSize="18sp"
+            android:fontFamily="@font/material_symbols" />
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:gravity="center"
+            android:text="Clipboard"
+            android:textColor="#aaaaaa"
+            android:textSize="13sp"
+            android:layout_marginStart="10dp" />
+
+        <TextView
+            android:id="@+id/btn_clipboard_close"
+            android:layout_width="42dp"
+            android:layout_height="32dp"
+            android:gravity="center"
+            android:text="✕"
+            android:textColor="#ffffff"
+            android:textSize="16sp"
+            android:background="@drawable/key_bg_dark" />
+
+    </LinearLayout>
+
+    <!-- LIST -->
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/clipboard_list"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:clipToPadding="false"
+        android:padding="4dp"/>
+
+</LinearLayout>
