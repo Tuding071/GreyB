@@ -1,0 +1,154 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/emoji_root"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:background="#1e1e1e"
+    android:padding="8dp">
+
+    <!-- TOP BAR (category tabs replace suggestions) -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="36dp"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:layout_marginBottom="6dp">
+
+        <TextView
+            android:id="@+id/btn_clipboard"
+            android:layout_width="42dp"
+            android:layout_height="32dp"
+            android:gravity="center"
+            android:background="@drawable/key_bg_dark"
+            android:textColor="#ffffff"
+            android:textSize="18sp"
+            android:fontFamily="@font/material_symbols" />
+
+        <HorizontalScrollView
+            android:layout_width="0dp"
+            android:layout_height="32dp"
+            android:layout_weight="1"
+            android:layout_marginStart="6dp"
+            android:layout_marginEnd="6dp"
+            android:scrollbars="none">
+
+            <LinearLayout
+                android:id="@+id/emoji_tabs"
+                android:layout_width="wrap_content"
+                android:layout_height="match_parent"
+                android:orientation="horizontal"
+                android:gravity="center_vertical">
+
+                <TextView android:id="@+id/tab_faces"
+                    android:layout_width="wrap_content"
+                    android:layout_height="match_parent"
+                    android:text="😊"
+                    android:gravity="center"
+                    android:paddingStart="12dp"
+                    android:paddingEnd="12dp"
+                    android:textSize="16sp"
+                    android:background="@drawable/key_bg_dark"
+                    android:layout_marginEnd="4dp"/>
+
+                <TextView android:id="@+id/tab_people"
+                    android:layout_width="wrap_content"
+                    android:layout_height="match_parent"
+                    android:text="👋"
+                    android:gravity="center"
+                    android:paddingStart="12dp"
+                    android:paddingEnd="12dp"
+                    android:textSize="16sp"
+                    android:background="@drawable/key_bg_dark"
+                    android:layout_marginEnd="4dp"/>
+
+                <TextView android:id="@+id/tab_animals"
+                    android:layout_width="wrap_content"
+                    android:layout_height="match_parent"
+                    android:text="🐶"
+                    android:gravity="center"
+                    android:paddingStart="12dp"
+                    android:paddingEnd="12dp"
+                    android:textSize="16sp"
+                    android:background="@drawable/key_bg_dark"
+                    android:layout_marginEnd="4dp"/>
+
+                <TextView android:id="@+id/tab_food"
+                    android:layout_width="wrap_content"
+                    android:layout_height="match_parent"
+                    android:text="🍕"
+                    android:gravity="center"
+                    android:paddingStart="12dp"
+                    android:paddingEnd="12dp"
+                    android:textSize="16sp"
+                    android:background="@drawable/key_bg_dark"
+                    android:layout_marginEnd="4dp"/>
+
+                <TextView android:id="@+id/tab_activities"
+                    android:layout_width="wrap_content"
+                    android:layout_height="match_parent"
+                    android:text="⚽"
+                    android:gravity="center"
+                    android:paddingStart="12dp"
+                    android:paddingEnd="12dp"
+                    android:textSize="16sp"
+                    android:background="@drawable/key_bg_dark"
+                    android:layout_marginEnd="4dp"/>
+
+                <TextView android:id="@+id/tab_objects"
+                    android:layout_width="wrap_content"
+                    android:layout_height="match_parent"
+                    android:text="💡"
+                    android:gravity="center"
+                    android:paddingStart="12dp"
+                    android:paddingEnd="12dp"
+                    android:textSize="16sp"
+                    android:background="@drawable/key_bg_dark"/>
+
+            </LinearLayout>
+        </HorizontalScrollView>
+
+        <TextView
+            android:id="@+id/btn_tools"
+            android:layout_width="42dp"
+            android:layout_height="32dp"
+            android:gravity="center"
+            android:background="@drawable/key_bg_dark"
+            android:textColor="#ffffff"
+            android:textSize="18sp"
+            android:fontFamily="@font/material_symbols" />
+
+    </LinearLayout>
+
+    <!-- EMOJI GRID -->
+    <androidx.core.widget.NestedScrollView
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1">
+
+        <GridLayout
+            android:id="@+id/emoji_grid"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:columnCount="8"
+            android:useDefaultMargins="true"/>
+
+    </androidx.core.widget.NestedScrollView>
+
+    <!-- ACTION ROW -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="44dp"
+        android:orientation="horizontal"
+        android:layout_marginTop="4dp">
+        <TextView android:id="@+id/btn_abc"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:gravity="center"
+            android:text="ABC"
+            android:textColor="#fff"
+            android:textSize="13sp"
+            android:background="@drawable/key_bg_dark"/>
+    </LinearLayout>
+
+</LinearLayout>
