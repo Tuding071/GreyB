@@ -1,0 +1,165 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/symbols_root"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:background="#1e1e1e"
+    android:padding="8dp">
+
+    <!-- TOP BAR -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="36dp"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:layout_marginBottom="6dp">
+
+        <TextView
+            android:id="@+id/btn_clipboard"
+            android:layout_width="42dp"
+            android:layout_height="32dp"
+            android:gravity="center"
+            android:background="@drawable/key_bg_dark"
+            android:textColor="#ffffff"
+            android:textSize="18sp"
+            android:fontFamily="@font/material_symbols" />
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="32dp"
+            android:layout_weight="1"
+            android:orientation="horizontal"
+            android:layout_marginStart="6dp"
+            android:layout_marginEnd="6dp"
+            android:gravity="center_vertical">
+
+            <TextView android:id="@+id/sug1"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:gravity="center"
+                android:background="@drawable/key_bg_dark"
+                android:textColor="#ffffff"
+                android:textSize="13sp"
+                android:layout_marginEnd="3dp" />
+
+            <TextView android:id="@+id/sug2"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:gravity="center"
+                android:background="@drawable/key_bg_dark"
+                android:textColor="#ffffff"
+                android:textSize="13sp"
+                android:layout_marginEnd="3dp" />
+
+            <TextView android:id="@+id/sug3"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:gravity="center"
+                android:background="@drawable/key_bg_dark"
+                android:textColor="#ffffff"
+                android:textSize="13sp" />
+
+        </LinearLayout>
+
+        <TextView
+            android:id="@+id/btn_tools"
+            android:layout_width="42dp"
+            android:layout_height="32dp"
+            android:gravity="center"
+            android:background="@drawable/key_bg_dark"
+            android:textColor="#ffffff"
+            android:textSize="18sp"
+            android:fontFamily="@font/material_symbols" />
+
+    </LinearLayout>
+
+    <!-- NUMBER ROW -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="40dp"
+        android:orientation="horizontal"
+        android:layout_marginBottom="4dp">
+        <TextView android:id="@+id/k1" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="1" android:textColor="#fff" android:textSize="15sp" android:background="@drawable/key_bg" android:layout_marginEnd="4dp"/>
+        <TextView android:id="@+id/k2" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="2" android:textColor="#fff" android:textSize="15sp" android:background="@drawable/key_bg" android:layout_marginEnd="4dp"/>
+        <TextView android:id="@+id/k3" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="3" android:textColor="#fff" android:textSize="15sp" android:background="@drawable/key_bg" android:layout_marginEnd="4dp"/>
+        <TextView android:id="@+id/k4" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="4" android:textColor="#fff" android:textSize="15sp" android:background="@drawable/key_bg" android:layout_marginEnd="4dp"/>
+        <TextView android:id="@+id/k5" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="5" android:textColor="#fff" android:textSize="15sp" android:background="@drawable/key_bg" android:layout_marginEnd="4dp"/>
+        <TextView android:id="@+id/k6" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="6" android:textColor="#fff" android:textSize="15sp" android:background="@drawable/key_bg" android:layout_marginEnd="4dp"/>
+        <TextView android:id="@+id/k7" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="7" android:textColor="#fff" android:textSize="15sp" android:background="@drawable/key_bg" android:layout_marginEnd="4dp"/>
+        <TextView android:id="@+id/k8" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="8" android:textColor="#fff" android:textSize="15sp" android:background="@drawable/key_bg" android:layout_marginEnd="4dp"/>
+        <TextView android:id="@+id/k9" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="9" android:textColor="#fff" android:textSize="15sp" android:background="@drawable/key_bg" android:layout_marginEnd="4dp"/>
+        <TextView android:id="@+id/k0" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="0" android:textColor="#fff" android:textSize="15sp" android:background="@drawable/key_bg"/>
+    </LinearLayout>
+
+    <!-- SYMBOL ROW 1 -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="44dp"
+        android:orientation="horizontal"
+        android:layout_marginBottom="4dp">
+        <TextView android:id="@+id/ks1" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="!" android:textColor="#fff" android:textSize="16sp" android:background="@drawable/key_bg" android:layout_marginEnd="4dp"/>
+        <TextView android:id="@+id/ks2" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="@" android:textColor="#fff" android:textSize="16sp" android:background="@drawable/key_bg" android:layout_marginEnd="4dp"/>
+        <TextView android:id="@+id/ks3" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="#" android:textColor="#fff" android:textSize="16sp" android:background="@drawable/key_bg" android:layout_marginEnd="4dp"/>
+        <TextView android:id="@+id/ks4" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="$" android:textColor="#fff" android:textSize="16sp" android:background="@drawable/key_bg" android:layout_marginEnd="4dp"/>
+        <TextView android:id="@+id/ks5" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="%" android:textColor="#fff" android:textSize="16sp" android:background="@drawable/key_bg" android:layout_marginEnd="4dp"/>
+        <TextView android:id="@+id/ks6" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="^" android:textColor="#fff" android:textSize="16sp" android:background="@drawable/key_bg" android:layout_marginEnd="4dp"/>
+        <TextView android:id="@+id/ks7" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="&amp;" android:textColor="#fff" android:textSize="16sp" android:background="@drawable/key_bg" android:layout_marginEnd="4dp"/>
+        <TextView android:id="@+id/ks8" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="*" android:textColor="#fff" android:textSize="16sp" android:background="@drawable/key_bg" android:layout_marginEnd="4dp"/>
+        <TextView android:id="@+id/ks9" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="(" android:textColor="#fff" android:textSize="16sp" android:background="@drawable/key_bg" android:layout_marginEnd="4dp"/>
+        <TextView android:id="@+id/ks10" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text=")" android:textColor="#fff" android:textSize="16sp" android:background="@drawable/key_bg"/>
+    </LinearLayout>
+
+    <!-- SYMBOL ROW 2 -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="44dp"
+        android:orientation="horizontal"
+        android:layout_marginBottom="4dp">
+        <TextView android:id="@+id/ks11" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="-" android:textColor="#fff" android:textSize="16sp" android:background="@drawable/key_bg" android:layout_marginEnd="4dp"/>
+        <TextView android:id="@+id/ks12" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="+" android:textColor="#fff" android:textSize="16sp" android:background="@drawable/key_bg" android:layout_marginEnd="4dp"/>
+        <TextView android:id="@+id/ks13" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="=" android:textColor="#fff" android:textSize="16sp" android:background="@drawable/key_bg" android:layout_marginEnd="4dp"/>
+        <TextView android:id="@+id/ks14" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="/" android:textColor="#fff" android:textSize="16sp" android:background="@drawable/key_bg" android:layout_marginEnd="4dp"/>
+        <TextView android:id="@+id/ks15" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text=":" android:textColor="#fff" android:textSize="16sp" android:background="@drawable/key_bg" android:layout_marginEnd="4dp"/>
+        <TextView android:id="@+id/ks16" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text=";" android:textColor="#fff" android:textSize="16sp" android:background="@drawable/key_bg" android:layout_marginEnd="4dp"/>
+        <TextView android:id="@+id/ks17" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="&quot;" android:textColor="#fff" android:textSize="16sp" android:background="@drawable/key_bg" android:layout_marginEnd="4dp"/>
+        <TextView android:id="@+id/ks18" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="'" android:textColor="#fff" android:textSize="16sp" android:background="@drawable/key_bg" android:layout_marginEnd="4dp"/>
+        <TextView android:id="@+id/ks19" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="?" android:textColor="#fff" android:textSize="16sp" android:background="@drawable/key_bg" android:layout_marginEnd="4dp"/>
+        <TextView android:id="@+id/ks20" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="!" android:textColor="#fff" android:textSize="16sp" android:background="@drawable/key_bg"/>
+    </LinearLayout>
+
+    <!-- SYMBOL ROW 3 -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="44dp"
+        android:orientation="horizontal"
+        android:layout_marginBottom="4dp">
+        <TextView android:id="@+id/ks21" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="[" android:textColor="#fff" android:textSize="16sp" android:background="@drawable/key_bg" android:layout_marginEnd="4dp"/>
+        <TextView android:id="@+id/ks22" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="]" android:textColor="#fff" android:textSize="16sp" android:background="@drawable/key_bg" android:layout_marginEnd="4dp"/>
+        <TextView android:id="@+id/ks23" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="{" android:textColor="#fff" android:textSize="16sp" android:background="@drawable/key_bg" android:layout_marginEnd="4dp"/>
+        <TextView android:id="@+id/ks24" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="}" android:textColor="#fff" android:textSize="16sp" android:background="@drawable/key_bg" android:layout_marginEnd="4dp"/>
+        <TextView android:id="@+id/ks25" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="&lt;" android:textColor="#fff" android:textSize="16sp" android:background="@drawable/key_bg" android:layout_marginEnd="4dp"/>
+        <TextView android:id="@+id/ks26" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="&gt;" android:textColor="#fff" android:textSize="16sp" android:background="@drawable/key_bg" android:layout_marginEnd="4dp"/>
+        <TextView android:id="@+id/ks27" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="|" android:textColor="#fff" android:textSize="16sp" android:background="@drawable/key_bg" android:layout_marginEnd="4dp"/>
+        <TextView android:id="@+id/ks28" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="\\" android:textColor="#fff" android:textSize="16sp" android:background="@drawable/key_bg" android:layout_marginEnd="4dp"/>
+        <TextView android:id="@+id/ks29" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="~" android:textColor="#fff" android:textSize="16sp" android:background="@drawable/key_bg" android:layout_marginEnd="4dp"/>
+        <TextView android:id="@+id/btn_backspace" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:textColor="#fff" android:textSize="16sp" android:background="@drawable/key_bg_dark" android:fontFamily="@font/material_symbols"/>
+    </LinearLayout>
+
+    <!-- ACTION ROW -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="44dp"
+        android:orientation="horizontal">
+        <TextView android:id="@+id/btn_abc" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1.5" android:gravity="center" android:text="ABC" android:textColor="#fff" android:textSize="13sp" android:background="@drawable/key_bg_dark" android:layout_marginEnd="4dp"/>
+        <TextView android:id="@+id/btn_emoji" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:textColor="#fff" android:textSize="18sp" android:background="@drawable/key_bg_dark" android:layout_marginEnd="4dp" android:fontFamily="@font/material_symbols"/>
+        <TextView android:id="@+id/btn_comma" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="," android:textColor="#fff" android:textSize="16sp" android:background="@drawable/key_bg" android:layout_marginEnd="4dp"/>
+        <TextView android:id="@+id/btn_space" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="4" android:gravity="center" android:text="space" android:textColor="#888" android:textSize="13sp" android:background="@drawable/key_bg_dark" android:layout_marginEnd="4dp"/>
+        <TextView android:id="@+id/btn_period" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="." android:textColor="#fff" android:textSize="16sp" android:background="@drawable/key_bg" android:layout_marginEnd="4dp"/>
+        <TextView android:id="@+id/btn_enter" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1.5" android:gravity="center" android:textColor="#fff" android:textSize="16sp" android:background="@drawable/key_bg_action"/>
+    </LinearLayout>
+
+</LinearLayout>
