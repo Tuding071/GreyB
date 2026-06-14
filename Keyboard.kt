@@ -425,7 +425,6 @@ class Keyboard : InputMethodService() {
             else                         -> ICON_ENTER
         }
         
-        // Update enter icon on both qwerty and symbols views
         val views = mutableListOf<View>()
         if (::qwertyView.isInitialized) views.add(qwertyView)
         if (::symbolsView.isInitialized) views.add(symbolsView)
