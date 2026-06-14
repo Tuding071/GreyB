@@ -94,9 +94,9 @@ class Keyboard : InputMethodService() {
         applyMsIcon(v, R.id.btn_tools,     ICON_TOOLS)
         applyMsIcon(v, R.id.btn_emoji,     ICON_EMOJI)
         applyMsIcon(v, R.id.btn_backspace, ICON_BACKSPACE)
+        applyMsIcon(v, R.id.btn_enter,     ICON_ENTER)
         v.findViewById<TextView>(R.id.btn_symbols).text = "?123"
         updateShiftIcon(v)
-        updateEnterIcon(v)
 
         val letters = "qwertyuiopasdfghjklzxcvbnm"
         val ids = listOf(
@@ -145,6 +145,7 @@ class Keyboard : InputMethodService() {
         applyMsIcon(v, R.id.btn_tools,     ICON_TOOLS)
         applyMsIcon(v, R.id.btn_emoji,     ICON_EMOJI)
         applyMsIcon(v, R.id.btn_backspace, ICON_BACKSPACE)
+        applyMsIcon(v, R.id.btn_enter,     ICON_ENTER)
 
         val syms = listOf(
             "!","@","#","$","%","^","&","*","(",")",
@@ -413,13 +414,6 @@ class Keyboard : InputMethodService() {
         }
     }
 
-    private fun updateEnterIcon(v: View) {
-        v.findViewById<TextView>(R.id.btn_enter)?.apply {
-            typeface = msFont
-            text = ICON_ENTER
-        }
-    }
-
     override fun onStartInputView(info: EditorInfo, restarting: Boolean) {
         super.onStartInputView(info, restarting)
         
@@ -432,7 +426,11 @@ class Keyboard : InputMethodService() {
         }
         
         // Update enter icon on both qwerty and symbols views
-        listOf(qwertyView, symbolsView).forEach { view ->
+        val views = mutableListOf<View>()
+        if (::qwertyView.isInitialized) views.add(qwertyView)
+        if (::symbolsView.isInitialized) views.add(symbolsView)
+        
+        views.forEach { view ->
             view.findViewById<TextView>(R.id.btn_enter)?.apply {
                 typeface = msFont
                 text = enterIcon
