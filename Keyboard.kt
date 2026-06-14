@@ -47,7 +47,7 @@ class Keyboard : InputMethodService() {
         "animals"    to listOf("🐶","🐱","🐭","🐹","🐰","🦊","🐻","🐼","🐨","🐯","🦁","🐮","🐷","🐸","🐵","🙈","🙉","🙊","🐔","🐧","🐦","🐤","🦆","🦅","🦉","🦇","🐺","🐗","🐴","🦄","🐝","🐛","🦋","🐌","🐞","🐜","🦟","🦗","🦂","🐢","🐍","🦎","🦖","🦕","🐙","🦑","🦐","🦞","🦀","🐡","🐠","🐟","🐬","🐳","🐋","🦈","🐊","🐅","🐆","🦓","🦍"),
         "food"       to listOf("🍕","🍔","🍟","🌭","🍿","🧂","🥓","🥚","🍳","🧇","🥞","🧈","🍞","🥐","🥖","🥨","🧀","🥗","🥙","🥪","🌮","🌯","🧆","🥜","🌰","🍱","🍘","🍙","🍚","🍛","🍜","🍝","🍠","🍢","🍣","🍤","🍥","🥮","🍡","🥟","🦪","🍦","🍧","🍨","🍩","🍪","🎂","🍰","🧁","🥧","🍫","🍬","🍭","🍮","🍯","🍷","🍸","🍹","🍺","🍻"),
         "activities" to listOf("⚽","🏀","🏈","⚾","🥎","🏐","🏉","🥏","🎾","🪃","🏸","🏒","🏑","🥍","🏏","🎯","🪀","🪁","🎱","🔮","🪄","🎮","🕹","🎲","🧩","🧸","🎭","🎨","🖼","🎰","🎟","🎪","🤹","🎬","🎤","🎧","🎼","🎹","🥁","🪘","🎷","🎺","🎸","🪕","🎻","🎳","🏹","🛹","🛼","🛷","⛸","🥌","🎿","⛷","🏂","🪂","🏋","🤸","🤺","🏇","🧘"),
-        "objects"    to listOf("💡","🔦","🕯","🪔","🧯","🛢","💰","💳","💎","⚖","🔧","🔨","⚒","🛠","⛏","🔩","🪛","🔗","⛓","🪝","🧲","🪜","🧰","🪤","🧲","🪣","🚪","🛏","🛋","🪑","🚽","🚿","🛁","🧴","🧷","🧹","🧺","🧻","🪣","🧼","🫧","🪥","🧽","🪒","🔑","🗝","🔐","🔏","🔒","🔓","🪪","📱","💻","🖥","🖨","🖱","🖲","💾","💿","📀","📷","📸")
+        "objects"    to listOf("💡","🔦","🕯","🪔","🧯","🛢","💰","💳","💎","⚖","🔧","🔨","⚒","🛠","⛏","🔩","🪛","🔗","⛓","🪝","🧲","🪜","🧰","🪤","🪣","🚪","🛏","🛋","🪑","🚽","🚿","🛁","🧴","🧷","🧹","🧺","🧻","🧼","🫧","🪥","🧽","🪒","🔑","🗝","🔐","🔏","🔒","🔓","🪪","📱","💻","🖥","🖨","🖱","💾","💿","📀","📷","📸")
     )
     private var currentEmojiCategory = "faces"
 
@@ -94,9 +94,8 @@ class Keyboard : InputMethodService() {
         applyMsIcon(v, R.id.btn_tools,     ICON_TOOLS)
         applyMsIcon(v, R.id.btn_emoji,     ICON_EMOJI)
         applyMsIcon(v, R.id.btn_backspace, ICON_BACKSPACE)
-        applyMsIcon(v, R.id.btn_enter,     ICON_ENTER)
-        v.findViewById<TextView>(R.id.btn_symbols).text = "?123"
         updateShiftIcon(v)
+        updateEnterIcon(v)
 
         val letters = "qwertyuiopasdfghjklzxcvbnm"
         val ids = listOf(
@@ -145,7 +144,6 @@ class Keyboard : InputMethodService() {
         applyMsIcon(v, R.id.btn_tools,     ICON_TOOLS)
         applyMsIcon(v, R.id.btn_emoji,     ICON_EMOJI)
         applyMsIcon(v, R.id.btn_backspace, ICON_BACKSPACE)
-        applyMsIcon(v, R.id.btn_enter,     ICON_ENTER)
 
         val syms = listOf(
             "!","@","#","$","%","^","&","*","(",")",
@@ -216,9 +214,9 @@ class Keyboard : InputMethodService() {
             }
         }
 
-        v.findViewById<TextView>(R.id.btn_abc).setOnClickListener         { showMode(Mode.QWERTY) }
-        v.findViewById<TextView>(R.id.btn_clipboard).setOnClickListener   { openClipboard() }
-        v.findViewById<TextView>(R.id.btn_tools).setOnClickListener       {
+        v.findViewById<TextView>(R.id.btn_abc).setOnClickListener       { showMode(Mode.QWERTY) }
+        v.findViewById<TextView>(R.id.btn_clipboard).setOnClickListener { openClipboard() }
+        v.findViewById<TextView>(R.id.btn_tools).setOnClickListener     {
             showTools(v.findViewById(R.id.btn_tools))
         }
         return v
@@ -229,7 +227,7 @@ class Keyboard : InputMethodService() {
         val emojis = emojiCategories[category] ?: return
         val cellSize = (resources.displayMetrics.widthPixels - 32.dp) / 8
         emojis.forEach { emoji ->
-            val tv = TextView(this).apply {
+            grid.addView(TextView(this).apply {
                 text = emoji
                 textSize = 22f
                 gravity = Gravity.CENTER
@@ -238,8 +236,7 @@ class Keyboard : InputMethodService() {
                     height = cellSize
                 }
                 setOnClickListener { typeText(emoji) }
-            }
-            grid.addView(tv)
+            })
         }
     }
 
@@ -252,7 +249,7 @@ class Keyboard : InputMethodService() {
         clipAdapter = ClipboardAdapter(
             clipboardItems,
             onPaste  = { item -> typeText(item); showMode(Mode.QWERTY) },
-            onDelete = { pos  ->
+            onDelete = { pos ->
                 clipboardItems.removeAt(pos)
                 clipAdapter.notifyItemRemoved(pos)
                 saveClipboard()
@@ -269,8 +266,7 @@ class Keyboard : InputMethodService() {
     }
 
     private fun openClipboard() {
-        val ic  = currentInputConnection
-        val sel = ic?.getSelectedText(0)
+        val sel = currentInputConnection?.getSelectedText(0)
         if (!sel.isNullOrEmpty()) addToClipboard(sel.toString())
         showMode(Mode.CLIPBOARD)
     }
@@ -331,7 +327,8 @@ class Keyboard : InputMethodService() {
                 }
             })
         }
-        toolsPopup = PopupWindow(popup,
+        toolsPopup = PopupWindow(
+            popup,
             ViewGroup.LayoutParams.WRAP_CONTENT,
             ViewGroup.LayoutParams.WRAP_CONTENT,
             true
@@ -369,8 +366,8 @@ class Keyboard : InputMethodService() {
     }
 
     private fun doEnter() {
-        val ei = currentInputEditorInfo
-        val action = ei?.imeOptions?.and(EditorInfo.IME_MASK_ACTION) ?: EditorInfo.IME_ACTION_NONE
+        val action = currentInputEditorInfo?.imeOptions?.and(EditorInfo.IME_MASK_ACTION)
+            ?: EditorInfo.IME_ACTION_NONE
         if (action != EditorInfo.IME_ACTION_NONE && action != EditorInfo.IME_ACTION_UNSPECIFIED) {
             currentInputConnection?.performEditorAction(action)
         } else {
@@ -383,10 +380,10 @@ class Keyboard : InputMethodService() {
     private fun handleShift(v: View) {
         val now = System.currentTimeMillis()
         shiftState = when {
-            shiftState == ShiftState.LOCKED  -> ShiftState.OFF
-            now - lastShiftTap < 200         -> ShiftState.LOCKED
-            shiftState == ShiftState.OFF     -> ShiftState.ONCE
-            else                             -> ShiftState.OFF
+            shiftState == ShiftState.LOCKED -> ShiftState.OFF
+            now - lastShiftTap < 200        -> ShiftState.LOCKED
+            shiftState == ShiftState.OFF    -> ShiftState.ONCE
+            else                            -> ShiftState.OFF
         }
         lastShiftTap = now
         updateShiftIcon(v)
@@ -414,25 +411,24 @@ class Keyboard : InputMethodService() {
         }
     }
 
+    private fun updateEnterIcon(v: View) {
+        v.findViewById<TextView>(R.id.btn_enter)?.apply {
+            typeface = msFont
+            text = ICON_ENTER
+        }
+    }
+
     override fun onStartInputView(info: EditorInfo, restarting: Boolean) {
         super.onStartInputView(info, restarting)
-        
-        val enterIcon = when (info.imeOptions and EditorInfo.IME_MASK_ACTION) {
-            EditorInfo.IME_ACTION_SEARCH -> "\uE8B6"
-            EditorInfo.IME_ACTION_SEND   -> "\uE163"
-            EditorInfo.IME_ACTION_GO     -> "\uE5C8"
-            EditorInfo.IME_ACTION_DONE   -> "\uE876"
-            else                         -> ICON_ENTER
-        }
-        
-        val views = mutableListOf<View>()
-        if (::qwertyView.isInitialized) views.add(qwertyView)
-        if (::symbolsView.isInitialized) views.add(symbolsView)
-        
-        views.forEach { view ->
-            view.findViewById<TextView>(R.id.btn_enter)?.apply {
-                typeface = msFont
-                text = enterIcon
+        val v = if (mode == Mode.SYMBOLS) symbolsView else qwertyView
+        v.findViewById<TextView>(R.id.btn_enter)?.apply {
+            typeface = msFont
+            text = when (info.imeOptions and EditorInfo.IME_MASK_ACTION) {
+                EditorInfo.IME_ACTION_SEARCH -> "\uE8B6"
+                EditorInfo.IME_ACTION_SEND   -> "\uE163"
+                EditorInfo.IME_ACTION_GO     -> "\uE5C8"
+                EditorInfo.IME_ACTION_DONE   -> "\uE876"
+                else                         -> ICON_ENTER
             }
         }
     }
