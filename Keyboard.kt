@@ -475,7 +475,7 @@ class ClipboardAdapter(
             ellipsize = android.text.TextUtils.TruncateAt.END
         }
         val del = TextView(ctx).apply {
-            text = "✕"
+            text = "X"
             setTextColor(0xFF888888.toInt())
             textSize = 16f
             setPadding(16, 0, 4, 0)
