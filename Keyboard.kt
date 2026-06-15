@@ -25,16 +25,6 @@ class Keyboard : InputMethodService() {
     private lateinit var clipboardView: View
     private var toolsPopup: PopupWindow? = null
 
-    private lateinit var msFont: Typeface
-
-    private val ICON_CLIPBOARD  = "\uEA9E"
-    private val ICON_TOOLS      = "\uE262"
-    private val ICON_EMOJI      = "\uE76E"
-    private val ICON_SHIFT      = "\uE5D8"
-    private val ICON_SHIFT_LOCK = "\uE5D7"
-    private val ICON_BACKSPACE  = "\uE14A"
-    private val ICON_ENTER      = "\uE31B"
-
     private val clipboardItems = mutableListOf<String>()
     private val PREFS_NAME = "greyb_kb"
     private val PREFS_CLIP = "clipboard"
@@ -56,11 +46,11 @@ class Keyboard : InputMethodService() {
 
     override fun onCreate() {
         super.onCreate()
-        msFont = Typeface.createFromAsset(assets, "MaterialSymbols-Outlined.ttf")
         loadClipboard()
     }
 
     override fun onCreateInputView(): View {
+        window?.window?.navigationBarColor = 0xFF1e1e1e.toInt()
         rootFrame = FrameLayout(this).apply {
             layoutParams = ViewGroup.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT,
@@ -89,13 +79,6 @@ class Keyboard : InputMethodService() {
     // ── QWERTY ───────────────────────────────────────────────────────────────
     private fun buildQwerty(): View {
         val v = layoutInflater.inflate(R.layout.qwerty, null)
-
-        applyMsIcon(v, R.id.btn_clipboard, ICON_CLIPBOARD)
-        applyMsIcon(v, R.id.btn_tools,     ICON_TOOLS)
-        applyMsIcon(v, R.id.btn_emoji,     ICON_EMOJI)
-        applyMsIcon(v, R.id.btn_backspace, ICON_BACKSPACE)
-        updateShiftIcon(v)
-        updateEnterIcon(v)
 
         val letters = "qwertyuiopasdfghjklzxcvbnm"
         val ids = listOf(
@@ -140,15 +123,10 @@ class Keyboard : InputMethodService() {
     private fun buildSymbols(): View {
         val v = layoutInflater.inflate(R.layout.symbols, null)
 
-        applyMsIcon(v, R.id.btn_clipboard, ICON_CLIPBOARD)
-        applyMsIcon(v, R.id.btn_tools,     ICON_TOOLS)
-        applyMsIcon(v, R.id.btn_emoji,     ICON_EMOJI)
-        applyMsIcon(v, R.id.btn_backspace, ICON_BACKSPACE)
-
         val syms = listOf(
-            "!","@","#","$","%","^","&","*","(",")",
-            "-","+","=","/",":",";","\"","'","?","!",
-            "[","]","{","}","<",">","|","\\","~"
+            "!","@","#","$","%","&","*","(",")","+",
+            "-","=","/",":",";","\"","'","?","~","_",
+            "[","]","{","}","<",">","|","\\","^"
         )
         val symIds = listOf(
             R.id.ks1,R.id.ks2,R.id.ks3,R.id.ks4,R.id.ks5,
@@ -193,10 +171,6 @@ class Keyboard : InputMethodService() {
     // ── EMOJI ────────────────────────────────────────────────────────────────
     private fun buildEmoji(): View {
         val v = layoutInflater.inflate(R.layout.emoji, null)
-
-        applyMsIcon(v, R.id.btn_clipboard, ICON_CLIPBOARD)
-        applyMsIcon(v, R.id.btn_tools,     ICON_TOOLS)
-
         val grid = v.findViewById<GridLayout>(R.id.emoji_grid)
         loadEmojiGrid(grid, currentEmojiCategory)
 
@@ -243,8 +217,6 @@ class Keyboard : InputMethodService() {
     // ── CLIPBOARD ────────────────────────────────────────────────────────────
     private fun buildClipboard(): View {
         val v = layoutInflater.inflate(R.layout.clipboard, null)
-
-        applyMsIcon(v, R.id.btn_clipboard_active, ICON_CLIPBOARD)
 
         clipAdapter = ClipboardAdapter(
             clipboardItems,
@@ -392,8 +364,7 @@ class Keyboard : InputMethodService() {
 
     private fun updateShiftIcon(v: View) {
         v.findViewById<TextView>(R.id.btn_shift)?.apply {
-            typeface = msFont
-            text = if (shiftState == ShiftState.LOCKED) ICON_SHIFT_LOCK else ICON_SHIFT
+            text = if (shiftState == ShiftState.LOCKED) "⇪" else "⇧"
             setTextColor(if (shiftState == ShiftState.OFF) 0xFFFFFFFF.toInt() else 0xFF4FC3F7.toInt())
         }
     }
@@ -411,33 +382,20 @@ class Keyboard : InputMethodService() {
         }
     }
 
-    private fun updateEnterIcon(v: View) {
-        v.findViewById<TextView>(R.id.btn_enter)?.apply {
-            typeface = msFont
-            text = ICON_ENTER
-        }
-    }
-
     override fun onStartInputView(info: EditorInfo, restarting: Boolean) {
         super.onStartInputView(info, restarting)
         val v = if (mode == Mode.SYMBOLS) symbolsView else qwertyView
-        v.findViewById<TextView>(R.id.btn_enter)?.apply {
-            typeface = msFont
-            text = when (info.imeOptions and EditorInfo.IME_MASK_ACTION) {
-                EditorInfo.IME_ACTION_SEARCH -> "\uE8B6"
-                EditorInfo.IME_ACTION_SEND   -> "\uE163"
-                EditorInfo.IME_ACTION_GO     -> "\uE5C8"
-                EditorInfo.IME_ACTION_DONE   -> "\uE876"
-                else                         -> ICON_ENTER
+        v.findViewById<TextView>(R.id.btn_enter)?.text =
+            when (info.imeOptions and EditorInfo.IME_MASK_ACTION) {
+                EditorInfo.IME_ACTION_SEARCH -> "🔍"
+                EditorInfo.IME_ACTION_SEND   -> "➤"
+                EditorInfo.IME_ACTION_GO     -> "→"
+                EditorInfo.IME_ACTION_DONE   -> "✓"
+                else                         -> "↵"
             }
-        }
     }
 
     // ── UTILS ────────────────────────────────────────────────────────────────
-    private fun applyMsIcon(root: View, id: Int, icon: String) {
-        root.findViewById<TextView>(id)?.apply { typeface = msFont; text = icon }
-    }
-
     private val Int.dp get() = (this * resources.displayMetrics.density).toInt()
 
     override fun onDestroy() {
