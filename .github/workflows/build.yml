@@ -41,12 +41,6 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-gradle-
 
-      - name: Download Material Symbols font
-        run: |
-          mkdir -p app/src/main/assets
-          curl -L "https://github.com/google/material-design-icons/raw/master/variablefont/MaterialSymbolsOutlined%5BFILL%2CGRAD%2CopsZ%2Cwght%5D.ttf" \
-            -o app/src/main/assets/MaterialSymbols-Outlined.ttf
-
       - name: Generate project structure
         env:
           BUILD_NUMBER: ${{ github.run_number }}
@@ -56,7 +50,7 @@ jobs:
           mkdir -p app/src/main/res/xml
           mkdir -p app/src/main/res/layout
           mkdir -p app/src/main/res/drawable
-          mkdir -p app/src/main/res/font
+          # Removed: mkdir -p app/src/main/res/font
           mkdir -p gradle/wrapper
 
           cp Keyboard.kt      $PKG/
@@ -67,8 +61,7 @@ jobs:
           cp method.xml       app/src/main/res/xml/
           cp AndroidManifest.xml app/src/main/
 
-          # font resource reference
-          cp app/src/main/assets/MaterialSymbols-Outlined.ttf app/src/main/res/font/material_symbols.ttf
+          # Removed font copy line
 
           # key backgrounds
           cat > app/src/main/res/drawable/key_bg.xml << 'EOF'
