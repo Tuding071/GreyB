@@ -43,6 +43,7 @@ jobs:
           mkdir -p app/src/main/res/values
           mkdir -p gradle/wrapper
 
+      # ---------- Manifest (adds launcher activity) ----------
       - name: Generate AndroidManifest.xml
         run: |
           cat > app/src/main/AndroidManifest.xml << 'ENDOFFILE'
@@ -52,6 +53,19 @@ jobs:
                   android:label="GreyB Keyboard"
                   android:icon="@mipmap/ic_launcher"
                   android:supportsRtl="true">
+
+                  <!-- Launcher activity -->
+                  <activity
+                      android:name=".MainActivity"
+                      android:label="GreyB Keyboard"
+                      android:exported="true">
+                      <intent-filter>
+                          <action android:name="android.intent.action.MAIN" />
+                          <category android:name="android.intent.category.LAUNCHER" />
+                      </intent-filter>
+                  </activity>
+
+                  <!-- Keyboard service -->
                   <service
                       android:name=".Keyboard"
                       android:label="GreyB Keyboard"
@@ -68,6 +82,7 @@ jobs:
           </manifest>
           ENDOFFILE
 
+      # ---------- Keyboard service resources ----------
       - name: Generate method.xml
         run: |
           cat > app/src/main/res/xml/method.xml << 'ENDOFFILE'
@@ -137,6 +152,7 @@ jobs:
           </resources>
           ENDOFFILE
 
+      # ---------- Keyboard layouts (qwerty, symbols, emoji) ----------
       - name: Generate qwerty.xml
         run: |
           cat > app/src/main/res/layout/qwerty.xml << 'ENDOFFILE'
@@ -148,7 +164,7 @@ jobs:
               android:orientation="vertical"
               android:background="#1e1e1e">
 
-              <!-- Suggestion row (fixed) -->
+              <!-- Suggestion row -->
               <LinearLayout
                   android:layout_width="match_parent"
                   android:layout_height="52dp"
@@ -221,7 +237,7 @@ jobs:
 
               </LinearLayout>
 
-              <!-- Number row (weighted, reduced padding) -->
+              <!-- Number row -->
               <LinearLayout
                   android:layout_width="match_parent"
                   android:layout_height="0dp"
@@ -243,7 +259,7 @@ jobs:
                   <TextView android:id="@+id/k0" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="0" android:textColor="#fff" android:textSize="32sp" android:background="@drawable/key_bg"/>
               </LinearLayout>
 
-              <!-- QWERTY row (weighted) -->
+              <!-- QWERTY row -->
               <LinearLayout
                   android:layout_width="match_parent"
                   android:layout_height="0dp"
@@ -265,7 +281,7 @@ jobs:
                   <TextView android:id="@+id/kp" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="p" android:textColor="#fff" android:textSize="32sp" android:background="@drawable/key_bg"/>
               </LinearLayout>
 
-              <!-- ASDF row (weighted) -->
+              <!-- ASDF row -->
               <LinearLayout
                   android:layout_width="match_parent"
                   android:layout_height="0dp"
@@ -286,7 +302,7 @@ jobs:
                   <Space android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="0.5"/>
               </LinearLayout>
 
-              <!-- ZXCV row (weighted) -->
+              <!-- ZXCV row -->
               <LinearLayout
                   android:layout_width="match_parent"
                   android:layout_height="0dp"
@@ -307,7 +323,7 @@ jobs:
                   <TextView android:id="@+id/btn_backspace" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1.4" android:gravity="center" android:text="⌫" android:textColor="#fff" android:textSize="35sp" android:background="@drawable/key_bg_dark"/>
               </LinearLayout>
 
-              <!-- Action row (fixed, same as suggestion row) -->
+              <!-- Action row -->
               <LinearLayout
                   android:layout_width="match_parent"
                   android:layout_height="52dp"
@@ -324,7 +340,6 @@ jobs:
                   <TextView android:id="@+id/btn_enter" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1.3" android:gravity="center" android:text="↵" android:textColor="#fff" android:textSize="35sp" android:background="@drawable/key_bg_action"/>
               </LinearLayout>
 
-              <!-- Bottom spacer removed (0dp) -->
               <View
                   android:layout_width="match_parent"
                   android:layout_height="0dp"
@@ -692,82 +707,60 @@ jobs:
           </LinearLayout>
           ENDOFFILE
 
-      - name: Generate clipboard.xml
+      # ---------- MainActivity (launcher) ----------
+      - name: Generate MainActivity.kt
         run: |
-          cat > app/src/main/res/layout/clipboard.xml << 'ENDOFFILE'
-          <?xml version="1.0" encoding="utf-8"?>
-          <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-              android:id="@+id/clipboard_root"
-              android:layout_width="match_parent"
-              android:layout_height="896dp"
-              android:orientation="vertical"
-              android:background="#1e1e1e">
+          cat > app/src/main/java/com/greyb/keyboard/MainActivity.kt << 'ENDOFFILE'
+          package com.greyb.keyboard
 
-              <LinearLayout
-                  android:layout_width="match_parent"
-                  android:layout_height="52dp"
-                  android:orientation="horizontal"
-                  android:gravity="center_vertical"
-                  android:paddingStart="8dp"
-                  android:paddingEnd="8dp"
-                  android:paddingTop="4dp"
-                  android:paddingBottom="4dp">
+          import android.app.Activity
+          import android.os.Bundle
+          import android.view.Gravity
+          import android.widget.LinearLayout
+          import android.widget.TextView
 
-                  <TextView
-                      android:id="@+id/btn_clipboard_active"
-                      android:layout_width="42dp"
-                      android:layout_height="match_parent"
-                      android:gravity="center"
-                      android:text="⧉"
-                      android:textColor="#ffffff"
-                      android:textSize="36sp"
-                      android:background="@drawable/key_bg_accent" />
+          class MainActivity : Activity() {
+              override fun onCreate(savedInstanceState: Bundle?) {
+                  super.onCreate(savedInstanceState)
 
-                  <TextView
-                      android:layout_width="0dp"
-                      android:layout_height="match_parent"
-                      android:layout_weight="1"
-                      android:gravity="center_vertical"
-                      android:text="Clipboard"
-                      android:textColor="#aaaaaa"
-                      android:textSize="22sp"
-                      android:paddingStart="12dp" />
+                  val root = LinearLayout(this).apply {
+                      orientation = LinearLayout.VERTICAL
+                      setBackgroundColor(0xFF1e1e1e.toInt())
+                      gravity = Gravity.CENTER
+                  }
 
-                  <TextView
-                      android:id="@+id/btn_clipboard_close"
-                      android:layout_width="42dp"
-                      android:layout_height="match_parent"
-                      android:gravity="center"
-                      android:text="✕"
-                      android:textColor="#ffffff"
-                      android:textSize="28sp"
-                      android:background="@drawable/key_bg_dark" />
+                  val title = TextView(this).apply {
+                      text = "GreyB Keyboard"
+                      textSize = 32f
+                      setTextColor(0xFFFFFFFF.toInt())
+                      setPadding(0, 0, 0, 24.dp)
+                  }
 
-              </LinearLayout>
+                  val subtitle = TextView(this).apply {
+                      text = "Enable the keyboard in\nSettings → System → Languages & Input"
+                      textSize = 18f
+                      setTextColor(0xFFAAAAAA.toInt())
+                      gravity = Gravity.CENTER
+                  }
 
-              <androidx.recyclerview.widget.RecyclerView
-                  android:id="@+id/clipboard_list"
-                  android:layout_width="match_parent"
-                  android:layout_height="0dp"
-                  android:layout_weight="1"
-                  android:clipToPadding="false"
-                  android:padding="4dp"/>
+                  root.addView(title)
+                  root.addView(subtitle)
+                  setContentView(root)
+              }
 
-              <View
-                  android:layout_width="match_parent"
-                  android:layout_height="0dp"
-                  android:background="#1e1e1e"/>
-
-          </LinearLayout>
+              private val Int.dp: Int get() = (this * resources.displayMetrics.density).toInt()
+          }
           ENDOFFILE
 
+      # ---------- Keyboard.kt (updated with popup clipboard & launcher compat) ----------
       - name: Generate Keyboard.kt
         run: |
           cat > app/src/main/java/com/greyb/keyboard/Keyboard.kt << 'ENDOFFILE'
           package com.greyb.keyboard
 
           import android.content.*
-          import android.graphics.Typeface
+          import android.graphics.Color
+          import android.graphics.drawable.ColorDrawable
           import android.os.*
           import android.view.*
           import android.view.inputmethod.*
@@ -777,7 +770,7 @@ jobs:
 
           class Keyboard : InputMethodService() {
 
-              enum class Mode { QWERTY, SYMBOLS, EMOJI, CLIPBOARD }
+              enum class Mode { QWERTY, SYMBOLS, EMOJI }
               private var mode = Mode.QWERTY
 
               enum class ShiftState { OFF, ONCE, LOCKED }
@@ -788,8 +781,8 @@ jobs:
               private lateinit var qwertyView: View
               private lateinit var symbolsView: View
               private lateinit var emojiView: View
-              private lateinit var clipboardView: View
               private var toolsPopup: PopupWindow? = null
+              private var clipboardPopup: PopupWindow? = null
 
               private val clipboardItems = mutableListOf<String>()
               private val PREFS_NAME = "greyb_kb"
@@ -826,7 +819,6 @@ jobs:
                   qwertyView    = buildQwerty()
                   symbolsView   = buildSymbols()
                   emojiView     = buildEmoji()
-                  clipboardView = buildClipboard()
                   showMode(Mode.QWERTY)
                   return rootFrame
               }
@@ -838,7 +830,6 @@ jobs:
                       Mode.QWERTY    -> qwertyView
                       Mode.SYMBOLS   -> symbolsView
                       Mode.EMOJI     -> emojiView
-                      Mode.CLIPBOARD -> clipboardView
                   })
               }
 
@@ -874,10 +865,8 @@ jobs:
                   v.findViewById<TextView>(R.id.btn_enter).setOnClickListener   { doEnter() }
                   v.findViewById<TextView>(R.id.btn_symbols).setOnClickListener { showMode(Mode.SYMBOLS) }
                   v.findViewById<TextView>(R.id.btn_emoji).setOnClickListener   { showMode(Mode.EMOJI) }
-                  v.findViewById<TextView>(R.id.btn_clipboard).setOnClickListener { openClipboard() }
-                  v.findViewById<TextView>(R.id.btn_tools).setOnClickListener   {
-                      showTools(v.findViewById(R.id.btn_tools))
-                  }
+                  v.findViewById<TextView>(R.id.btn_clipboard).setOnClickListener { showClipboardPopup(it) }
+                  v.findViewById<TextView>(R.id.btn_tools).setOnClickListener   { showToolsPopup(it) }
                   return v
               }
 
@@ -919,10 +908,8 @@ jobs:
                   v.findViewById<TextView>(R.id.btn_enter).setOnClickListener  { doEnter() }
                   v.findViewById<TextView>(R.id.btn_abc).setOnClickListener    { showMode(Mode.QWERTY) }
                   v.findViewById<TextView>(R.id.btn_emoji).setOnClickListener  { showMode(Mode.EMOJI) }
-                  v.findViewById<TextView>(R.id.btn_clipboard).setOnClickListener { openClipboard() }
-                  v.findViewById<TextView>(R.id.btn_tools).setOnClickListener  {
-                      showTools(v.findViewById(R.id.btn_tools))
-                  }
+                  v.findViewById<TextView>(R.id.btn_clipboard).setOnClickListener { showClipboardPopup(it) }
+                  v.findViewById<TextView>(R.id.btn_tools).setOnClickListener  { showToolsPopup(it) }
                   return v
               }
 
@@ -944,10 +931,8 @@ jobs:
                       }
                   }
                   v.findViewById<TextView>(R.id.btn_abc).setOnClickListener       { showMode(Mode.QWERTY) }
-                  v.findViewById<TextView>(R.id.btn_clipboard).setOnClickListener { openClipboard() }
-                  v.findViewById<TextView>(R.id.btn_tools).setOnClickListener     {
-                      showTools(v.findViewById(R.id.btn_tools))
-                  }
+                  v.findViewById<TextView>(R.id.btn_clipboard).setOnClickListener { showClipboardPopup(it) }
+                  v.findViewById<TextView>(R.id.btn_tools).setOnClickListener     { showToolsPopup(it) }
                   return v
               }
 
@@ -969,55 +954,53 @@ jobs:
                   }
               }
 
-              private fun buildClipboard(): View {
-                  val v = layoutInflater.inflate(R.layout.clipboard, null)
+              private fun showClipboardPopup(anchor: View) {
+                  if (clipboardItems.isEmpty()) return
+                  clipboardPopup?.dismiss()
+
                   clipAdapter = ClipboardAdapter(
                       clipboardItems,
-                      onPaste  = { item -> typeText(item); showMode(Mode.QWERTY) },
+                      onPaste  = { item ->
+                          typeText(item)
+                          // keep popup open after paste
+                      },
                       onDelete = { pos ->
                           clipboardItems.removeAt(pos)
                           clipAdapter.notifyItemRemoved(pos)
                           saveClipboard()
+                          if (clipboardItems.isEmpty()) clipboardPopup?.dismiss()
                       }
                   )
-                  v.findViewById<RecyclerView>(R.id.clipboard_list).apply {
+
+                  val popupView = LinearLayout(this).apply {
+                      orientation = LinearLayout.VERTICAL
+                      setBackgroundColor(0xFF2C2C2C.toInt())
+                      setPadding(8.dp, 8.dp, 8.dp, 8.dp)
+                  }
+                  val rv = RecyclerView(this).apply {
                       layoutManager = LinearLayoutManager(this@Keyboard)
                       adapter = clipAdapter
+                      layoutParams = LinearLayout.LayoutParams(
+                          resources.displayMetrics.widthPixels / 2,
+                          (200 * resources.displayMetrics.density).toInt()
+                      )
                   }
-                  v.findViewById<TextView>(R.id.btn_clipboard_close).setOnClickListener {
-                      showMode(Mode.QWERTY)
+                  popupView.addView(rv)
+
+                  clipboardPopup = PopupWindow(
+                      popupView,
+                      ViewGroup.LayoutParams.WRAP_CONTENT,
+                      ViewGroup.LayoutParams.WRAP_CONTENT,
+                      true
+                  ).apply {
+                      setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
+                      isOutsideTouchable = true
+                      elevation = 12f
+                      showAsDropDown(anchor, 0, -(rv.layoutParams.height + anchor.height))
                   }
-                  return v
               }
 
-              private fun openClipboard() {
-                  val sel = currentInputConnection?.getSelectedText(0)
-                  if (!sel.isNullOrEmpty()) addToClipboard(sel.toString())
-                  showMode(Mode.CLIPBOARD)
-              }
-
-              private fun addToClipboard(text: String) {
-                  clipboardItems.remove(text)
-                  clipboardItems.add(0, text)
-                  if (clipboardItems.size > MAX_CLIP) clipboardItems.removeAt(clipboardItems.size - 1)
-                  saveClipboard()
-                  if (::clipAdapter.isInitialized) clipAdapter.notifyDataSetChanged()
-              }
-
-              private fun saveClipboard() {
-                  getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE).edit()
-                      .putString(PREFS_CLIP, clipboardItems.take(MAX_CLIP).joinToString("\u001F"))
-                      .apply()
-              }
-
-              private fun loadClipboard() {
-                  val s = getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
-                      .getString(PREFS_CLIP, "") ?: ""
-                  clipboardItems.clear()
-                  if (s.isNotEmpty()) clipboardItems.addAll(s.split("\u001F"))
-              }
-
-              private fun showTools(anchor: View) {
+              private fun showToolsPopup(anchor: View) {
                   toolsPopup?.dismiss()
                   val popup = LinearLayout(this).apply {
                       orientation = LinearLayout.VERTICAL
@@ -1057,9 +1040,32 @@ jobs:
                       ViewGroup.LayoutParams.WRAP_CONTENT,
                       true
                   ).apply {
+                      setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
+                      isOutsideTouchable = true
                       elevation = 8f
                       showAsDropDown(anchor, 0, -(anchor.height * 4))
                   }
+              }
+
+              private fun addToClipboard(text: String) {
+                  clipboardItems.remove(text)
+                  clipboardItems.add(0, text)
+                  if (clipboardItems.size > MAX_CLIP) clipboardItems.removeAt(clipboardItems.size - 1)
+                  saveClipboard()
+                  if (::clipAdapter.isInitialized) clipAdapter.notifyDataSetChanged()
+              }
+
+              private fun saveClipboard() {
+                  getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE).edit()
+                      .putString(PREFS_CLIP, clipboardItems.take(MAX_CLIP).joinToString("\u001F"))
+                      .apply()
+              }
+
+              private fun loadClipboard() {
+                  val s = getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+                      .getString(PREFS_CLIP, "") ?: ""
+                  clipboardItems.clear()
+                  if (s.isNotEmpty()) clipboardItems.addAll(s.split("\u001F"))
               }
 
               private fun typeChar(c: Char) {
@@ -1150,6 +1156,7 @@ jobs:
                   super.onDestroy()
                   stopBackspaceRepeat()
                   toolsPopup?.dismiss()
+                  clipboardPopup?.dismiss()
               }
           }
 
@@ -1200,6 +1207,7 @@ jobs:
           }
           ENDOFFILE
 
+      # ---------- Gradle files ----------
       - name: Generate Gradle Scripts
         env:
           BUILD_NUMBER: ${{ github.run_number }}
@@ -1280,6 +1288,7 @@ jobs:
           android.suppressUnsupportedCompileSdk=36
           ENDOFFILE
 
+      # ---------- Keystore, icons, build, artifact ----------
       - name: Generate fixed keystore
         run: |
           keytool -genkey -v \
@@ -1368,10 +1377,10 @@ jobs:
           mkdir -p GreyB-release
           cp app/build/outputs/apk/release/app-release.apk GreyB-release/GreyB.apk
           cp app/src/main/java/com/greyb/keyboard/Keyboard.kt GreyB-release/
+          cp app/src/main/java/com/greyb/keyboard/MainActivity.kt GreyB-release/
           cp app/src/main/res/layout/qwerty.xml GreyB-release/
           cp app/src/main/res/layout/symbols.xml GreyB-release/
           cp app/src/main/res/layout/emoji.xml GreyB-release/
-          cp app/src/main/res/layout/clipboard.xml GreyB-release/
           cp .github/workflows/build.yml GreyB-release/
 
           APK_SIZE=$(ls -lh app/build/outputs/apk/release/app-release.apk | awk '{print $5}')
