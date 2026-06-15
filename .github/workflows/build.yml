@@ -144,13 +144,13 @@ jobs:
           <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
               android:id="@+id/qwerty_root"
               android:layout_width="match_parent"
-              android:layout_height="1120dp"
+              android:layout_height="896dp"
               android:orientation="vertical"
               android:background="#1e1e1e">
 
               <LinearLayout
                   android:layout_width="match_parent"
-                  android:layout_height="64dp"
+                  android:layout_height="52dp"
                   android:orientation="horizontal"
                   android:gravity="center_vertical"
                   android:paddingStart="8dp"
@@ -165,7 +165,7 @@ jobs:
                       android:gravity="center"
                       android:text="⧉"
                       android:textColor="#ffffff"
-                      android:textSize="44sp"
+                      android:textSize="36sp"
                       android:background="@drawable/key_bg_dark" />
 
                   <LinearLayout
@@ -184,7 +184,7 @@ jobs:
                           android:gravity="center"
                           android:background="@drawable/key_bg_dark"
                           android:textColor="#ffffff"
-                          android:textSize="28sp"
+                          android:textSize="22sp"
                           android:layout_marginEnd="5dp" />
 
                       <TextView android:id="@+id/sug2"
@@ -194,7 +194,7 @@ jobs:
                           android:gravity="center"
                           android:background="@drawable/key_bg_dark"
                           android:textColor="#ffffff"
-                          android:textSize="28sp"
+                          android:textSize="22sp"
                           android:layout_marginEnd="5dp" />
 
                       <TextView android:id="@+id/sug3"
@@ -204,7 +204,7 @@ jobs:
                           android:gravity="center"
                           android:background="@drawable/key_bg_dark"
                           android:textColor="#ffffff"
-                          android:textSize="28sp" />
+                          android:textSize="22sp" />
 
                   </LinearLayout>
 
@@ -215,7 +215,7 @@ jobs:
                       android:gravity="center"
                       android:text="✎"
                       android:textColor="#ffffff"
-                      android:textSize="44sp"
+                      android:textSize="36sp"
                       android:background="@drawable/key_bg_dark" />
 
               </LinearLayout>
@@ -227,18 +227,18 @@ jobs:
                   android:orientation="horizontal"
                   android:paddingStart="8dp"
                   android:paddingEnd="8dp"
-                  android:paddingTop="8dp"
-                  android:paddingBottom="8dp">
-                  <TextView android:id="@+id/k1" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="1" android:textColor="#fff" android:textSize="40sp" android:background="@drawable/key_bg" android:layout_marginEnd="4dp"/>
-                  <TextView android:id="@+id/k2" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="2" android:textColor="#fff" android:textSize="40sp" android:background="@drawable/key_bg" android:layout_marginEnd="4dp"/>
-                  <TextView android:id="@+id/k3" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="3" android:textColor="#fff" android:textSize="40sp" android:background="@drawable/key_bg" android:layout_marginEnd="4dp"/>
-                  <TextView android:id="@+id/k4" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="4" android:textColor="#fff" android:textSize="40sp" android:background="@drawable/key_bg" android:layout_marginEnd="4dp"/>
-                  <TextView android:id="@+id/k5" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="5" android:textColor="#fff" android:textSize="40sp" android:background="@drawable/key_bg" android:layout_marginEnd="4dp"/>
-                  <TextView android:id="@+id/k6" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="6" android:textColor="#fff" android:textSize="40sp" android:background="@drawable/key_bg" android:layout_marginEnd="4dp"/>
-                  <TextView android:id="@+id/k7" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="7" android:textColor="#fff" android:textSize="40sp" android:background="@drawable/key_bg" android:layout_marginEnd="4dp"/>
-                  <TextView android:id="@+id/k8" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="8" android:textColor="#fff" android:textSize="40sp" android:background="@drawable/key_bg" android:layout_marginEnd="4dp"/>
-                  <TextView android:id="@+id/k9" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="9" android:textColor="#fff" android:textSize="40sp" android:background="@drawable/key_bg" android:layout_marginEnd="4dp"/>
-                  <TextView android:id="@+id/k0" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="0" android:textColor="#fff" android:textSize="40sp" android:background="@drawable/key_bg"/>
+                  android:paddingTop="6dp"
+                  android:paddingBottom="6dp">
+                  <TextView android:id="@+id/k1" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="1" android:textColor="#fff" android:textSize="32sp" android:background="@drawable/key_bg" android:layout_marginEnd="4dp"/>
+                  <TextView android:id="@+id/k2" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="2" android:textColor="#fff" android:textSize="32sp" android:background="@drawable/key_bg" android:layout_marginEnd="4dp"/>
+                  <TextView android:id="@+id/k3" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="3" android:textColor="#fff" android:textSize="32sp" android:background="@drawable/key_bg" android:layout_marginEnd="4dp"/>
+                  <TextView android:id="@+id/k4" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="4" android:textColor="#fff" android:textSize="32sp" android:background="@drawable/key_bg" android:layout_marginEnd="4dp"/>
+                  <TextView android:id="@+id/k5" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="5" android:textColor="#fff" android:textSize="32sp" android:background="@drawable/key_bg" android:layout_marginEnd="4dp"/>
+                  <TextView android:id="@+id/k6" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="6" android:textColor="#fff" android:textSize="32sp" android:background="@drawable/key_bg" android:layout_marginEnd="4dp"/>
+                  <TextView android:id="@+id/k7" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="7" android:textColor="#fff" android:textSize="32sp" android:background="@drawable/key_bg" android:layout_marginEnd="4dp"/>
+                  <TextView android:id="@+id/k8" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="8" android:textColor="#fff" android:textSize="32sp" android:background="@drawable/key_bg" android:layout_marginEnd="4dp"/>
+                  <TextView android:id="@+id/k9" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="9" android:textColor="#fff" android:textSize="32sp" android:background="@drawable/key_bg" android:layout_marginEnd="4dp"/>
+                  <TextView android:id="@+id/k0" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="0" android:textColor="#fff" android:textSize="32sp" android:background="@drawable/key_bg"/>
               </LinearLayout>
 
               <LinearLayout
@@ -248,18 +248,18 @@ jobs:
                   android:orientation="horizontal"
                   android:paddingStart="8dp"
                   android:paddingEnd="8dp"
-                  android:paddingTop="8dp"
-                  android:paddingBottom="8dp">
-                  <TextView android:id="@+id/kq" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="q" android:textColor="#fff" android:textSize="40sp" android:background="@drawable/key_bg" android:layout_marginEnd="4dp"/>
-                  <TextView android:id="@+id/kw" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="w" android:textColor="#fff" android:textSize="40sp" android:background="@drawable/key_bg" android:layout_marginEnd="4dp"/>
-                  <TextView android:id="@+id/ke" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="e" android:textColor="#fff" android:textSize="40sp" android:background="@drawable/key_bg" android:layout_marginEnd="4dp"/>
-                  <TextView android:id="@+id/kr" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="r" android:textColor="#fff" android:textSize="40sp" android:background="@drawable/key_bg" android:layout_marginEnd="4dp"/>
-                  <TextView android:id="@+id/kt" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="t" android:textColor="#fff" android:textSize="40sp" android:background="@drawable/key_bg" android:layout_marginEnd="4dp"/>
-                  <TextView android:id="@+id/ky" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="y" android:textColor="#fff" android:textSize="40sp" android:background="@drawable/key_bg" android:layout_marginEnd="4dp"/>
-                  <TextView android:id="@+id/ku" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="u" android:textColor="#fff" android:textSize="40sp" android:background="@drawable/key_bg" android:layout_marginEnd="4dp"/>
-                  <TextView android:id="@+id/ki" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="i" android:textColor="#fff" android:textSize="40sp" android:background="@drawable/key_bg" android:layout_marginEnd="4dp"/>
-                  <TextView android:id="@+id/ko" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="o" android:textColor="#fff" android:textSize="40sp" android:background="@drawable/key_bg" android:layout_marginEnd="4dp"/>
-                  <TextView android:id="@+id/kp" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="p" android:textColor="#fff" android:textSize="40sp" android:background="@drawable/key_bg"/>
+                  android:paddingTop="6dp"
+                  android:paddingBottom="6dp">
+                  <TextView android:id="@+id/kq" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="q" android:textColor="#fff" android:textSize="32sp" android:background="@drawable/key_bg" android:layout_marginEnd="4dp"/>
+                  <TextView android:id="@+id/kw" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="w" android:textColor="#fff" android:textSize="32sp" android:background="@drawable/key_bg" android:layout_marginEnd="4dp"/>
+                  <TextView android:id="@+id/ke" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="e" android:textColor="#fff" android:textSize="32sp" android:background="@drawable/key_bg" android:layout_marginEnd="4dp"/>
+                  <TextView android:id="@+id/kr" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="r" android:textColor="#fff" android:textSize="32sp" android:background="@drawable/key_bg" android:layout_marginEnd="4dp"/>
+                  <TextView android:id="@+id/kt" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="t" android:textColor="#fff" android:textSize="32sp" android:background="@drawable/key_bg" android:layout_marginEnd="4dp"/>
+                  <TextView android:id="@+id/ky" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="y" android:textColor="#fff" android:textSize="32sp" android:background="@drawable/key_bg" android:layout_marginEnd="4dp"/>
+                  <TextView android:id="@+id/ku" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="u" android:textColor="#fff" android:textSize="32sp" android:background="@drawable/key_bg" android:layout_marginEnd="4dp"/>
+                  <TextView android:id="@+id/ki" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="i" android:textColor="#fff" android:textSize="32sp" android:background="@drawable/key_bg" android:layout_marginEnd="4dp"/>
+                  <TextView android:id="@+id/ko" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="o" android:textColor="#fff" android:textSize="32sp" android:background="@drawable/key_bg" android:layout_marginEnd="4dp"/>
+                  <TextView android:id="@+id/kp" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="p" android:textColor="#fff" android:textSize="32sp" android:background="@drawable/key_bg"/>
               </LinearLayout>
 
               <LinearLayout
@@ -267,18 +267,18 @@ jobs:
                   android:layout_height="0dp"
                   android:layout_weight="1"
                   android:orientation="horizontal"
-                  android:paddingTop="8dp"
-                  android:paddingBottom="8dp">
+                  android:paddingTop="6dp"
+                  android:paddingBottom="6dp">
                   <Space android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="0.5"/>
-                  <TextView android:id="@+id/ka" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="a" android:textColor="#fff" android:textSize="40sp" android:background="@drawable/key_bg" android:layout_marginEnd="4dp"/>
-                  <TextView android:id="@+id/ks" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="s" android:textColor="#fff" android:textSize="40sp" android:background="@drawable/key_bg" android:layout_marginEnd="4dp"/>
-                  <TextView android:id="@+id/kd" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="d" android:textColor="#fff" android:textSize="40sp" android:background="@drawable/key_bg" android:layout_marginEnd="4dp"/>
-                  <TextView android:id="@+id/kf" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="f" android:textColor="#fff" android:textSize="40sp" android:background="@drawable/key_bg" android:layout_marginEnd="4dp"/>
-                  <TextView android:id="@+id/kg" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="g" android:textColor="#fff" android:textSize="40sp" android:background="@drawable/key_bg" android:layout_marginEnd="4dp"/>
-                  <TextView android:id="@+id/kh" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="h" android:textColor="#fff" android:textSize="40sp" android:background="@drawable/key_bg" android:layout_marginEnd="4dp"/>
-                  <TextView android:id="@+id/kj" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="j" android:textColor="#fff" android:textSize="40sp" android:background="@drawable/key_bg" android:layout_marginEnd="4dp"/>
-                  <TextView android:id="@+id/kk" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="k" android:textColor="#fff" android:textSize="40sp" android:background="@drawable/key_bg" android:layout_marginEnd="4dp"/>
-                  <TextView android:id="@+id/kl" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="l" android:textColor="#fff" android:textSize="40sp" android:background="@drawable/key_bg"/>
+                  <TextView android:id="@+id/ka" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="a" android:textColor="#fff" android:textSize="32sp" android:background="@drawable/key_bg" android:layout_marginEnd="4dp"/>
+                  <TextView android:id="@+id/ks" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="s" android:textColor="#fff" android:textSize="32sp" android:background="@drawable/key_bg" android:layout_marginEnd="4dp"/>
+                  <TextView android:id="@+id/kd" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="d" android:textColor="#fff" android:textSize="32sp" android:background="@drawable/key_bg" android:layout_marginEnd="4dp"/>
+                  <TextView android:id="@+id/kf" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="f" android:textColor="#fff" android:textSize="32sp" android:background="@drawable/key_bg" android:layout_marginEnd="4dp"/>
+                  <TextView android:id="@+id/kg" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="g" android:textColor="#fff" android:textSize="32sp" android:background="@drawable/key_bg" android:layout_marginEnd="4dp"/>
+                  <TextView android:id="@+id/kh" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="h" android:textColor="#fff" android:textSize="32sp" android:background="@drawable/key_bg" android:layout_marginEnd="4dp"/>
+                  <TextView android:id="@+id/kj" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="j" android:textColor="#fff" android:textSize="32sp" android:background="@drawable/key_bg" android:layout_marginEnd="4dp"/>
+                  <TextView android:id="@+id/kk" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="k" android:textColor="#fff" android:textSize="32sp" android:background="@drawable/key_bg" android:layout_marginEnd="4dp"/>
+                  <TextView android:id="@+id/kl" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="l" android:textColor="#fff" android:textSize="32sp" android:background="@drawable/key_bg"/>
                   <Space android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="0.5"/>
               </LinearLayout>
 
@@ -289,17 +289,17 @@ jobs:
                   android:orientation="horizontal"
                   android:paddingStart="8dp"
                   android:paddingEnd="8dp"
-                  android:paddingTop="8dp"
-                  android:paddingBottom="8dp">
-                  <TextView android:id="@+id/btn_shift" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1.4" android:gravity="center" android:text="⇧" android:textColor="#fff" android:textSize="44sp" android:background="@drawable/key_bg_dark" android:layout_marginEnd="4dp"/>
-                  <TextView android:id="@+id/kz" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="z" android:textColor="#fff" android:textSize="40sp" android:background="@drawable/key_bg" android:layout_marginEnd="4dp"/>
-                  <TextView android:id="@+id/kx" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="x" android:textColor="#fff" android:textSize="40sp" android:background="@drawable/key_bg" android:layout_marginEnd="4dp"/>
-                  <TextView android:id="@+id/kc" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="c" android:textColor="#fff" android:textSize="40sp" android:background="@drawable/key_bg" android:layout_marginEnd="4dp"/>
-                  <TextView android:id="@+id/kv" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="v" android:textColor="#fff" android:textSize="40sp" android:background="@drawable/key_bg" android:layout_marginEnd="4dp"/>
-                  <TextView android:id="@+id/kb" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="b" android:textColor="#fff" android:textSize="40sp" android:background="@drawable/key_bg" android:layout_marginEnd="4dp"/>
-                  <TextView android:id="@+id/kn" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="n" android:textColor="#fff" android:textSize="40sp" android:background="@drawable/key_bg" android:layout_marginEnd="4dp"/>
-                  <TextView android:id="@+id/km" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="m" android:textColor="#fff" android:textSize="40sp" android:background="@drawable/key_bg" android:layout_marginEnd="4dp"/>
-                  <TextView android:id="@+id/btn_backspace" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1.4" android:gravity="center" android:text="⌫" android:textColor="#fff" android:textSize="44sp" android:background="@drawable/key_bg_dark"/>
+                  android:paddingTop="6dp"
+                  android:paddingBottom="6dp">
+                  <TextView android:id="@+id/btn_shift" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1.4" android:gravity="center" android:text="⇧" android:textColor="#fff" android:textSize="35sp" android:background="@drawable/key_bg_dark" android:layout_marginEnd="4dp"/>
+                  <TextView android:id="@+id/kz" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="z" android:textColor="#fff" android:textSize="32sp" android:background="@drawable/key_bg" android:layout_marginEnd="4dp"/>
+                  <TextView android:id="@+id/kx" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="x" android:textColor="#fff" android:textSize="32sp" android:background="@drawable/key_bg" android:layout_marginEnd="4dp"/>
+                  <TextView android:id="@+id/kc" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="c" android:textColor="#fff" android:textSize="32sp" android:background="@drawable/key_bg" android:layout_marginEnd="4dp"/>
+                  <TextView android:id="@+id/kv" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="v" android:textColor="#fff" android:textSize="32sp" android:background="@drawable/key_bg" android:layout_marginEnd="4dp"/>
+                  <TextView android:id="@+id/kb" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="b" android:textColor="#fff" android:textSize="32sp" android:background="@drawable/key_bg" android:layout_marginEnd="4dp"/>
+                  <TextView android:id="@+id/kn" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="n" android:textColor="#fff" android:textSize="32sp" android:background="@drawable/key_bg" android:layout_marginEnd="4dp"/>
+                  <TextView android:id="@+id/km" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="m" android:textColor="#fff" android:textSize="32sp" android:background="@drawable/key_bg" android:layout_marginEnd="4dp"/>
+                  <TextView android:id="@+id/btn_backspace" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1.4" android:gravity="center" android:text="⌫" android:textColor="#fff" android:textSize="35sp" android:background="@drawable/key_bg_dark"/>
               </LinearLayout>
 
               <LinearLayout
@@ -309,14 +309,14 @@ jobs:
                   android:orientation="horizontal"
                   android:paddingStart="8dp"
                   android:paddingEnd="8dp"
-                  android:paddingTop="8dp"
-                  android:paddingBottom="8dp">
-                  <TextView android:id="@+id/btn_symbols" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1.3" android:gravity="center" android:text="\?123" android:textColor="#fff" android:textSize="32sp" android:background="@drawable/key_bg_dark" android:layout_marginEnd="4dp"/>
-                  <TextView android:id="@+id/btn_emoji" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="☺" android:textColor="#fff" android:textSize="44sp" android:background="@drawable/key_bg_dark" android:layout_marginEnd="4dp"/>
-                  <TextView android:id="@+id/btn_comma" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="," android:textColor="#fff" android:textSize="40sp" android:background="@drawable/key_bg" android:layout_marginEnd="4dp"/>
-                  <TextView android:id="@+id/btn_space" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="4" android:gravity="center" android:text="space" android:textColor="#888" android:textSize="32sp" android:background="@drawable/key_bg_dark" android:layout_marginEnd="4dp"/>
-                  <TextView android:id="@+id/btn_period" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="." android:textColor="#fff" android:textSize="40sp" android:background="@drawable/key_bg" android:layout_marginEnd="4dp"/>
-                  <TextView android:id="@+id/btn_enter" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1.3" android:gravity="center" android:text="↵" android:textColor="#fff" android:textSize="44sp" android:background="@drawable/key_bg_action"/>
+                  android:paddingTop="6dp"
+                  android:paddingBottom="6dp">
+                  <TextView android:id="@+id/btn_symbols" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1.3" android:gravity="center" android:text="\?123" android:textColor="#fff" android:textSize="26sp" android:background="@drawable/key_bg_dark" android:layout_marginEnd="4dp"/>
+                  <TextView android:id="@+id/btn_emoji" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="☺" android:textColor="#fff" android:textSize="35sp" android:background="@drawable/key_bg_dark" android:layout_marginEnd="4dp"/>
+                  <TextView android:id="@+id/btn_comma" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="," android:textColor="#fff" android:textSize="32sp" android:background="@drawable/key_bg" android:layout_marginEnd="4dp"/>
+                  <TextView android:id="@+id/btn_space" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="4" android:gravity="center" android:text="space" android:textColor="#888" android:textSize="26sp" android:background="@drawable/key_bg_dark" android:layout_marginEnd="4dp"/>
+                  <TextView android:id="@+id/btn_period" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="." android:textColor="#fff" android:textSize="32sp" android:background="@drawable/key_bg" android:layout_marginEnd="4dp"/>
+                  <TextView android:id="@+id/btn_enter" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1.3" android:gravity="center" android:text="↵" android:textColor="#fff" android:textSize="35sp" android:background="@drawable/key_bg_action"/>
               </LinearLayout>
 
               <View
@@ -334,13 +334,13 @@ jobs:
           <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
               android:id="@+id/symbols_root"
               android:layout_width="match_parent"
-              android:layout_height="1120dp"
+              android:layout_height="896dp"
               android:orientation="vertical"
               android:background="#1e1e1e">
 
               <LinearLayout
                   android:layout_width="match_parent"
-                  android:layout_height="64dp"
+                  android:layout_height="52dp"
                   android:orientation="horizontal"
                   android:gravity="center_vertical"
                   android:paddingStart="8dp"
@@ -355,7 +355,7 @@ jobs:
                       android:gravity="center"
                       android:text="⧉"
                       android:textColor="#ffffff"
-                      android:textSize="44sp"
+                      android:textSize="36sp"
                       android:background="@drawable/key_bg_dark" />
 
                   <LinearLayout
@@ -374,7 +374,7 @@ jobs:
                           android:gravity="center"
                           android:background="@drawable/key_bg_dark"
                           android:textColor="#ffffff"
-                          android:textSize="28sp"
+                          android:textSize="22sp"
                           android:layout_marginEnd="5dp" />
 
                       <TextView android:id="@+id/sug2"
@@ -384,7 +384,7 @@ jobs:
                           android:gravity="center"
                           android:background="@drawable/key_bg_dark"
                           android:textColor="#ffffff"
-                          android:textSize="28sp"
+                          android:textSize="22sp"
                           android:layout_marginEnd="5dp" />
 
                       <TextView android:id="@+id/sug3"
@@ -394,7 +394,7 @@ jobs:
                           android:gravity="center"
                           android:background="@drawable/key_bg_dark"
                           android:textColor="#ffffff"
-                          android:textSize="28sp" />
+                          android:textSize="22sp" />
 
                   </LinearLayout>
 
@@ -405,7 +405,7 @@ jobs:
                       android:gravity="center"
                       android:text="✎"
                       android:textColor="#ffffff"
-                      android:textSize="44sp"
+                      android:textSize="36sp"
                       android:background="@drawable/key_bg_dark" />
 
               </LinearLayout>
@@ -417,18 +417,18 @@ jobs:
                   android:orientation="horizontal"
                   android:paddingStart="8dp"
                   android:paddingEnd="8dp"
-                  android:paddingTop="8dp"
-                  android:paddingBottom="8dp">
-                  <TextView android:id="@+id/k1" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="1" android:textColor="#fff" android:textSize="40sp" android:background="@drawable/key_bg" android:layout_marginEnd="4dp"/>
-                  <TextView android:id="@+id/k2" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="2" android:textColor="#fff" android:textSize="40sp" android:background="@drawable/key_bg" android:layout_marginEnd="4dp"/>
-                  <TextView android:id="@+id/k3" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="3" android:textColor="#fff" android:textSize="40sp" android:background="@drawable/key_bg" android:layout_marginEnd="4dp"/>
-                  <TextView android:id="@+id/k4" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="4" android:textColor="#fff" android:textSize="40sp" android:background="@drawable/key_bg" android:layout_marginEnd="4dp"/>
-                  <TextView android:id="@+id/k5" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="5" android:textColor="#fff" android:textSize="40sp" android:background="@drawable/key_bg" android:layout_marginEnd="4dp"/>
-                  <TextView android:id="@+id/k6" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="6" android:textColor="#fff" android:textSize="40sp" android:background="@drawable/key_bg" android:layout_marginEnd="4dp"/>
-                  <TextView android:id="@+id/k7" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="7" android:textColor="#fff" android:textSize="40sp" android:background="@drawable/key_bg" android:layout_marginEnd="4dp"/>
-                  <TextView android:id="@+id/k8" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="8" android:textColor="#fff" android:textSize="40sp" android:background="@drawable/key_bg" android:layout_marginEnd="4dp"/>
-                  <TextView android:id="@+id/k9" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="9" android:textColor="#fff" android:textSize="40sp" android:background="@drawable/key_bg" android:layout_marginEnd="4dp"/>
-                  <TextView android:id="@+id/k0" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="0" android:textColor="#fff" android:textSize="40sp" android:background="@drawable/key_bg"/>
+                  android:paddingTop="6dp"
+                  android:paddingBottom="6dp">
+                  <TextView android:id="@+id/k1" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="1" android:textColor="#fff" android:textSize="32sp" android:background="@drawable/key_bg" android:layout_marginEnd="4dp"/>
+                  <TextView android:id="@+id/k2" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="2" android:textColor="#fff" android:textSize="32sp" android:background="@drawable/key_bg" android:layout_marginEnd="4dp"/>
+                  <TextView android:id="@+id/k3" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="3" android:textColor="#fff" android:textSize="32sp" android:background="@drawable/key_bg" android:layout_marginEnd="4dp"/>
+                  <TextView android:id="@+id/k4" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="4" android:textColor="#fff" android:textSize="32sp" android:background="@drawable/key_bg" android:layout_marginEnd="4dp"/>
+                  <TextView android:id="@+id/k5" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="5" android:textColor="#fff" android:textSize="32sp" android:background="@drawable/key_bg" android:layout_marginEnd="4dp"/>
+                  <TextView android:id="@+id/k6" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="6" android:textColor="#fff" android:textSize="32sp" android:background="@drawable/key_bg" android:layout_marginEnd="4dp"/>
+                  <TextView android:id="@+id/k7" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="7" android:textColor="#fff" android:textSize="32sp" android:background="@drawable/key_bg" android:layout_marginEnd="4dp"/>
+                  <TextView android:id="@+id/k8" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="8" android:textColor="#fff" android:textSize="32sp" android:background="@drawable/key_bg" android:layout_marginEnd="4dp"/>
+                  <TextView android:id="@+id/k9" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="9" android:textColor="#fff" android:textSize="32sp" android:background="@drawable/key_bg" android:layout_marginEnd="4dp"/>
+                  <TextView android:id="@+id/k0" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="0" android:textColor="#fff" android:textSize="32sp" android:background="@drawable/key_bg"/>
               </LinearLayout>
 
               <LinearLayout
@@ -438,18 +438,18 @@ jobs:
                   android:orientation="horizontal"
                   android:paddingStart="8dp"
                   android:paddingEnd="8dp"
-                  android:paddingTop="8dp"
-                  android:paddingBottom="8dp">
-                  <TextView android:id="@+id/ks1" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="!" android:textColor="#fff" android:textSize="40sp" android:background="@drawable/key_bg" android:layout_marginEnd="4dp"/>
-                  <TextView android:id="@+id/ks2" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="@" android:textColor="#fff" android:textSize="40sp" android:background="@drawable/key_bg" android:layout_marginEnd="4dp"/>
-                  <TextView android:id="@+id/ks3" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="#" android:textColor="#fff" android:textSize="40sp" android:background="@drawable/key_bg" android:layout_marginEnd="4dp"/>
-                  <TextView android:id="@+id/ks4" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="$" android:textColor="#fff" android:textSize="40sp" android:background="@drawable/key_bg" android:layout_marginEnd="4dp"/>
-                  <TextView android:id="@+id/ks5" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="%" android:textColor="#fff" android:textSize="40sp" android:background="@drawable/key_bg" android:layout_marginEnd="4dp"/>
-                  <TextView android:id="@+id/ks6" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="&amp;" android:textColor="#fff" android:textSize="40sp" android:background="@drawable/key_bg" android:layout_marginEnd="4dp"/>
-                  <TextView android:id="@+id/ks7" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="*" android:textColor="#fff" android:textSize="40sp" android:background="@drawable/key_bg" android:layout_marginEnd="4dp"/>
-                  <TextView android:id="@+id/ks8" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="(" android:textColor="#fff" android:textSize="40sp" android:background="@drawable/key_bg" android:layout_marginEnd="4dp"/>
-                  <TextView android:id="@+id/ks9" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text=")" android:textColor="#fff" android:textSize="40sp" android:background="@drawable/key_bg" android:layout_marginEnd="4dp"/>
-                  <TextView android:id="@+id/ks10" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="+" android:textColor="#fff" android:textSize="40sp" android:background="@drawable/key_bg"/>
+                  android:paddingTop="6dp"
+                  android:paddingBottom="6dp">
+                  <TextView android:id="@+id/ks1" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="!" android:textColor="#fff" android:textSize="32sp" android:background="@drawable/key_bg" android:layout_marginEnd="4dp"/>
+                  <TextView android:id="@+id/ks2" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="@" android:textColor="#fff" android:textSize="32sp" android:background="@drawable/key_bg" android:layout_marginEnd="4dp"/>
+                  <TextView android:id="@+id/ks3" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="#" android:textColor="#fff" android:textSize="32sp" android:background="@drawable/key_bg" android:layout_marginEnd="4dp"/>
+                  <TextView android:id="@+id/ks4" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="$" android:textColor="#fff" android:textSize="32sp" android:background="@drawable/key_bg" android:layout_marginEnd="4dp"/>
+                  <TextView android:id="@+id/ks5" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="%" android:textColor="#fff" android:textSize="32sp" android:background="@drawable/key_bg" android:layout_marginEnd="4dp"/>
+                  <TextView android:id="@+id/ks6" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="&amp;" android:textColor="#fff" android:textSize="32sp" android:background="@drawable/key_bg" android:layout_marginEnd="4dp"/>
+                  <TextView android:id="@+id/ks7" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="*" android:textColor="#fff" android:textSize="32sp" android:background="@drawable/key_bg" android:layout_marginEnd="4dp"/>
+                  <TextView android:id="@+id/ks8" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="(" android:textColor="#fff" android:textSize="32sp" android:background="@drawable/key_bg" android:layout_marginEnd="4dp"/>
+                  <TextView android:id="@+id/ks9" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text=")" android:textColor="#fff" android:textSize="32sp" android:background="@drawable/key_bg" android:layout_marginEnd="4dp"/>
+                  <TextView android:id="@+id/ks10" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="+" android:textColor="#fff" android:textSize="32sp" android:background="@drawable/key_bg"/>
               </LinearLayout>
 
               <LinearLayout
@@ -459,18 +459,18 @@ jobs:
                   android:orientation="horizontal"
                   android:paddingStart="8dp"
                   android:paddingEnd="8dp"
-                  android:paddingTop="8dp"
-                  android:paddingBottom="8dp">
-                  <TextView android:id="@+id/ks11" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="-" android:textColor="#fff" android:textSize="40sp" android:background="@drawable/key_bg" android:layout_marginEnd="4dp"/>
-                  <TextView android:id="@+id/ks12" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="=" android:textColor="#fff" android:textSize="40sp" android:background="@drawable/key_bg" android:layout_marginEnd="4dp"/>
-                  <TextView android:id="@+id/ks13" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="/" android:textColor="#fff" android:textSize="40sp" android:background="@drawable/key_bg" android:layout_marginEnd="4dp"/>
-                  <TextView android:id="@+id/ks14" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text=":" android:textColor="#fff" android:textSize="40sp" android:background="@drawable/key_bg" android:layout_marginEnd="4dp"/>
-                  <TextView android:id="@+id/ks15" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text=";" android:textColor="#fff" android:textSize="40sp" android:background="@drawable/key_bg" android:layout_marginEnd="4dp"/>
-                  <TextView android:id="@+id/ks16" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="&quot;" android:textColor="#fff" android:textSize="40sp" android:background="@drawable/key_bg" android:layout_marginEnd="4dp"/>
-                  <TextView android:id="@+id/ks17" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="'" android:textColor="#fff" android:textSize="40sp" android:background="@drawable/key_bg" android:layout_marginEnd="4dp"/>
-                  <TextView android:id="@+id/ks18" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="?" android:textColor="#fff" android:textSize="40sp" android:background="@drawable/key_bg" android:layout_marginEnd="4dp"/>
-                  <TextView android:id="@+id/ks19" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="~" android:textColor="#fff" android:textSize="40sp" android:background="@drawable/key_bg" android:layout_marginEnd="4dp"/>
-                  <TextView android:id="@+id/ks20" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="_" android:textColor="#fff" android:textSize="40sp" android:background="@drawable/key_bg"/>
+                  android:paddingTop="6dp"
+                  android:paddingBottom="6dp">
+                  <TextView android:id="@+id/ks11" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="-" android:textColor="#fff" android:textSize="32sp" android:background="@drawable/key_bg" android:layout_marginEnd="4dp"/>
+                  <TextView android:id="@+id/ks12" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="=" android:textColor="#fff" android:textSize="32sp" android:background="@drawable/key_bg" android:layout_marginEnd="4dp"/>
+                  <TextView android:id="@+id/ks13" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="/" android:textColor="#fff" android:textSize="32sp" android:background="@drawable/key_bg" android:layout_marginEnd="4dp"/>
+                  <TextView android:id="@+id/ks14" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text=":" android:textColor="#fff" android:textSize="32sp" android:background="@drawable/key_bg" android:layout_marginEnd="4dp"/>
+                  <TextView android:id="@+id/ks15" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text=";" android:textColor="#fff" android:textSize="32sp" android:background="@drawable/key_bg" android:layout_marginEnd="4dp"/>
+                  <TextView android:id="@+id/ks16" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="&quot;" android:textColor="#fff" android:textSize="32sp" android:background="@drawable/key_bg" android:layout_marginEnd="4dp"/>
+                  <TextView android:id="@+id/ks17" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="'" android:textColor="#fff" android:textSize="32sp" android:background="@drawable/key_bg" android:layout_marginEnd="4dp"/>
+                  <TextView android:id="@+id/ks18" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="?" android:textColor="#fff" android:textSize="32sp" android:background="@drawable/key_bg" android:layout_marginEnd="4dp"/>
+                  <TextView android:id="@+id/ks19" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="~" android:textColor="#fff" android:textSize="32sp" android:background="@drawable/key_bg" android:layout_marginEnd="4dp"/>
+                  <TextView android:id="@+id/ks20" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="_" android:textColor="#fff" android:textSize="32sp" android:background="@drawable/key_bg"/>
               </LinearLayout>
 
               <LinearLayout
@@ -480,18 +480,18 @@ jobs:
                   android:orientation="horizontal"
                   android:paddingStart="8dp"
                   android:paddingEnd="8dp"
-                  android:paddingTop="8dp"
-                  android:paddingBottom="8dp">
-                  <TextView android:id="@+id/ks21" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1.4" android:gravity="center" android:text="[" android:textColor="#fff" android:textSize="40sp" android:background="@drawable/key_bg" android:layout_marginEnd="4dp"/>
-                  <TextView android:id="@+id/ks22" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="]" android:textColor="#fff" android:textSize="40sp" android:background="@drawable/key_bg" android:layout_marginEnd="4dp"/>
-                  <TextView android:id="@+id/ks23" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="{" android:textColor="#fff" android:textSize="40sp" android:background="@drawable/key_bg" android:layout_marginEnd="4dp"/>
-                  <TextView android:id="@+id/ks24" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="}" android:textColor="#fff" android:textSize="40sp" android:background="@drawable/key_bg" android:layout_marginEnd="4dp"/>
-                  <TextView android:id="@+id/ks25" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="&lt;" android:textColor="#fff" android:textSize="40sp" android:background="@drawable/key_bg" android:layout_marginEnd="4dp"/>
-                  <TextView android:id="@+id/ks26" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="&gt;" android:textColor="#fff" android:textSize="40sp" android:background="@drawable/key_bg" android:layout_marginEnd="4dp"/>
-                  <TextView android:id="@+id/ks27" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="|" android:textColor="#fff" android:textSize="40sp" android:background="@drawable/key_bg" android:layout_marginEnd="4dp"/>
-                  <TextView android:id="@+id/ks28" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="\\" android:textColor="#fff" android:textSize="40sp" android:background="@drawable/key_bg" android:layout_marginEnd="4dp"/>
-                  <TextView android:id="@+id/ks29" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="^" android:textColor="#fff" android:textSize="40sp" android:background="@drawable/key_bg" android:layout_marginEnd="4dp"/>
-                  <TextView android:id="@+id/btn_backspace" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1.4" android:gravity="center" android:text="⌫" android:textColor="#fff" android:textSize="44sp" android:background="@drawable/key_bg_dark"/>
+                  android:paddingTop="6dp"
+                  android:paddingBottom="6dp">
+                  <TextView android:id="@+id/ks21" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1.4" android:gravity="center" android:text="[" android:textColor="#fff" android:textSize="32sp" android:background="@drawable/key_bg" android:layout_marginEnd="4dp"/>
+                  <TextView android:id="@+id/ks22" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="]" android:textColor="#fff" android:textSize="32sp" android:background="@drawable/key_bg" android:layout_marginEnd="4dp"/>
+                  <TextView android:id="@+id/ks23" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="{" android:textColor="#fff" android:textSize="32sp" android:background="@drawable/key_bg" android:layout_marginEnd="4dp"/>
+                  <TextView android:id="@+id/ks24" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="}" android:textColor="#fff" android:textSize="32sp" android:background="@drawable/key_bg" android:layout_marginEnd="4dp"/>
+                  <TextView android:id="@+id/ks25" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="&lt;" android:textColor="#fff" android:textSize="32sp" android:background="@drawable/key_bg" android:layout_marginEnd="4dp"/>
+                  <TextView android:id="@+id/ks26" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="&gt;" android:textColor="#fff" android:textSize="32sp" android:background="@drawable/key_bg" android:layout_marginEnd="4dp"/>
+                  <TextView android:id="@+id/ks27" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="|" android:textColor="#fff" android:textSize="32sp" android:background="@drawable/key_bg" android:layout_marginEnd="4dp"/>
+                  <TextView android:id="@+id/ks28" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="\\" android:textColor="#fff" android:textSize="32sp" android:background="@drawable/key_bg" android:layout_marginEnd="4dp"/>
+                  <TextView android:id="@+id/ks29" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="^" android:textColor="#fff" android:textSize="32sp" android:background="@drawable/key_bg" android:layout_marginEnd="4dp"/>
+                  <TextView android:id="@+id/btn_backspace" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1.4" android:gravity="center" android:text="⌫" android:textColor="#fff" android:textSize="35sp" android:background="@drawable/key_bg_dark"/>
               </LinearLayout>
 
               <LinearLayout
@@ -501,14 +501,14 @@ jobs:
                   android:orientation="horizontal"
                   android:paddingStart="8dp"
                   android:paddingEnd="8dp"
-                  android:paddingTop="8dp"
-                  android:paddingBottom="8dp">
-                  <TextView android:id="@+id/btn_abc" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1.3" android:gravity="center" android:text="ABC" android:textColor="#fff" android:textSize="32sp" android:background="@drawable/key_bg_dark" android:layout_marginEnd="4dp"/>
-                  <TextView android:id="@+id/btn_emoji" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="☺" android:textColor="#fff" android:textSize="44sp" android:background="@drawable/key_bg_dark" android:layout_marginEnd="4dp"/>
-                  <TextView android:id="@+id/btn_comma" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="," android:textColor="#fff" android:textSize="40sp" android:background="@drawable/key_bg" android:layout_marginEnd="4dp"/>
-                  <TextView android:id="@+id/btn_space" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="4" android:gravity="center" android:text="space" android:textColor="#888" android:textSize="32sp" android:background="@drawable/key_bg_dark" android:layout_marginEnd="4dp"/>
-                  <TextView android:id="@+id/btn_period" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="." android:textColor="#fff" android:textSize="40sp" android:background="@drawable/key_bg" android:layout_marginEnd="4dp"/>
-                  <TextView android:id="@+id/btn_enter" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1.3" android:gravity="center" android:text="↵" android:textColor="#fff" android:textSize="44sp" android:background="@drawable/key_bg_action"/>
+                  android:paddingTop="6dp"
+                  android:paddingBottom="6dp">
+                  <TextView android:id="@+id/btn_abc" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1.3" android:gravity="center" android:text="ABC" android:textColor="#fff" android:textSize="26sp" android:background="@drawable/key_bg_dark" android:layout_marginEnd="4dp"/>
+                  <TextView android:id="@+id/btn_emoji" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="☺" android:textColor="#fff" android:textSize="35sp" android:background="@drawable/key_bg_dark" android:layout_marginEnd="4dp"/>
+                  <TextView android:id="@+id/btn_comma" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="," android:textColor="#fff" android:textSize="32sp" android:background="@drawable/key_bg" android:layout_marginEnd="4dp"/>
+                  <TextView android:id="@+id/btn_space" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="4" android:gravity="center" android:text="space" android:textColor="#888" android:textSize="26sp" android:background="@drawable/key_bg_dark" android:layout_marginEnd="4dp"/>
+                  <TextView android:id="@+id/btn_period" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="." android:textColor="#fff" android:textSize="32sp" android:background="@drawable/key_bg" android:layout_marginEnd="4dp"/>
+                  <TextView android:id="@+id/btn_enter" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1.3" android:gravity="center" android:text="↵" android:textColor="#fff" android:textSize="35sp" android:background="@drawable/key_bg_action"/>
               </LinearLayout>
 
               <View
@@ -526,13 +526,13 @@ jobs:
           <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
               android:id="@+id/emoji_root"
               android:layout_width="match_parent"
-              android:layout_height="1120dp"
+              android:layout_height="896dp"
               android:orientation="vertical"
               android:background="#1e1e1e">
 
               <LinearLayout
                   android:layout_width="match_parent"
-                  android:layout_height="64dp"
+                  android:layout_height="52dp"
                   android:orientation="horizontal"
                   android:gravity="center_vertical"
                   android:paddingStart="8dp"
@@ -547,7 +547,7 @@ jobs:
                       android:gravity="center"
                       android:text="⧉"
                       android:textColor="#ffffff"
-                      android:textSize="44sp"
+                      android:textSize="36sp"
                       android:background="@drawable/key_bg_dark" />
 
                   <HorizontalScrollView
@@ -572,7 +572,7 @@ jobs:
                               android:gravity="center"
                               android:paddingStart="12dp"
                               android:paddingEnd="12dp"
-                              android:textSize="40sp"
+                              android:textSize="32sp"
                               android:background="@drawable/key_bg_dark"
                               android:layout_marginEnd="4dp"/>
 
@@ -583,7 +583,7 @@ jobs:
                               android:gravity="center"
                               android:paddingStart="12dp"
                               android:paddingEnd="12dp"
-                              android:textSize="40sp"
+                              android:textSize="32sp"
                               android:background="@drawable/key_bg_dark"
                               android:layout_marginEnd="4dp"/>
 
@@ -594,7 +594,7 @@ jobs:
                               android:gravity="center"
                               android:paddingStart="12dp"
                               android:paddingEnd="12dp"
-                              android:textSize="40sp"
+                              android:textSize="32sp"
                               android:background="@drawable/key_bg_dark"
                               android:layout_marginEnd="4dp"/>
 
@@ -605,7 +605,7 @@ jobs:
                               android:gravity="center"
                               android:paddingStart="12dp"
                               android:paddingEnd="12dp"
-                              android:textSize="40sp"
+                              android:textSize="32sp"
                               android:background="@drawable/key_bg_dark"
                               android:layout_marginEnd="4dp"/>
 
@@ -616,7 +616,7 @@ jobs:
                               android:gravity="center"
                               android:paddingStart="12dp"
                               android:paddingEnd="12dp"
-                              android:textSize="40sp"
+                              android:textSize="32sp"
                               android:background="@drawable/key_bg_dark"
                               android:layout_marginEnd="4dp"/>
 
@@ -627,7 +627,7 @@ jobs:
                               android:gravity="center"
                               android:paddingStart="12dp"
                               android:paddingEnd="12dp"
-                              android:textSize="40sp"
+                              android:textSize="32sp"
                               android:background="@drawable/key_bg_dark"/>
 
                       </LinearLayout>
@@ -640,7 +640,7 @@ jobs:
                       android:gravity="center"
                       android:text="✎"
                       android:textColor="#ffffff"
-                      android:textSize="44sp"
+                      android:textSize="36sp"
                       android:background="@drawable/key_bg_dark" />
 
               </LinearLayout>
@@ -661,7 +661,7 @@ jobs:
 
               <LinearLayout
                   android:layout_width="match_parent"
-                  android:layout_height="64dp"
+                  android:layout_height="52dp"
                   android:orientation="horizontal"
                   android:paddingStart="8dp"
                   android:paddingEnd="8dp"
@@ -674,7 +674,7 @@ jobs:
                       android:gravity="center"
                       android:text="ABC"
                       android:textColor="#fff"
-                      android:textSize="32sp"
+                      android:textSize="26sp"
                       android:background="@drawable/key_bg_dark"/>
 
               </LinearLayout>
@@ -694,13 +694,13 @@ jobs:
           <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
               android:id="@+id/clipboard_root"
               android:layout_width="match_parent"
-              android:layout_height="1120dp"
+              android:layout_height="896dp"
               android:orientation="vertical"
               android:background="#1e1e1e">
 
               <LinearLayout
                   android:layout_width="match_parent"
-                  android:layout_height="64dp"
+                  android:layout_height="52dp"
                   android:orientation="horizontal"
                   android:gravity="center_vertical"
                   android:paddingStart="8dp"
@@ -715,7 +715,7 @@ jobs:
                       android:gravity="center"
                       android:text="⧉"
                       android:textColor="#ffffff"
-                      android:textSize="44sp"
+                      android:textSize="36sp"
                       android:background="@drawable/key_bg_accent" />
 
                   <TextView
@@ -725,7 +725,7 @@ jobs:
                       android:gravity="center_vertical"
                       android:text="Clipboard"
                       android:textColor="#aaaaaa"
-                      android:textSize="28sp"
+                      android:textSize="22sp"
                       android:paddingStart="12dp" />
 
                   <TextView
@@ -735,7 +735,7 @@ jobs:
                       android:gravity="center"
                       android:text="✕"
                       android:textColor="#ffffff"
-                      android:textSize="36sp"
+                      android:textSize="28sp"
                       android:background="@drawable/key_bg_dark" />
 
               </LinearLayout>
@@ -953,7 +953,7 @@ jobs:
                   emojis.forEach { emoji ->
                       grid.addView(TextView(this).apply {
                           text = emoji
-                          textSize = 48f
+                          textSize = 38f
                           gravity = Gravity.CENTER
                           layoutParams = GridLayout.LayoutParams().apply {
                               width  = cellSize
@@ -1022,7 +1022,7 @@ jobs:
                   listOf("Select All", "Copy", "Paste").forEach { label ->
                       popup.addView(TextView(this).apply {
                           text = label
-                          textSize = 30f
+                          textSize = 24f
                           setTextColor(0xFFFFFFFF.toInt())
                           setPadding(16.dp, 12.dp, 16.dp, 12.dp)
                           setOnClickListener {
@@ -1161,7 +1161,7 @@ jobs:
                   val ctx = parent.context
                   val root = LinearLayout(ctx).apply {
                       orientation = LinearLayout.HORIZONTAL
-                      setPadding(24, 20, 24, 20)
+                      setPadding(20, 16, 20, 16)
                       layoutParams = RecyclerView.LayoutParams(
                           ViewGroup.LayoutParams.MATCH_PARENT,
                           ViewGroup.LayoutParams.WRAP_CONTENT
@@ -1170,15 +1170,15 @@ jobs:
                   val tv = TextView(ctx).apply {
                       layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
                       setTextColor(0xFFFFFFFF.toInt())
-                      textSize = 28f
+                      textSize = 22f
                       maxLines = 2
                       ellipsize = android.text.TextUtils.TruncateAt.END
                   }
                   val del = TextView(ctx).apply {
                       text = "✕"
                       setTextColor(0xFF888888.toInt())
-                      textSize = 32f
-                      setPadding(32, 0, 8, 0)
+                      textSize = 26f
+                      setPadding(26, 0, 6, 0)
                   }
                   root.addView(tv)
                   root.addView(del)
