@@ -788,7 +788,7 @@ jobs:
               private val PREFS_NAME = "greyb_kb"
               private val PREFS_CLIP = "clipboard"
               private val MAX_CLIP = 10
-              private lateinit var clipAdapter: ClipboardAdapter
+              private var clipAdapter: ClipboardAdapter? = null
 
               private val emojiCategories = mapOf(
                   "faces"      to listOf("😀","😁","😂","🤣","😃","😄","😅","😆","😇","😉","😊","😋","😌","😍","🥰","😎","😏","😐","😑","😒","😓","😔","😕","😖","😗","😘","😙","😚","😛","😜","😝","😞","😟","😠","😡","😢","😣","😤","😥","😦","😧","😨","😩","😪","😫","😬","😭","😮","😯","😰","😱","😲","😳","😴","😵","😶","😷","🙁","🙂","🙃","🙄"),
@@ -865,7 +865,7 @@ jobs:
                   v.findViewById<TextView>(R.id.btn_enter).setOnClickListener   { doEnter() }
                   v.findViewById<TextView>(R.id.btn_symbols).setOnClickListener { showMode(Mode.SYMBOLS) }
                   v.findViewById<TextView>(R.id.btn_emoji).setOnClickListener   { showMode(Mode.EMOJI) }
-                  v.findViewById<TextView>(R.id.btn_clipboard).setOnClickListener { showClipboardPopup(it) }
+                  v.findViewById<TextView>(R.id.btn_clipboard).setOnClickListener { openClipboard() }
                   v.findViewById<TextView>(R.id.btn_tools).setOnClickListener   { showToolsPopup(it) }
                   return v
               }
@@ -908,7 +908,7 @@ jobs:
                   v.findViewById<TextView>(R.id.btn_enter).setOnClickListener  { doEnter() }
                   v.findViewById<TextView>(R.id.btn_abc).setOnClickListener    { showMode(Mode.QWERTY) }
                   v.findViewById<TextView>(R.id.btn_emoji).setOnClickListener  { showMode(Mode.EMOJI) }
-                  v.findViewById<TextView>(R.id.btn_clipboard).setOnClickListener { showClipboardPopup(it) }
+                  v.findViewById<TextView>(R.id.btn_clipboard).setOnClickListener { openClipboard() }
                   v.findViewById<TextView>(R.id.btn_tools).setOnClickListener  { showToolsPopup(it) }
                   return v
               }
@@ -931,7 +931,7 @@ jobs:
                       }
                   }
                   v.findViewById<TextView>(R.id.btn_abc).setOnClickListener       { showMode(Mode.QWERTY) }
-                  v.findViewById<TextView>(R.id.btn_clipboard).setOnClickListener { showClipboardPopup(it) }
+                  v.findViewById<TextView>(R.id.btn_clipboard).setOnClickListener { openClipboard() }
                   v.findViewById<TextView>(R.id.btn_tools).setOnClickListener     { showToolsPopup(it) }
                   return v
               }
@@ -954,9 +954,49 @@ jobs:
                   }
               }
 
-              private fun showClipboardPopup(anchor: View) {
-                  if (clipboardItems.isEmpty()) return
+              // Capture selected text, then show clipboard popup
+              private fun openClipboard() {
+                  val sel = currentInputConnection?.getSelectedText(0)
+                  if (!sel.isNullOrEmpty()) addToClipboard(sel.toString())
+                  // Also grab the system clipboard if list is still empty
+                  if (clipboardItems.isEmpty()) {
+                      val clip = (getSystemService(Context.CLIPBOARD_SERVICE) as? ClipboardManager)
+                          ?.primaryClip?.getItemAt(0)?.text?.toString()
+                      if (!clip.isNullOrEmpty()) addToClipboard(clip)
+                  }
+                  showClipboardPopup()
+              }
+
+              private fun showClipboardPopup() {
                   clipboardPopup?.dismiss()
+
+                  // If still empty, show a hint
+                  if (clipboardItems.isEmpty()) {
+                      val hintLayout = LinearLayout(this).apply {
+                          orientation = LinearLayout.VERTICAL
+                          setBackgroundColor(0xFF2C2C2C.toInt())
+                          setPadding(16.dp, 16.dp, 16.dp, 16.dp)
+                          gravity = Gravity.CENTER
+                      }
+                      val msg = TextView(this).apply {
+                          text = "Clipboard is empty"
+                          textSize = 20f
+                          setTextColor(0xFFFFFFFF.toInt())
+                      }
+                      hintLayout.addView(msg)
+                      clipboardPopup = PopupWindow(
+                          hintLayout,
+                          ViewGroup.LayoutParams.WRAP_CONTENT,
+                          ViewGroup.LayoutParams.WRAP_CONTENT,
+                          true
+                      ).apply {
+                          setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
+                          isOutsideTouchable = true
+                          elevation = 12f
+                          showAtLocation(rootFrame, Gravity.TOP or Gravity.CENTER_HORIZONTAL, 0, 60.dp)
+                      }
+                      return
+                  }
 
                   clipAdapter = ClipboardAdapter(
                       clipboardItems,
@@ -966,9 +1006,11 @@ jobs:
                       },
                       onDelete = { pos ->
                           clipboardItems.removeAt(pos)
-                          clipAdapter.notifyItemRemoved(pos)
+                          clipAdapter?.notifyItemRemoved(pos)
                           saveClipboard()
-                          if (clipboardItems.isEmpty()) clipboardPopup?.dismiss()
+                          if (clipboardItems.isEmpty()) {
+                              clipboardPopup?.dismiss()
+                          }
                       }
                   )
 
@@ -996,7 +1038,7 @@ jobs:
                       setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
                       isOutsideTouchable = true
                       elevation = 12f
-                      showAsDropDown(anchor, 0, -(rv.layoutParams.height + anchor.height))
+                      showAtLocation(rootFrame, Gravity.TOP or Gravity.CENTER_HORIZONTAL, 0, 60.dp)
                   }
               }
 
@@ -1052,7 +1094,7 @@ jobs:
                   clipboardItems.add(0, text)
                   if (clipboardItems.size > MAX_CLIP) clipboardItems.removeAt(clipboardItems.size - 1)
                   saveClipboard()
-                  if (::clipAdapter.isInitialized) clipAdapter.notifyDataSetChanged()
+                  clipAdapter?.notifyDataSetChanged()
               }
 
               private fun saveClipboard() {
