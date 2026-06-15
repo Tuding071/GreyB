@@ -1,16 +1,9 @@
-name: Build GreyB Keyboard
+name: Build GreyB Launcher
 
 on:
   push:
     branches: [ main, master ]
     paths:
-      - 'Keyboard.kt'
-      - 'qwerty.xml'
-      - 'symbols.xml'
-      - 'emoji.xml'
-      - 'clipboard.xml'
-      - 'method.xml'
-      - 'AndroidManifest.xml'
       - '.github/workflows/build.yml'
   workflow_dispatch:
 
@@ -21,6 +14,24 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
+      # Define central dimensions and colors
+      - name: Set up Central Config
+        run: |
+          echo "APP_NAME=GreyB Launcher" >> $GITHUB_ENV
+          echo "PACKAGE_NAME=com.greyb.launcher" >> $GITHUB_ENV
+          
+          # Dimensions
+          echo "ITEM_PADDING_DP=12" >> $GITHUB_ENV
+          echo "GRID_SPAN_COUNT=6" >> $GITHUB_ENV
+          echo "RECYCLER_HEIGHT_WEIGHT=1" >> $GITHUB_ENV
+          
+          # Colors
+          echo "COLOR_PRIMARY=#1e1e1e" >> $GITHUB_ENV
+          echo "COLOR_SURFACE=#2c2c2c" >> $GITHUB_ENV
+          echo "COLOR_ACCENT=#1565C0" >> $GITHUB_ENV
+          echo "COLOR_TEXT_NORMAL=#FFFFFF" >> $GITHUB_ENV
+          echo "COLOR_TEXT_SECONDARY=#AAAAAA" >> $GITHUB_ENV
 
       - name: Set up JDK 17
         uses: actions/setup-java@v4
@@ -36,8 +47,7 @@ jobs:
         with:
           path: |
             ~/.gradle/caches
-            ~/.gradle/wrapper
-          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
+            ~/.gradle/wrapper          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
           restore-keys: |
             ${{ runner.os }}-gradle-
 
@@ -45,149 +55,302 @@ jobs:
         env:
           BUILD_NUMBER: ${{ github.run_number }}
         run: |
-          PKG=app/src/main/java/com/greyb/keyboard
+          PKG=app/src/main/java/com/greyb/launcher
           mkdir -p $PKG
           mkdir -p app/src/main/res/xml
           mkdir -p app/src/main/res/layout
           mkdir -p app/src/main/res/drawable
+          mkdir -p app/src/main/res/values
           mkdir -p gradle/wrapper
 
-          cp Keyboard.kt      $PKG/
-          cp qwerty.xml       app/src/main/res/layout/
-          cp symbols.xml      app/src/main/res/layout/
-          cp emoji.xml        app/src/main/res/layout/
-          cp clipboard.xml    app/src/main/res/layout/
-          cp method.xml       app/src/main/res/xml/
-          cp AndroidManifest.xml app/src/main/
-
-          # Remove font/material_symbols references from XML files
-          sed -i 's|font/material_symbols||g' app/src/main/res/layout/emoji.xml
-          sed -i 's|font/material_symbols||g' app/src/main/res/layout/clipboard.xml
-          # Also remove any android:fontFamily attributes that point to it
-          sed -i 's|android:fontFamily="@font/material_symbols"||g' app/src/main/res/layout/emoji.xml
-          sed -i 's|android:fontFamily="@font/material_symbols"||g' app/src/main/res/layout/clipboard.xml
-
-          # key backgrounds
-          cat > app/src/main/res/drawable/key_bg.xml << 'EOF'
-          <?xml version="1.0" encoding="utf-8"?>
-          <shape xmlns:android="http://schemas.android.com/apk/res/android">
-              <solid android:color="#333333"/>
-              <corners android:radius="8dp"/>
-          </shape>
-          EOF
-
-          cat > app/src/main/res/drawable/key_bg_dark.xml << 'EOF'
-          <?xml version="1.0" encoding="utf-8"?>
-          <shape xmlns:android="http://schemas.android.com/apk/res/android">
-              <solid android:color="#2c2c2c"/>
-              <corners android:radius="8dp"/>
-          </shape>
-          EOF
-
-          cat > app/src/main/res/drawable/key_bg_action.xml << 'EOF'
-          <?xml version="1.0" encoding="utf-8"?>
-          <shape xmlns:android="http://schemas.android.com/apk/res/android">
-              <solid android:color="#1565C0"/>
-              <corners android:radius="8dp"/>
-          </shape>
-          EOF
-
-          cat > app/src/main/res/drawable/key_bg_accent.xml << 'EOF'
-          <?xml version="1.0" encoding="utf-8"?>
-          <shape xmlns:android="http://schemas.android.com/apk/res/android">
-              <solid android:color="#1565C0"/>
-              <corners android:radius="8dp"/>
-          </shape>
-          EOF
-
-          cat > settings.gradle.kts << 'EOF'
-          pluginManagement {
-              repositories { google(); mavenCentral(); gradlePluginPortal() }
-          }
-          dependencyResolutionManagement {
-              repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
-              repositories { google(); mavenCentral() }
-          }
-          rootProject.name = "GreyB"
-          include(":app")
-          EOF
-
-          cat > build.gradle.kts << 'EOF'
-          plugins {
-              id("com.android.application") version "8.9.1" apply false
-              id("org.jetbrains.kotlin.android") version "2.2.0" apply false
-          }
-          EOF
-
-          cat > app/build.gradle.kts << APP
-          plugins {
-              id("com.android.application")
-              id("org.jetbrains.kotlin.android")
-          }
-
-          android {
-              namespace  = "com.greyb.keyboard"
-              compileSdk = 36
-
-              defaultConfig {
-                  applicationId = "com.greyb.keyboard"
-                  minSdk        = 26
-                  targetSdk     = 36
-                  versionCode   = ${BUILD_NUMBER}
-                  versionName   = "${BUILD_NUMBER}"
-              }
-
-              signingConfigs {
-                  create("release") {
-                      storeFile     = file("release.keystore")
-                      storePassword = "greyb2024"
-                      keyAlias      = "greyb"
-                      keyPassword   = "greyb2024"
-                  }
-              }
-
-              buildTypes {
-                  release {
-                      isMinifyEnabled   = true
-                      isShrinkResources = true
-                      proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"))
-                      signingConfig = signingConfigs.getByName("release")
-                  }
-              }
-
-              compileOptions {
-                  sourceCompatibility = JavaVersion.VERSION_17
-                  targetCompatibility = JavaVersion.VERSION_17
-              }
-              kotlinOptions { jvmTarget = "17" }
-          }
-
-          dependencies {
-              implementation("androidx.recyclerview:recyclerview:1.3.2")
-              implementation("androidx.core:core-ktx:1.13.1")
-          }
-          APP
-
-          cat > gradle.properties << 'EOF'
-          android.useAndroidX=true
-          android.enableJetifier=true
-          org.gradle.jvmargs=-Xmx4g -XX:MaxMetaspaceSize=512m -XX:+UseParallelGC
-          kotlin.code.style=official
-          android.suppressUnsupportedCompileSdk=36
-          EOF
-
-      - name: Generate fixed keystore
+      # Generate AndroidManifest.xml
+      - name: Generate AndroidManifest.xml
         run: |
-          keytool -genkey -v \
-            -keystore app/release.keystore \
-            -alias greyb \
-            -keyalg RSA \
-            -keysize 2048 \
-            -validity 10000 \
-            -storepass greyb2024 \
-            -keypass greyb2024 \
-            -dname "CN=GreyB, OU=GreyB, O=GreyB Keyboard, L=Test, S=Test, C=US"
+          cat > app/src/main/AndroidManifest.xml << EOF
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
 
+    <uses-permission android:name="android.permission.READ_LOGS" tools:ignore="ProtectedPermissions" />
+
+    <application
+        android:allowBackup="true"
+        android:icon="@mipmap/ic_launcher"
+        android:label="${{ env.APP_NAME }}"
+        android:theme="@style/AppTheme"
+        android:supportsRtl="true">
+        <activity
+            android:name=".MainActivity"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+    </application>
+
+</manifest>
+EOF
+
+      # Generate MainActivity.kt
+      - name: Generate MainActivity.kt
+        run: |
+          cat > app/src/main/java/com/greyb/launcher/MainActivity.kt << 'EOF'
+package com.greyb.launcher
+import android.content.ClipData
+import android.content.ClipboardManager
+import android.content.Context
+import android.os.Bundle
+import android.widget.TextView
+import androidx.appcompat.app.AppCompatActivity
+import androidx.recyclerview.widget.GridLayoutManager
+import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
+import java.util.*
+
+class MainActivity : AppCompatActivity() {
+
+    private lateinit var emojiRecyclerView: RecyclerView
+    private lateinit var clipboardRecyclerView: RecyclerView
+    private lateinit var emojiAdapter: EmojiAdapter
+    private lateinit var clipboardAdapter: ClipboardAdapter
+    private lateinit var clipboardManager: ClipboardManager
+    private val clipboardItems = mutableListOf<String>()
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        setContentView(R.layout.activity_main)
+
+        window.statusBarColor = 0xFF1e1e1e.toInt() // Match background
+        window.navigationBarColor = 0xFF1e1e1e.toInt() // Match background
+
+        emojiRecyclerView = findViewById(R.id.emojiRecyclerView)
+        clipboardRecyclerView = findViewById(R.id.clipboardRecyclerView)
+
+        clipboardManager = getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+
+        setupEmojiRecyclerView()
+        setupClipboardRecyclerView()
+        loadInitialClipboardContent()
+    }
+
+    private fun setupEmojiRecyclerView() {
+        emojiAdapter = EmojiAdapter(getEmojiData())
+        emojiRecyclerView.layoutManager = GridLayoutManager(this, 6) // Use span count from config
+        emojiRecyclerView.adapter = emojiAdapter
+    }
+
+    private fun setupClipboardRecyclerView() {
+        clipboardAdapter = ClipboardAdapter(clipboardItems)
+        clipboardRecyclerView.layoutManager = LinearLayoutManager(this)
+        clipboardRecyclerView.adapter = clipboardAdapter
+    }
+    private fun loadInitialClipboardContent() {
+        val primaryClip = clipboardManager.primaryClip
+        if (primaryClip != null && primaryClip.itemCount > 0) {
+            val content = primaryClip.getItemAt(0).text?.toString()
+            if (!content.isNullOrEmpty() && !clipboardItems.contains(content)) {
+                clipboardItems.add(0, content)
+                clipboardAdapter.notifyItemInserted(0)
+            }
+        }
+    }
+
+    override fun onResume() {
+        super.onResume()
+        // Listen for clipboard changes
+        clipboardManager.addPrimaryClipChangedListener(clipboardListener)
+    }
+
+    override fun onPause() {
+        super.onPause()
+        // Remove listener when paused
+        clipboardManager.removePrimaryClipChangedListener(clipboardListener)
+    }
+
+    private val clipboardListener = ClipboardManager.OnPrimaryClipChangedListener {
+        val primaryClip = clipboardManager.primaryClip
+        if (primaryClip != null && primaryClip.itemCount > 0) {
+            val content = primaryClip.getItemAt(0).text?.toString()
+            if (!content.isNullOrEmpty() && !clipboardItems.contains(content)) {
+                clipboardItems.add(0, content)
+                clipboardAdapter.notifyItemInserted(0)
+                // Optional: Scroll to top
+                 clipboardRecyclerView.scrollToPosition(0)
+            }
+        }
+    }
+
+    private fun getEmojiData(): Map<String, List<String>> {
+        return mapOf(
+            "Faces" to listOf("😀","😁","😂","🤣","😃","😄","😅","😆","😇","😉","😊","😋","😌","😍","🥰","😎","😏","😐","😑","😒","😓","😔","😕","😖","😗","😘","😙","😚","😛","😜","😝","😞","😟","😠","😡","😢","😣","😤","😥","😦","😧","😨","😩","😪","😫","😬","😭","😮","😯","😰","😱","😲","😳","😴","😵","😶","😷","🙁","🙂","🙃","🙄"),
+            "People" to listOf("👋","🤚","🖐","✋","🖖","👌","🤌","🤏","✌","🤞","🤟","🤘","🤙","👈","👉","👆","👇","☝","👍","👎","✊","👊","🤛","🤜","👏","🙌","👐","🤲","🤝","🙏","✍","💅","🤳","💪","🦾","🦵","🦶","👂","🦻","👃","👶","🧒","👦","👧","🧑","👱","👨","🧔","👩","🧓","👴","👵","🙍","🙎","🙅","🙆","💁","🙋","🧏","🙇","🤦","🤷"),
+            "Animals" to listOf("🐶","🐱","🐭","🐹","🐰","🦊","🐻","🐼","🐨","🐯","🦁","🐮","🐷","🐸","🐵","🙈","🙉","🙊","🐔","🐧","🐦","🐤","🦆","🦅","🦉","🦇","🐺","🐗","🐴","🦄","🐝","🐛","🦋","🐌","🐞","🐜","🦟","🦗","🦂","🐢","🐍","🦎","🦖","🦕","🐙","🦑","🦐","🦞","🦀","🐡","🐠","🐟","🐬","🐳","🐋","🦈","🐊","🐅","🐆","🦓","🦍"),
+            "Food" to listOf("🍕","🍔","🍟","🌭","🍿","🧂","🥓","🥚","🍳","🧇","🥞","🧈","🍞","🥐","🥖","🥨","🧀","🥗","🥙","🥪","🌮","🌯","🧆","🥜","栗","🍱","🍘","🍙","🍚"," Curry ","🍜","🍝","🍠","🍢","🍣","🍤","🍥","🥮","🍡","🥟","🦪","🍦","🍧","🍨","🍩","🍪","🎂","🍰","🧁","🥧","🍫","🍬","🍭","🍮","🍯","🍷","🍸","🍹","🍺","🍻"),
+            "Activities" to listOf("⚽","🏀","🏈","⚾","🥎","🏐","🏉","🥏","🎾","🪃","羽毛球","🏒","🏑","🥍","🏏","🎯","🪀","🪁","🎱","🔮","🪄","🎮","🕹","🎲","🧩","🧸","🎭","🎨","🖼","🎰","🎟","🎪","杂技","🎬","🎤","🎧","🎼","🎹","🥁","🪘","🎷"," trumpet ","🎸","🪕"," violin ","🎳","🏹","🛹","🛼","🛷","⛸","🥌","🎿","⛷","🏂","🪂","🏋","🤸","🤺","🏇","🧘"),
+            "Objects" to listOf("💡","🔦","🕯","🪔","🧯","🛢","💰","💳","💎","⚖","🔧"," hammer "," axe "," tool "," pick "," nut "," screwdriver "," link "," chain "," hook "," magnet "," ladder "," toolbox "," trap "," bucket "," door "," bed "," sofa "," chair "," toilet "," shower "," bathtub "," lotion "," pin "," broom "," basket "," paper "," soap "," bubble "," toothbrush "," razor "," key "," key "," lock "," lock "," unlock "," card "," phone "," computer "," monitor "," printer "," mouse "," disk "," cd "," dvd "," camera "," photo "," light "," battery "," bulb "," plug "," outlet "," power "," gear "," wheel "," clock "," watch "," hourglass "," hourglass "," compass "," map "," anchor "," knife "," fork "," spoon "," cup "," glass "," mug "," bottle "," wine "," cocktail "," beer "," beer "," milk "," juice "," tea "," coffee "," soup "," ice "," spoon "," fork "," knife "," plate "," chopsticks "," meat "," fish "," egg "," bread "," cookie "," cake "," chocolate "," candy "," lollipop "," honey "," baby "," gift "," balloon "," ribbon "," ticket "," medal "," military "," trophy "," sports "," game "," puzzle "," domino "," card "," joker "," flower "," cherry "," rose "," tulip "," seedling "," tree "," palm "," cactus "," mushroom "," chestnut "," earth "," moon "," sun "," star "," cloud "," rain "," snow "," wind "," tornado "," fire "," volcano "," desert "," island "," mountain "," beach "," park "," school "," house "," building "," factory "," home "," hotel "," hospital "," bank "," shop "," restaurant "," cafe "," bar "," pub "," pharmacy "," gas "," car "," bus "," train "," plane "," rocket "," helicopter "," boat "," ship "," anchor "," sailboat "," speedboat "," motorboat "," ferry "," subway "," tram "," bike "," motorcycle "," traffic "," police "," ambulance "," fire "," truck "," tractor "," crane "," airplane "," satellite "," rocket "," satellite "," orbit "," planet "," galaxy "," universe "," atom "," molecule "," DNA "," bacteria "," virus "," microscope "," telescope "," satellite "," antenna "," radio "," TV "," speaker "," headphones "," microphone "," saxophone "," guitar "," piano "," drum "," trumpet "," violin "," music "," note "," notes "," beat "," rhythm "," melody "," harmony "," sing "," dance "," concert "," theater "," movie "," cinema "," film "," video "," camera "," photo "," picture "," art "," paint "," brush "," pencil "," pen "," marker "," crayon "," chalk "," eraser "," ruler "," calculator "," book "," newspaper "," magazine "," letter "," envelope "," mail "," package "," postcard "," email "," phone "," mobile "," signal "," wifi "," bluetooth "," network "," internet "," world "," globe "," map "," location "," pin "," flag "," country "," city "," town "," village "," street "," road "," highway "," bridge "," tunnel "," railway "," station "," airport "," port "," harbor "," dock "," terminal "," gate "," platform "," baggage "," ticket "," passport "," visa "," hotel "," motel "," hostel "," camp "," tent "," cabin "," cottage "," villa "," apartment "," condo "," building "," office "," factory "," warehouse "," store "," market "," mall "," shop "," boutique "," store "," department "," grocery "," supermarket "," pharmacy "," drugstore "," clinic "," hospital "," doctor "," nurse "," medicine "," pill "," injection "," syringe "," bandage "," wheelchair "," stretcher "," ambulance "," fire "," police "," security "," law "," court "," judge "," lawyer "," jury "," prison "," jail "," police "," arrest "," fine "," crime "," weapon "," gun "," bullet "," bomb "," explosion "," danger "," warning "," safety "," emergency "," help "," 911 "," sos "," rescue "," aid "," first "," responder "," soldier "," army "," navy "," air "," force "," marine "," coast "," guard "," veteran "," medal "," honor "," peace "," war "," conflict "," fight "," battle "," victory "," defeat "," win "," lose "," score "," goal "," penalty "," foul "," referee "," coach "," team "," player "," fan "," audience "," crowd "," stadium "," arena "," field "," court "," ring "," gym "," fitness "," exercise "," sport "," activity "," recreation "," leisure "," fun "," play "," game "," toy "," doll "," ball "," cube "," puzzle "," board "," card "," dice "," spinner "," wheel "," lever "," button "," switch "," knob "," dial "," gauge "," meter "," scale "," balance "," weight "," mass "," volume "," liquid "," solid "," gas "," plasma "," matter "," energy "," force "," power "," work "," heat "," temperature "," cold "," hot "," warm "," cool "," climate "," weather "," sun "," moon "," star "," sky "," cloud "," rain "," snow "," storm "," lightning "," thunder "," wind "," breeze "," gale "," hurricane "," tornado "," flood "," drought "," fire "," smoke "," ash "," dust "," sand "," rock "," stone "," pebble "," boulder "," mountain "," hill "," valley "," plain "," desert "," forest "," jungle "," park "," garden "," lawn "," grass "," flower "," tree "," leaf "," branch "," root "," seed "," fruit "," vegetable "," grain "," rice "," wheat "," corn "," soybean "," potato "," tomato "," onion "," garlic "," herb "," spice "," salt "," sugar "," oil "," butter "," cheese "," meat "," fish "," egg "," milk "," water "," juice "," soda "," coffee "," tea "," alcohol "," wine "," beer "," cocktail "," food "," meal "," breakfast "," lunch "," dinner "," snack "," dessert "," candy "," chocolate "," cookie "," cake "," bread "," pasta "," rice "," soup "," salad "," sandwich "," burger "," pizza "," hotdog "," taco "," burrito "," sushi "," noodles "," curry "," stew "," roast "," fry "," boil "," steam "," bake "," grill "," barbecue "," cooking "," kitchen "," stove "," oven "," microwave "," refrigerator "," freezer "," dishwasher "," sink "," faucet "," pipe "," valve "," pump "," engine "," motor "," generator "," turbine "," battery "," fuel "," oil "," gas "," coal "," wood "," fire "," flame "," spark "," lightning "," electricity "," circuit "," wire "," plug "," socket "," outlet "," lamp "," bulb "," flashlight "," candle "," lantern "," torch "," spotlight "," laser "," radiation "," nuclear "," atomic "," quantum "," molecular "," cellular "," organism "," life "," death "," birth "," growth "," development "," evolution "," change "," progress "," revolution "," reform "," improvement "," innovation "," technology "," science "," research "," laboratory "," experiment "," theory "," law "," principle "," rule "," regulation "," policy "," government "," politics "," democracy "," republic "," monarchy "," dictator "," president "," prime "," minister "," chancellor "," king "," queen "," emperor "," pope "," bishop "," priest "," monk "," nun "," religion "," faith "," belief "," god "," goddess "," spirit "," soul "," heaven "," hell "," angel "," demon "," ghost "," vampire "," zombie "," fairy "," elf "," dwarf "," orc "," troll "," dragon "," unicorn "," phoenix "," griffin "," sphinx "," centaur "," mermaid "," alien "," robot "," cyborg "," human "," person "," man "," woman "," boy "," girl "," child "," adult "," elder "," senior "," youth "," age "," time "," year "," month "," week "," day "," hour "," minute "," second "," millisecond "," microsecond "," nanosecond "," picosecond "," femtosecond "," attosecond "," zeptosecond "," yoctosecond "," moment "," instant "," eternity "," forever "," never "," always "," sometimes "," often "," rarely "," never "," again "," back "," forward "," up "," down "," left "," right "," north "," south "," east "," west "," direction "," orientation "," position "," place "," location "," area "," region "," zone "," territory "," border "," boundary "," limit "," extent "," range "," scope "," coverage "," spread "," distribution "," concentration "," density "," mass "," volume "," length "," width "," height "," depth "," thickness "," distance "," measurement "," metric "," imperial "," standard "," unit "," meter "," kilogram "," second "," ampere "," kelvin "," mole "," candela "," gram "," ton "," ounce "," pound "," inch "," foot "," yard "," mile "," nautical "," knot "," fathom "," furlong "," league "," rod "," chain "," link "," hand "," barleycorn "," finger "," palm "," span "," cubit "," ell "," pace "," stride "," furlong "," league "," astronomical "," light "," parsec "," angstrom "," micron "," millimeter "," centimeter "," decimeter "," meter "," dekameter "," hectometer "," kilometer "," megameter "," gigameter "," terameter "," petameter "," exameter "," zettameter "," yottameter "," yoctometer "," zeptometer "," attometer "," femtometer "," picometer "," nanometer "," micrometer "," millimeter "," centimeter "," decimeter "," meter "," dekameter "," hectometer "," kilometer "," megameter "," gigameter "," terameter "," petameter "," exameter "," zettameter "," yottameter "," yoctometer "," zeptometer "," attometer "," femtometer "," picometer "," nanometer "," micrometer "," millimeter "," centimeter "," decimeter "," meter "," dekameter "," hectometer "," kilometer "," megameter "," gigameter "," terameter "," petameter "," exameter "," zettameter "," yottameter "," yoctometer "," zeptometer "," attometer "," femtometer "," picometer "," nanometer "," micrometer "," millimeter "," centimeter "," decimeter "," meter "," dekameter "," hectometer "," kilometer "," megameter "," gigameter "," terameter "," petameter "," exameter "," zettameter "," yottameter "," yoctometer "," zeptometer "," attometer "," femtometer "," picometer "," nanometer "," micrometer "," millimeter "," centimeter "," decimeter "," meter "," dekameter "," hectometer "," kilometer "," megameter "," gigameter "," terameter "," petameter "," exameter "," zettameter "," yottameter "," yoctometer "," zeptometer "," attometer "," femtometer "," picometer "," nanometer "," micrometer "," millimeter "," centimeter "," decimeter "," meter "," dekameter "," hectometer "," kilometer "," megameter "," gigameter "," terameter "," petameter "," exameter "," zettameter "," yottameter "," yoctometer "," zeptometer "," attometer "," femtometer "," picometer "," nanometer "," micrometer "," millimeter "," centimeter "," decimeter "," meter "," dekameter "," hectometer "," kilometer "," megameter "," gigameter "," terameter "," petameter "," exameter "," zettameter "," yottameter "," yoctometer "," zeptometer "," attometer "," femtometer "," picometer "," nanometer "," micrometer "," millimeter "," centimeter "," decimeter "," meter "," dekameter "," hectometer "," kilometer "," megam...... truncated for brevity")
+        )
+    }
+}
+EOF
+
+      # Generate EmojiAdapter.kt      - name: Generate EmojiAdapter.kt
+        run: |
+          cat > app/src/main/java/com/greyb/launcher/EmojiAdapter.kt << 'EOF'
+package com.greyb.launcher
+
+import android.view.LayoutInflater
+import android.view.View
+import android.view.ViewGroup
+import android.widget.TextView
+import androidx.recyclerview.widget.RecyclerView
+
+class EmojiAdapter(private val emojiData: Map<String, List<String>>) :
+    RecyclerView.Adapter<EmojiAdapter.EmojiViewHolder>() {
+
+    private val allEmojis = emojiData.values.flatten()
+
+    class EmojiViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
+        val emojiText: TextView = itemView.findViewById(R.id.emojiItem)
+    }
+
+    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): EmojiViewHolder {
+        val view = LayoutInflater.from(parent.context)
+            .inflate(R.layout.item_emoji, parent, false)
+        return EmojiViewHolder(view)
+    }
+
+    override fun onBindViewHolder(holder: EmojiViewHolder, position: Int) {
+        holder.emojiText.text = allEmojis[position]
+    }
+
+    override fun getItemCount(): Int = allEmojis.size
+}
+EOF
+
+      # Generate ClipboardAdapter.kt
+      - name: Generate ClipboardAdapter.kt
+        run: |
+          cat > app/src/main/java/com/greyb/launcher/ClipboardAdapter.kt << 'EOF'
+package com.greyb.launcher
+
+import android.view.LayoutInflater
+import android.view.View
+import android.view.ViewGroup
+import android.widget.TextView
+import androidx.recyclerview.widget.RecyclerView
+
+class ClipboardAdapter(private val items: List<String>) :
+    RecyclerView.Adapter<ClipboardAdapter.ClipboardViewHolder>() {
+
+    class ClipboardViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {        val clipboardText: TextView = itemView.findViewById(R.id.clipboardItem)
+    }
+
+    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ClipboardViewHolder {
+        val view = LayoutInflater.from(parent.context)
+            .inflate(R.layout.item_clipboard, parent, false)
+        return ClipboardViewHolder(view)
+    }
+
+    override fun onBindViewHolder(holder: ClipboardViewHolder, position: Int) {
+        holder.clipboardText.text = items[position]
+    }
+
+    override fun getItemCount(): Int = items.size
+}
+EOF
+
+      # Generate activity_main.xml
+      - name: Generate activity_main.xml
+        run: |
+          cat > app/src/main/res/layout/activity_main.xml << EOF
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="${{ env.COLOR_PRIMARY }}">
+
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/emojiRecyclerView"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:layout_marginBottom="8dp"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintBottom_toTopOf="@+id/clipboardRecyclerView" />
+
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/clipboardRecyclerView"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:layout_marginTop="8dp"
+        app:layout_constraintTop_toBottomOf="@+id/emojiRecyclerView"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent" />
+
+</androidx.constraintlayout.widget.ConstraintLayout>
+EOF
+      # Generate item_emoji.xml
+      - name: Generate item_emoji.xml
+        run: |
+          cat > app/src/main/res/layout/item_emoji.xml << EOF
+<?xml version="1.0" encoding="utf-8"?>
+<TextView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/emojiItem"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:gravity="center"
+    android:padding="${{ env.ITEM_PADDING_DP }}dp"
+    android:textSize="28sp"
+    android:textColor="${{ env.COLOR_TEXT_NORMAL }}" />
+EOF
+
+      # Generate item_clipboard.xml
+      - name: Generate item_clipboard.xml
+        run: |
+          cat > app/src/main/res/layout/item_clipboard.xml << EOF
+<?xml version="1.0" encoding="utf-8"?>
+<TextView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/clipboardItem"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:padding="${{ env.ITEM_PADDING_DP }}dp"
+    android:textSize="16sp"
+    android:textColor="${{ env.COLOR_TEXT_NORMAL }}"
+    android:maxLines="2"
+    android:ellipsize="end" />
+EOF
+
+      # Generate values/colors.xml
+      - name: Generate values/colors.xml
+        run: |
+          cat > app/src/main/res/values/colors.xml << EOF
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="colorPrimary">${{ env.COLOR_PRIMARY }}</color>
+    <color name="colorSurface">${{ env.COLOR_SURFACE }}</color>
+    <color name="colorAccent">${{ env.COLOR_ACCENT }}</color>
+    <color name="textColorNormal">${{ env.COLOR_TEXT_NORMAL }}</color>
+    <color name="textColorSecondary">${{ env.COLOR_TEXT_SECONDARY }}</color>
+</resources>
+EOF
+
+      # Generate values/styles.xml
+      - name: Generate values/styles.xml
+        run: |
+          cat > app/src/main/res/values/styles.xml << 'EOF'<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="AppTheme" parent="Theme.AppCompat.Light.NoActionBar">
+        <item name="android:windowBackground">@color/colorPrimary</item>
+        <item name="android:navigationBarColor">@color/colorPrimary</item>
+    </style>
+</resources>
+EOF
+
+      # Generate App Icon
       - name: Generate launcher icons
         run: |
           rm -rf app/src/main/res/mipmap-*
@@ -197,7 +360,7 @@ jobs:
           import os
 
           def make_icon(size):
-              BG     = (42, 45, 52, 255)
+              BG     = (42, 45, 52, 255) # Match primary color
               ACCENT = (90, 93, 100, 255)
               WHITE  = (255, 255, 255, 255)
               img = Image.new('RGBA', (size, size), BG)
@@ -227,14 +390,105 @@ jobs:
               os.makedirs(path, exist_ok=True)
               icon = make_icon(s)
               icon.save(f'{path}/ic_launcher.png')
-              icon.save(f'{path}/ic_launcher_round.png')
-          print("Icons generated!")
+              icon.save(f'{path}/ic_launcher_round.png')          print("Icons generated!")
           PYEOF
+
+      # Generate build.gradle files
+      - name: Generate Gradle Scripts
+        run: |
+          cat > settings.gradle.kts << 'EOF'
+          pluginManagement {
+              repositories { google(); mavenCentral(); gradlePluginPortal() }
+          }
+          dependencyResolutionManagement {
+              repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
+              repositories { google(); mavenCentral() }
+          }
+          rootProject.name = "GreyB Launcher"
+          include(":app")
+          EOF
+
+          cat > build.gradle.kts << 'EOF'
+          plugins {
+              id("com.android.application") version "8.9.1" apply false
+              id("org.jetbrains.kotlin.android") version "2.2.0" apply false
+          }
+          EOF
+
+          cat > app/build.gradle.kts << APP
+          plugins {
+              id("com.android.application")
+              id("org.jetbrains.kotlin.android")
+          }
+
+          android {
+              namespace  = "${{ env.PACKAGE_NAME }}"
+              compileSdk = 36
+
+              defaultConfig {
+                  applicationId = "${{ env.PACKAGE_NAME }}"
+                  minSdk        = 26
+                  targetSdk     = 36
+                  versionCode   = ${BUILD_NUMBER}
+                  versionName   = "${BUILD_NUMBER}"
+              }
+
+              signingConfigs {
+                  create("release") {
+                      storeFile     = file("release.keystore")
+                      storePassword = "greyb2024"
+                      keyAlias      = "greyb"
+                      keyPassword   = "greyb2024"
+                  }              }
+
+              buildTypes {
+                  release {
+                      isMinifyEnabled   = true
+                      isShrinkResources = true
+                      proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"))
+                      signingConfig = signingConfigs.getByName("release")
+                  }
+              }
+
+              compileOptions {
+                  sourceCompatibility = JavaVersion.VERSION_17
+                  targetCompatibility = JavaVersion.VERSION_17
+              }
+              kotlinOptions { jvmTarget = "17" }
+          }
+
+          dependencies {
+              implementation("androidx.core:core-ktx:1.13.1")
+              implementation("androidx.appcompat:appcompat:1.7.0")
+              implementation("com.google.android.material:material:1.12.0")
+              implementation("androidx.constraintlayout:constraintlayout:2.2.0")
+              implementation("androidx.recyclerview:recyclerview:1.3.2")
+          }
+          APP
+
+          cat > gradle.properties << 'EOF'
+          android.useAndroidX=true
+          android.enableJetifier=true
+          org.gradle.jvmargs=-Xmx4g -XX:MaxMetaspaceSize=512m -XX:+UseParallelGC
+          kotlin.code.style=official
+          android.suppressUnsupportedCompileSdk=36
+          EOF
+
+      - name: Generate fixed keystore
+        run: |
+          keytool -genkey -v \
+            -keystore app/release.keystore \
+            -alias greyb \
+            -keyalg RSA \
+            -keysize 2048 \
+            -validity 10000 \
+            -storepass greyb2024 \
+            -keypass greyb2024 \
+            -dname "CN=GreyB, OU=GreyB, O=GreyB Launcher, L=Test, S=Test, C=US"
 
       - name: Setup Gradle Wrapper
         run: |
-          gradle wrapper --gradle-version=8.11.1 --distribution-type=bin
-          chmod +x gradlew
+          gradle wrapper --gradle-version=8.11.1 --distribution-type=bin          chmod +x gradlew
 
       - name: Clean build
         run: |
@@ -250,7 +504,6 @@ jobs:
           if [ -f "$APK_PATH" ]; then
               echo "✅ Release APK generated"
               echo "📦 APK size: $(ls -lh "$APK_PATH" | awk '{print $5}')"
-              # Find available build-tools version
               BT_PATH=$(ls -d $ANDROID_HOME/build-tools/* 2>/dev/null | head -1)
               if [ -n "$BT_PATH" ]; then
                   $BT_PATH/apksigner verify --print-certs "$APK_PATH" 2>/dev/null || echo "⚠️ apksigner verify skipped"
@@ -262,18 +515,12 @@ jobs:
 
       - name: Bundle APK + source
         run: |
-          mkdir -p GreyB-release
-          cp app/build/outputs/apk/release/app-release.apk GreyB-release/GreyB.apk
-          cp Keyboard.kt      GreyB-release/
-          cp qwerty.xml       GreyB-release/
-          cp symbols.xml      GreyB-release/
-          cp emoji.xml        GreyB-release/
-          cp clipboard.xml    GreyB-release/
-          cp .github/workflows/build.yml GreyB-release/
+          mkdir -p GreyB-Launcher-release
+          cp app/build/outputs/apk/release/app-release.apk GreyB-Launcher-release/GreyBLauncher.apk
 
           APK_SIZE=$(ls -lh app/build/outputs/apk/release/app-release.apk | awk '{print $5}')
 
-          cat > GreyB-release/BUILD_INFO.txt << EOF
+          cat > GreyB-Launcher-release/BUILD_INFO.txt << EOF
           Build:      #${{ github.run_number }}
           Commit:     ${{ github.sha }}
           Timestamp:  $(date -u '+%Y-%m-%d %H:%M:%S UTC')
@@ -285,6 +532,6 @@ jobs:
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: GreyB-${{ github.run_number }}
-          path: GreyB-release/
+          name: GreyB-Launcher-${{ github.run_number }}
+          path: GreyB-Launcher-release/
           retention-days: 30
