@@ -66,7 +66,7 @@ jobs:
       # Generate AndroidManifest.xml
       - name: Generate AndroidManifest.xml
         run: |
-          cat > app/src/main/AndroidManifest.xml << EOF
+          cat > app/src/main/AndroidManifest.xml << 'EOF'
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
@@ -184,7 +184,7 @@ class MainActivity : AppCompatActivity() {
     private fun getEmojiData(): Map<String, List<String>> {
         return mapOf(
             "Faces" to listOf("😀","😁","😂","🤣","😃","😄","😅","😆","😇","😉","😊","😋","😌","😍","🥰","😎","😏","😐","😑","😒","😓","😔","😕","😖","😗","😘","😙","😚","😛","😜","😝","😞","😟","😠","😡","😢","😣","😤","😥","😦","😧","😨","😩","😪","😫","😬","😭","😮","😯","😰","😱","😲","😳","😴","😵","😶","😷","🙁","🙂","🙃","🙄"),
-            "People" to listOf("👋","🤚","🖐","✋","🖖","👌","🤌","🤏","✌","🤞","🤟","🤘","🤙","👈","👉","👆","👇","☝","👍","👎","✊","👊","🤛","🤜","👏","🙌","👐","🤲","🤝","🙏","✍","💅","🤳","💪","🦾","🦵","🦶","👂","🦻","👃","👶","🧒","👦","👧","🧑","👱","👨","🧔","👩","🧓","👴","👵","🙍","🙎","🙅","🙆","💁","🙋","🧏","🙇","🤦","🤷"),
+            "People" to listOf("👋","🤚","🖐","✋","🖖","👌","🤌","🤏","✌","🤞","🤟","🤘","🤙","👈","👉","👆","👇","☝","👍","👎","✊","👊","🤛","🤜","👏","🙌"," setOpen ","🤲","🤝","🙏","✍","💅","🤳","💪","🦾","🦵","🦶","👂","🦻"," nose ","👶","🧒","👦","👧","🧑","👱","👨","🧔","👩","🧓","👴","👵","🙍","🙎","🙅","🙆","💁","🙋","🧏","🙇","🤦","🤷"),
             "Animals" to listOf("🐶","🐱","🐭","🐹","🐰","🦊","🐻","🐼","🐨","🐯","🦁","🐮","🐷","🐸","🐵","🙈","🙉","🙊","🐔","🐧","🐦","🐤","🦆","🦅","🦉","🦇","🐺","🐗","🐴","🦄","🐝","🐛","🦋","🐌","🐞","🐜","🦟","🦗","🦂","🐢","🐍","🦎","🦖","🦕","🐙","🦑","🦐","🦞","🦀","🐡","🐠","🐟","🐬","🐳","🐋","🦈","🐊","🐅","🐆","🦓","🦍"),
             "Food" to listOf("🍕","🍔","🍟","🌭","🍿","🧂","🥓","🥚","🍳","🧇","🥞","🧈","🍞","🥐","🥖","🥨","🧀","🥗","🥙","🥪","🌮","🌯","🧆","🥜","栗","🍱","🍘","🍙","🍚"," Curry ","🍜","🍝","🍠","🍢","🍣","🍤","🍥","🥮","🍡","🥟","🦪","🍦","🍧","🍨","🍩","🍪","🎂","🍰","🧁","🥧","🍫","🍬","🍭","🍮","🍯","🍷","🍸","🍹","🍺","🍻"),
             "Activities" to listOf("⚽","🏀","🏈","⚾","🥎","🏐","🏉","🥏","🎾","🪃","羽毛球","🏒","🏑","🥍","🏏","🎯","🪀","🪁","🎱","🔮","🪄","🎮","🕹","🎲","🧩","🧸","🎭","🎨","🖼","🎰","🎟","🎪","杂技","🎬","🎤","🎧","🎼","🎹","🥁","🪘","🎷"," trumpet ","🎸","🪕"," violin ","🎳","🏹","🛹","🛼","🛷","⛸","🥌","🎿","⛷","🏂","🪂","🏋","🤸","🤺","🏇","🧘"),
@@ -263,7 +263,7 @@ EOF
       # Generate activity_main.xml
       - name: Generate activity_main.xml
         run: |
-          cat > app/src/main/res/layout/activity_main.xml << EOF
+          cat > app/src/main/res/layout/activity_main.xml << 'EOF'
 <?xml version="1.0" encoding="utf-8"?>
 <androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
@@ -296,7 +296,7 @@ EOF
       # Generate item_emoji.xml
       - name: Generate item_emoji.xml
         run: |
-          cat > app/src/main/res/layout/item_emoji.xml << EOF
+          cat > app/src/main/res/layout/item_emoji.xml << 'EOF'
 <?xml version="1.0" encoding="utf-8"?>
 <TextView xmlns:android="http://schemas.android.com/apk/res/android"
     android:id="@+id/emojiItem"
@@ -311,7 +311,7 @@ EOF
       # Generate item_clipboard.xml
       - name: Generate item_clipboard.xml
         run: |
-          cat > app/src/main/res/layout/item_clipboard.xml << EOF
+          cat > app/src/main/res/layout/item_clipboard.xml << 'EOF'
 <?xml version="1.0" encoding="utf-8"?>
 <TextView xmlns:android="http://schemas.android.com/apk/res/android"
     android:id="@+id/clipboardItem"
@@ -327,7 +327,7 @@ EOF
       # Generate values/colors.xml
       - name: Generate values/colors.xml
         run: |
-          cat > app/src/main/res/values/colors.xml << EOF
+          cat > app/src/main/res/values/colors.xml << 'EOF'
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <color name="colorPrimary">${{ env.COLOR_PRIMARY }}</color>
@@ -415,7 +415,7 @@ EOF
           }
           EOF
 
-          cat > app/build.gradle.kts << APP
+          cat > app/build.gradle.kts << 'APP'
           plugins {
               id("com.android.application")
               id("org.jetbrains.kotlin.android")
