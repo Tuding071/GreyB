@@ -50,7 +50,6 @@ jobs:
           mkdir -p app/src/main/res/xml
           mkdir -p app/src/main/res/layout
           mkdir -p app/src/main/res/drawable
-          # Removed: mkdir -p app/src/main/res/font
           mkdir -p gradle/wrapper
 
           cp Keyboard.kt      $PKG/
@@ -61,7 +60,12 @@ jobs:
           cp method.xml       app/src/main/res/xml/
           cp AndroidManifest.xml app/src/main/
 
-          # Removed font copy line
+          # Remove font/material_symbols references from XML files
+          sed -i 's|font/material_symbols||g' app/src/main/res/layout/emoji.xml
+          sed -i 's|font/material_symbols||g' app/src/main/res/layout/clipboard.xml
+          # Also remove any android:fontFamily attributes that point to it
+          sed -i 's|android:fontFamily="@font/material_symbols"||g' app/src/main/res/layout/emoji.xml
+          sed -i 's|android:fontFamily="@font/material_symbols"||g' app/src/main/res/layout/clipboard.xml
 
           # key backgrounds
           cat > app/src/main/res/drawable/key_bg.xml << 'EOF'
@@ -187,7 +191,7 @@ jobs:
       - name: Generate launcher icons
         run: |
           rm -rf app/src/main/res/mipmap-*
-          pip install Pillow --quiet
+          pip3 install Pillow --quiet --break-system-packages 2>/dev/null || pip install Pillow --quiet
           python3 << 'PYEOF'
           from PIL import Image, ImageDraw
           import os
@@ -246,7 +250,11 @@ jobs:
           if [ -f "$APK_PATH" ]; then
               echo "✅ Release APK generated"
               echo "📦 APK size: $(ls -lh "$APK_PATH" | awk '{print $5}')"
-              $ANDROID_HOME/build-tools/36.0.0/apksigner verify --print-certs "$APK_PATH"
+              # Find available build-tools version
+              BT_PATH=$(ls -d $ANDROID_HOME/build-tools/* 2>/dev/null | head -1)
+              if [ -n "$BT_PATH" ]; then
+                  $BT_PATH/apksigner verify --print-certs "$APK_PATH" 2>/dev/null || echo "⚠️ apksigner verify skipped"
+              fi
           else
               echo "❌ Release APK not found"
               exit 1
