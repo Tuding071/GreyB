@@ -67,7 +67,7 @@ jobs:
       # Generate AndroidManifest.xml
       - name: Generate AndroidManifest.xml
         run: |
-          cat > app/src/main/AndroidManifest.xml << 'EOF'
+          cat > app/src/main/AndroidManifest.xml << 'MANIFESTEOF'
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
@@ -91,12 +91,12 @@ jobs:
     </application>
 
 </manifest>
-EOF
+MANIFESTEOF
 
       # Generate MainActivity.kt
       - name: Generate MainActivity.kt
         run: |
-          cat > app/src/main/java/com/greyb/launcher/MainActivity.kt << 'KOTLIN'
+          cat > app/src/main/java/com/greyb/launcher/MainActivity.kt << 'KOTLINEOF'
 package com.greyb.launcher
 import android.content.ClipData
 import android.content.ClipboardManager
@@ -190,12 +190,12 @@ class MainActivity : AppCompatActivity() {
         )
     }
 }
-KOTLIN
+KOTLINEOF
 
       # Generate EmojiAdapter.kt
       - name: Generate EmojiAdapter.kt
         run: |
-          cat > app/src/main/java/com/greyb/launcher/EmojiAdapter.kt << 'KOTLIN'
+          cat > app/src/main/java/com/greyb/launcher/EmojiAdapter.kt << 'KOTLINEOF'
 package com.greyb.launcher
 
 import android.view.LayoutInflater
@@ -225,12 +225,12 @@ class EmojiAdapter(private val emojiData: Map<String, List<String>>) :
 
     override fun getItemCount(): Int = allEmojis.size
 }
-KOTLIN
+KOTLINEOF
 
       # Generate ClipboardAdapter.kt
       - name: Generate ClipboardAdapter.kt
         run: |
-          cat > app/src/main/java/com/greyb/launcher/ClipboardAdapter.kt << 'KOTLIN'
+          cat > app/src/main/java/com/greyb/launcher/ClipboardAdapter.kt << 'KOTLINEOF'
 package com.greyb.launcher
 
 import android.view.LayoutInflater
@@ -258,12 +258,12 @@ class ClipboardAdapter(private val items: List<String>) :
 
     override fun getItemCount(): Int = items.size
 }
-KOTLIN
+KOTLINEOF
 
       # Generate activity_main.xml
       - name: Generate activity_main.xml
         run: |
-          cat > app/src/main/res/layout/activity_main.xml << 'XML'
+          cat > app/src/main/res/layout/activity_main.xml << 'XMLEOF'
 <?xml version="1.0" encoding="utf-8"?>
 <androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
@@ -292,12 +292,12 @@ KOTLIN
         app:layout_constraintBottom_toBottomOf="parent" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>
-XML
+XMLEOF
 
       # Generate item_emoji.xml
       - name: Generate item_emoji.xml
         run: |
-          cat > app/src/main/res/layout/item_emoji.xml << 'XML'
+          cat > app/src/main/res/layout/item_emoji.xml << 'XMLEOF'
 <?xml version="1.0" encoding="utf-8"?>
 <TextView xmlns:android="http://schemas.android.com/apk/res/android"
     android:id="@+id/emojiItem"
@@ -307,12 +307,12 @@ XML
     android:padding="12dp"
     android:textSize="28sp"
     android:textColor="#FFFFFF" />
-XML
+XMLEOF
 
       # Generate item_clipboard.xml
       - name: Generate item_clipboard.xml
         run: |
-          cat > app/src/main/res/layout/item_clipboard.xml << 'XML'
+          cat > app/src/main/res/layout/item_clipboard.xml << 'XMLEOF'
 <?xml version="1.0" encoding="utf-8"?>
 <TextView xmlns:android="http://schemas.android.com/apk/res/android"
     android:id="@+id/clipboardItem"
@@ -323,12 +323,12 @@ XML
     android:textColor="#FFFFFF"
     android:maxLines="2"
     android:ellipsize="end" />
-XML
+XMLEOF
 
       # Generate values/colors.xml
       - name: Generate values/colors.xml
         run: |
-          cat > app/src/main/res/values/colors.xml << 'XML'
+          cat > app/src/main/res/values/colors.xml << 'XMLEOF'
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <color name="colorPrimary">#1e1e1e</color>
@@ -337,12 +337,12 @@ XML
     <color name="textColorNormal">#FFFFFF</color>
     <color name="textColorSecondary">#AAAAAA</color>
 </resources>
-XML
+XMLEOF
 
       # Generate values/styles.xml
       - name: Generate values/styles.xml
         run: |
-          cat > app/src/main/res/values/styles.xml << 'XML'
+          cat > app/src/main/res/values/styles.xml << 'XMLEOF'
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <style name="AppTheme" parent="Theme.AppCompat.Light.NoActionBar">
@@ -350,7 +350,7 @@ XML
         <item name="android:navigationBarColor">@color/colorPrimary</item>
     </style>
 </resources>
-XML
+XMLEOF
 
       # Generate App Icon
       - name: Generate launcher icons
@@ -401,7 +401,7 @@ PYEOF
         env:
           BUILD_NUMBER: ${{ github.run_number }}
         run: |
-          cat > settings.gradle.kts << 'EOF'
+          cat > settings.gradle.kts << 'GRADLEEOF'
 pluginManagement {
     repositories { google(); mavenCentral(); gradlePluginPortal() }
 }
@@ -411,16 +411,16 @@ dependencyResolutionManagement {
 }
 rootProject.name = "GreyB Launcher"
 include(":app")
-EOF
+GRADLEEOF
 
-          cat > build.gradle.kts << 'EOF'
+          cat > build.gradle.kts << 'GRADLEEOF'
 plugins {
     id("com.android.application") version "8.9.1" apply false
     id("org.jetbrains.kotlin.android") version "2.2.0" apply false
 }
-EOF
+GRADLEEOF
 
-          cat > app/build.gradle.kts << APPEOF
+          cat > app/build.gradle.kts << GRADLEEOF
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
@@ -470,15 +470,15 @@ dependencies {
     implementation("androidx.constraintlayout:constraintlayout:2.2.0")
     implementation("androidx.recyclerview:recyclerview:1.3.2")
 }
-APPEOF
+GRADLEEOF
 
-          cat > gradle.properties << 'EOF'
+          cat > gradle.properties << 'GRADLEEOF'
 android.useAndroidX=true
 android.enableJetifier=true
 org.gradle.jvmargs=-Xmx4g -XX:MaxMetaspaceSize=512m -XX:+UseParallelGC
 kotlin.code.style=official
 android.suppressUnsupportedCompileSdk=36
-EOF
+GRADLEEOF
 
       - name: Generate fixed keystore
         run: |
@@ -527,14 +527,14 @@ EOF
 
           APK_SIZE=$(ls -lh app/build/outputs/apk/release/app-release.apk | awk '{print $5}')
 
-          cat > GreyB-Launcher-release/BUILD_INFO.txt << EOF
+          cat > GreyB-Launcher-release/BUILD_INFO.txt << INFOEOF
 Build:      #${{ github.run_number }}
 Commit:     ${{ github.sha }}
 Timestamp:  $(date -u '+%Y-%m-%d %H:%M:%S UTC')
 Signed:     Yes (fixed key)
 APK Size:   $APK_SIZE
 Optimized:  Yes (ProGuard/R8 enabled)
-EOF
+INFOEOF
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
