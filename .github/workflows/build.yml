@@ -144,7 +144,7 @@ jobs:
           <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
               android:id="@+id/qwerty_root"
               android:layout_width="match_parent"
-              android:layout_height="344dp"
+              android:layout_height="420dp"
               android:orientation="vertical"
               android:background="#1e1e1e">
 
@@ -334,7 +334,7 @@ jobs:
           <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
               android:id="@+id/symbols_root"
               android:layout_width="match_parent"
-              android:layout_height="344dp"
+              android:layout_height="420dp"
               android:orientation="vertical"
               android:background="#1e1e1e">
 
@@ -526,7 +526,7 @@ jobs:
           <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
               android:id="@+id/emoji_root"
               android:layout_width="match_parent"
-              android:layout_height="344dp"
+              android:layout_height="420dp"
               android:orientation="vertical"
               android:background="#1e1e1e">
 
@@ -694,7 +694,7 @@ jobs:
           <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
               android:id="@+id/clipboard_root"
               android:layout_width="match_parent"
-              android:layout_height="344dp"
+              android:layout_height="420dp"
               android:orientation="vertical"
               android:background="#1e1e1e">
 
