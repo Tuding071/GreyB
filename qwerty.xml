@@ -27,6 +27,8 @@
             android:text="⧉"
             android:textColor="#ffffff"
             android:textSize="30sp"
+            android:paddingTop="3dp"
+            android:paddingBottom="3dp"
             android:background="@drawable/key_bg_dark" />
 
         <LinearLayout
@@ -46,6 +48,8 @@
                 android:background="@drawable/key_bg_dark"
                 android:textColor="#ffffff"
                 android:textSize="20sp"
+                android:paddingTop="3dp"
+                android:paddingBottom="3dp"
                 android:layout_marginEnd="5dp" />
 
             <TextView android:id="@+id/sug2"
@@ -56,6 +60,8 @@
                 android:background="@drawable/key_bg_dark"
                 android:textColor="#ffffff"
                 android:textSize="20sp"
+                android:paddingTop="3dp"
+                android:paddingBottom="3dp"
                 android:layout_marginEnd="5dp" />
 
             <TextView android:id="@+id/sug3"
@@ -65,7 +71,9 @@
                 android:gravity="center"
                 android:background="@drawable/key_bg_dark"
                 android:textColor="#ffffff"
-                android:textSize="20sp" />
+                android:textSize="20sp"
+                android:paddingTop="3dp"
+                android:paddingBottom="3dp" />
 
         </LinearLayout>
 
@@ -77,6 +85,8 @@
             android:text="✎"
             android:textColor="#ffffff"
             android:textSize="30sp"
+            android:paddingTop="3dp"
+            android:paddingBottom="3dp"
             android:background="@drawable/key_bg_dark" />
 
     </LinearLayout>
@@ -157,7 +167,7 @@
         android:paddingEnd="8dp"
         android:paddingTop="4dp"
         android:paddingBottom="2dp">
-        <TextView android:id="@+id/btn_shift" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1.4" android:gravity="center" android:text="⇧" android:textColor="#fff" android:textSize="28sp" android:background="@drawable/key_bg_dark" android:layout_marginEnd="5dp"/>
+        <TextView android:id="@+id/btn_shift" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1.4" android:gravity="center" android:text="⇧" android:textColor="#fff" android:textSize="28sp" android:paddingTop="3dp" android:paddingBottom="3dp" android:background="@drawable/key_bg_dark" android:layout_marginEnd="5dp"/>
         <TextView android:id="@+id/kz" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="z" android:textColor="#fff" android:textSize="26sp" android:background="@drawable/key_bg" android:layout_marginEnd="5dp"/>
         <TextView android:id="@+id/kx" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="x" android:textColor="#fff" android:textSize="26sp" android:background="@drawable/key_bg" android:layout_marginEnd="5dp"/>
         <TextView android:id="@+id/kc" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="c" android:textColor="#fff" android:textSize="26sp" android:background="@drawable/key_bg" android:layout_marginEnd="5dp"/>
@@ -165,7 +175,7 @@
         <TextView android:id="@+id/kb" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="b" android:textColor="#fff" android:textSize="26sp" android:background="@drawable/key_bg" android:layout_marginEnd="5dp"/>
         <TextView android:id="@+id/kn" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="n" android:textColor="#fff" android:textSize="26sp" android:background="@drawable/key_bg" android:layout_marginEnd="5dp"/>
         <TextView android:id="@+id/km" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="m" android:textColor="#fff" android:textSize="26sp" android:background="@drawable/key_bg" android:layout_marginEnd="5dp"/>
-        <TextView android:id="@+id/btn_backspace" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1.4" android:gravity="center" android:text="⌫" android:textColor="#fff" android:textSize="28sp" android:background="@drawable/key_bg_dark"/>
+        <TextView android:id="@+id/btn_backspace" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1.4" android:gravity="center" android:text="⌫" android:textColor="#fff" android:textSize="28sp" android:paddingTop="3dp" android:paddingBottom="3dp" android:background="@drawable/key_bg_dark"/>
     </LinearLayout>
 
     <!-- ACTION ROW -->
@@ -178,12 +188,12 @@
         android:paddingEnd="8dp"
         android:paddingTop="4dp"
         android:paddingBottom="2dp">
-        <TextView android:id="@+id/btn_symbols" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1.3" android:gravity="center" android:text="\?123" android:textColor="#fff" android:textSize="22sp" android:background="@drawable/key_bg_dark" android:layout_marginEnd="5dp"/>
-        <TextView android:id="@+id/btn_emoji" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="☺" android:textColor="#fff" android:textSize="28sp" android:background="@drawable/key_bg_dark" android:layout_marginEnd="5dp"/>
+        <TextView android:id="@+id/btn_symbols" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1.3" android:gravity="center" android:text="\?123" android:textColor="#fff" android:textSize="22sp" android:paddingTop="3dp" android:paddingBottom="3dp" android:background="@drawable/key_bg_dark" android:layout_marginEnd="5dp"/>
+        <TextView android:id="@+id/btn_emoji" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="☺" android:textColor="#fff" android:textSize="28sp" android:paddingTop="3dp" android:paddingBottom="3dp" android:background="@drawable/key_bg_dark" android:layout_marginEnd="5dp"/>
         <TextView android:id="@+id/btn_comma" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="," android:textColor="#fff" android:textSize="26sp" android:background="@drawable/key_bg" android:layout_marginEnd="5dp"/>
-        <TextView android:id="@+id/btn_space" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="4" android:gravity="center" android:text="space" android:textColor="#888" android:textSize="22sp" android:background="@drawable/key_bg_dark" android:layout_marginEnd="5dp"/>
+        <TextView android:id="@+id/btn_space" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="4" android:gravity="center" android:text="space" android:textColor="#888" android:textSize="22sp" android:paddingTop="3dp" android:paddingBottom="3dp" android:background="@drawable/key_bg_dark" android:layout_marginEnd="5dp"/>
         <TextView android:id="@+id/btn_period" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="." android:textColor="#fff" android:textSize="26sp" android:background="@drawable/key_bg" android:layout_marginEnd="5dp"/>
-        <TextView android:id="@+id/btn_enter" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1.3" android:gravity="center" android:text="↵" android:textColor="#fff" android:textSize="28sp" android:background="@drawable/key_bg_action"/>
+        <TextView android:id="@+id/btn_enter" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1.3" android:gravity="center" android:text="↵" android:textColor="#fff" android:textSize="28sp" android:paddingTop="3dp" android:paddingBottom="3dp" android:background="@drawable/key_bg_action"/>
     </LinearLayout>
 
     <!-- BOTTOM SPACER -->
