@@ -56,443 +56,407 @@ jobs:
           mkdir -p app/src/main/res/values
           mkdir -p gradle/wrapper
 
-      - name: Generate all source files
-        env:
-          BUILD_NUMBER: ${{ github.run_number }}
+      - name: Write AndroidManifest.xml
         run: |
-          # Generate AndroidManifest.xml
-          python3 -c "
-          content = '''<?xml version=\"1.0\" encoding=\"utf-8\"?>
-          <manifest xmlns:android=\"http://schemas.android.com/apk/res/android\"
-              xmlns:tools=\"http://schemas.android.com/tools\">
-              <uses-permission android:name=\"android.permission.READ_LOGS\" tools:ignore=\"ProtectedPermissions\" />
+          cat > app/src/main/AndroidManifest.xml << 'ENDOFFILE'
+          <?xml version="1.0" encoding="utf-8"?>
+          <manifest xmlns:android="http://schemas.android.com/apk/res/android"
+              xmlns:tools="http://schemas.android.com/tools">
+              <uses-permission android:name="android.permission.READ_LOGS" tools:ignore="ProtectedPermissions" />
               <application
-                  android:allowBackup=\"true\"
-                  android:icon=\"@mipmap/ic_launcher\"
-                  android:label=\"GreyB Launcher\"
-                  android:theme=\"@style/AppTheme\"
-                  android:supportsRtl=\"true\">
+                  android:allowBackup="true"
+                  android:icon="@mipmap/ic_launcher"
+                  android:label="GreyB Launcher"
+                  android:theme="@style/AppTheme"
+                  android:supportsRtl="true">
                   <activity
-                      android:name=\".MainActivity\"
-                      android:exported=\"true\">
+                      android:name=".MainActivity"
+                      android:exported="true">
                       <intent-filter>
-                          <action android:name=\"android.intent.action.MAIN\" />
-                          <category android:name=\"android.intent.category.LAUNCHER\" />
+                          <action android:name="android.intent.action.MAIN" />
+                          <category android:name="android.intent.category.LAUNCHER" />
                       </intent-filter>
                   </activity>
               </application>
-          </manifest>'''
-          with open('app/src/main/AndroidManifest.xml', 'w') as f:
-              f.write(content)
-          "
+          </manifest>
+          ENDOFFILE
 
-          # Generate MainActivity.kt
-          python3 -c "
-          content = open('/dev/stdin').read()
-          with open('app/src/main/java/com/greyb/launcher/MainActivity.kt', 'w') as f:
-              f.write(content)
-          " << 'PYEOF'
-package com.greyb.launcher
-import android.content.ClipData
-import android.content.ClipboardManager
-import android.content.Context
-import android.os.Bundle
-import android.widget.TextView
-import androidx.appcompat.app.AppCompatActivity
-import androidx.recyclerview.widget.GridLayoutManager
-import androidx.recyclerview.widget.LinearLayoutManager
-import androidx.recyclerview.widget.RecyclerView
-import java.util.*
-
-class MainActivity : AppCompatActivity() {
-
-    private lateinit var emojiRecyclerView: RecyclerView
-    private lateinit var clipboardRecyclerView: RecyclerView
-    private lateinit var emojiAdapter: EmojiAdapter
-    private lateinit var clipboardAdapter: ClipboardAdapter
-    private lateinit var clipboardManager: ClipboardManager
-    private val clipboardItems = mutableListOf<String>()
-
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_main)
-
-        window.statusBarColor = 0xFF1e1e1e.toInt()
-        window.navigationBarColor = 0xFF1e1e1e.toInt()
-
-        emojiRecyclerView = findViewById(R.id.emojiRecyclerView)
-        clipboardRecyclerView = findViewById(R.id.clipboardRecyclerView)
-
-        clipboardManager = getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-
-        setupEmojiRecyclerView()
-        setupClipboardRecyclerView()
-        loadInitialClipboardContent()
-    }
-
-    private fun setupEmojiRecyclerView() {
-        emojiAdapter = EmojiAdapter(getEmojiData())
-        emojiRecyclerView.layoutManager = GridLayoutManager(this, 6)
-        emojiRecyclerView.adapter = emojiAdapter
-    }
-
-    private fun setupClipboardRecyclerView() {
-        clipboardAdapter = ClipboardAdapter(clipboardItems)
-        clipboardRecyclerView.layoutManager = LinearLayoutManager(this)
-        clipboardRecyclerView.adapter = clipboardAdapter
-    }
-    private fun loadInitialClipboardContent() {
-        val primaryClip = clipboardManager.primaryClip
-        if (primaryClip != null && primaryClip.itemCount > 0) {
-            val content = primaryClip.getItemAt(0).text?.toString()
-            if (!content.isNullOrEmpty() && !clipboardItems.contains(content)) {
-                clipboardItems.add(0, content)
-                clipboardAdapter.notifyItemInserted(0)
-            }
-        }
-    }
-
-    override fun onResume() {
-        super.onResume()
-        clipboardManager.addPrimaryClipChangedListener(clipboardListener)
-    }
-
-    override fun onPause() {
-        super.onPause()
-        clipboardManager.removePrimaryClipChangedListener(clipboardListener)
-    }
-
-    private val clipboardListener = ClipboardManager.OnPrimaryClipChangedListener {
-        val primaryClip = clipboardManager.primaryClip
-        if (primaryClip != null && primaryClip.itemCount > 0) {
-            val content = primaryClip.getItemAt(0).text?.toString()
-            if (!content.isNullOrEmpty() && !clipboardItems.contains(content)) {
-                clipboardItems.add(0, content)
-                clipboardAdapter.notifyItemInserted(0)
-                clipboardRecyclerView.scrollToPosition(0)
-            }
-        }
-    }
-
-    private fun getEmojiData(): Map<String, List<String>> {
-        return mapOf(
-            "Faces" to listOf("😀","😁","😂","🤣","😃","😄","😅","😆","😇","😉","😊","😋","😌","😍","🥰","😎","😏","😐","😑","😒","😓","😔","😕","😖","😗","😘","😙","😚","😛","😜","😝","😞","😟","😠","😡","😢","😣","😤","😥","😦","😧","😨","😩","😪","😫","😬","😭","😮","😯","😰","😱","😲","😳","😴","😵","😶","😷","🙁","🙂","🙃","🙄"),
-            "People" to listOf("👋","🤚","🖐","✋","🖖","👌","🤌","🤏","✌","🤞","🤟","🤘","🤙","👈","👉","👆","👇","☝","👍","👎","✊","👊","🤛","🤜","👏","🙌","👐","🤲","🤝","🙏","✍","💅","🤳","💪","🦾","🦵","🦶","👂","🦻","👃","👶","🧒","👦","👧","🧑","👱","👨","🧔","👩","🧓","👴","👵","🙍","🙎","🙅","🙆","💁","🙋","🧏","🙇","🤦","🤷"),
-            "Animals" to listOf("🐶","🐱","🐭","🐹","🐰","🦊","🐻","🐼","🐨","🐯","🦁","🐮","🐷","🐸","🐵","🙈","🙉","🙊","🐔","🐧","🐦","🐤","🦆","🦅","🦉","🦇","🐺","🐗","🐴","🦄","🐝","🐛","🦋","🐌","🐞","🐜","🦟","🦗","🦂","🐢","🐍","🦎","🦖","🦕","🐙","🦑","🦐","🦞","🦀","🐡","🐠","🐟","🐬","🐳","🐋","🦈","🐊","🐅","🐆","🦓","🦍"),
-            "Food" to listOf("🍕","🍔","🍟","🌭","🍿","🧂","🥓","🥚","🍳","🧇","🥞","🧈","🍞","🥐","🥖","🥨","🧀","🥗","🥙","🥪","🌮","🌯","🧆","🥜","🫘","🍱","🍘","🍙","🍚","🍛","🍜","🍝","🍠","🍢","🍣","🍤","🍥","🥮","🍡","🥟","🦪","🍦","🍧","🍨","🍩","🍪","🎂","🍰","🧁","🥧","🍫","🍬","🍭","🍮","🍯","🍷","🍸","🍹","🍺","🍻"),
-            "Activities" to listOf("⚽","🏀","🏈","⚾","🥎","🏐","🏉","🥏","🎾","🪃","🏸","🏒","🏑","🥍","🏏","🎯","🪀","🪁","🎱","🔮","🪄","🎮","🕹","🎲","🧩","🧸","🎭","🎨","🖼","🎰","🎟","🎪","🤹","🎬","🎤","🎧","🎼","🎹","🥁","🪘","🎷","🎺","🎸","🪕","🎻","🎳","🏹","🛹","🛼","🛷","⛸","🥌","🎿","⛷","🏂","🪂","🏋","🤸","🤺","🏇","🧘"),
-            "Objects" to listOf("⌚","📱","💻","⌨","🖥","🖨","🖱","🖲","🕹","🗜","💽","💾","💿","📀","📼","📷","📸","📹","🎥","📽","🎞","📞","☎","📟","📠","📺","📻","🎙","🎚","🎛","🧭","⏱","⏲","⏰","🕰","⌛","📡","🔋","🔌","💡","🔦","🕯","🪔","🧯","🛢","💸","💵","💴","💶","💷","🪙","💰","💳","💎","⚖","🧰","🔧","🔨","⚒","🛠","⛏","🔩","🔗","⛓","🧲","🪝","🧱","🪜","🛗","🚪","🛏","🛋","🚽","🚿","🛁","🪒","🧴","🧷","🧹","🧺","🧻","🧼","🪥","🗝","🔑","🔐","🔏","🔓","🪪")
-        )
-    }
-}
-PYEOF
-
-      - name: Generate EmojiAdapter.kt
+      - name: Write MainActivity.kt
         run: |
-          python3 -c "
-          content = open('/dev/stdin').read()
-          with open('app/src/main/java/com/greyb/launcher/EmojiAdapter.kt', 'w') as f:
-              f.write(content)
-          " << 'PYEOF'
-package com.greyb.launcher
+          cat > app/src/main/java/com/greyb/launcher/MainActivity.kt << 'ENDOFFILE'
+          package com.greyb.launcher
+          import android.content.ClipData
+          import android.content.ClipboardManager
+          import android.content.Context
+          import android.os.Bundle
+          import android.widget.TextView
+          import androidx.appcompat.app.AppCompatActivity
+          import androidx.recyclerview.widget.GridLayoutManager
+          import androidx.recyclerview.widget.LinearLayoutManager
+          import androidx.recyclerview.widget.RecyclerView
+          import java.util.*
 
-import android.view.LayoutInflater
-import android.view.View
-import android.view.ViewGroup
-import android.widget.TextView
-import androidx.recyclerview.widget.RecyclerView
+          class MainActivity : AppCompatActivity() {
 
-class EmojiAdapter(private val emojiData: Map<String, List<String>>) :
-    RecyclerView.Adapter<EmojiAdapter.EmojiViewHolder>() {
+              private lateinit var emojiRecyclerView: RecyclerView
+              private lateinit var clipboardRecyclerView: RecyclerView
+              private lateinit var emojiAdapter: EmojiAdapter
+              private lateinit var clipboardAdapter: ClipboardAdapter
+              private lateinit var clipboardManager: ClipboardManager
+              private val clipboardItems = mutableListOf<String>()
 
-    private val allEmojis = emojiData.values.flatten()
+              override fun onCreate(savedInstanceState: Bundle?) {
+                  super.onCreate(savedInstanceState)
+                  setContentView(R.layout.activity_main)
+                  window.statusBarColor = 0xFF1e1e1e.toInt()
+                  window.navigationBarColor = 0xFF1e1e1e.toInt()
+                  emojiRecyclerView = findViewById(R.id.emojiRecyclerView)
+                  clipboardRecyclerView = findViewById(R.id.clipboardRecyclerView)
+                  clipboardManager = getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+                  setupEmojiRecyclerView()
+                  setupClipboardRecyclerView()
+                  loadInitialClipboardContent()
+              }
 
-    class EmojiViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
-        val emojiText: TextView = itemView.findViewById(R.id.emojiItem)
-    }
+              private fun setupEmojiRecyclerView() {
+                  emojiAdapter = EmojiAdapter(getEmojiData())
+                  emojiRecyclerView.layoutManager = GridLayoutManager(this, 6)
+                  emojiRecyclerView.adapter = emojiAdapter
+              }
 
-    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): EmojiViewHolder {
-        val view = LayoutInflater.from(parent.context)
-            .inflate(R.layout.item_emoji, parent, false)
-        return EmojiViewHolder(view)
-    }
+              private fun setupClipboardRecyclerView() {
+                  clipboardAdapter = ClipboardAdapter(clipboardItems)
+                  clipboardRecyclerView.layoutManager = LinearLayoutManager(this)
+                  clipboardRecyclerView.adapter = clipboardAdapter
+              }
 
-    override fun onBindViewHolder(holder: EmojiViewHolder, position: Int) {
-        holder.emojiText.text = allEmojis[position]
-    }
+              private fun loadInitialClipboardContent() {
+                  val primaryClip = clipboardManager.primaryClip
+                  if (primaryClip != null && primaryClip.itemCount > 0) {
+                      val content = primaryClip.getItemAt(0).text?.toString()
+                      if (!content.isNullOrEmpty() && !clipboardItems.contains(content)) {
+                          clipboardItems.add(0, content)
+                          clipboardAdapter.notifyItemInserted(0)
+                      }
+                  }
+              }
 
-    override fun getItemCount(): Int = allEmojis.size
-}
-PYEOF
+              override fun onResume() {
+                  super.onResume()
+                  clipboardManager.addPrimaryClipChangedListener(clipboardListener)
+              }
 
-      - name: Generate ClipboardAdapter.kt
+              override fun onPause() {
+                  super.onPause()
+                  clipboardManager.removePrimaryClipChangedListener(clipboardListener)
+              }
+
+              private val clipboardListener = ClipboardManager.OnPrimaryClipChangedListener {
+                  val primaryClip = clipboardManager.primaryClip
+                  if (primaryClip != null && primaryClip.itemCount > 0) {
+                      val content = primaryClip.getItemAt(0).text?.toString()
+                      if (!content.isNullOrEmpty() && !clipboardItems.contains(content)) {
+                          clipboardItems.add(0, content)
+                          clipboardAdapter.notifyItemInserted(0)
+                          clipboardRecyclerView.scrollToPosition(0)
+                      }
+                  }
+              }
+
+              private fun getEmojiData(): Map<String, List<String>> {
+                  return mapOf(
+                      "Faces" to listOf("😀","😁","😂","🤣","😃","😄","😅","😆","😇","😉","😊","😋","😌","😍","🥰","😎","😏","😐","😑","😒","😓","😔","😕","😖","😗","😘","😙","😚","😛","😜","😝","😞","😟","😠","😡","😢","😣","😤","😥","😦","😧","😨","😩","😪","😫","😬","😭","😮","😯","😰","😱","😲","😳","😴","😵","😶","😷","🙁","🙂","🙃","🙄"),
+                      "People" to listOf("👋","🤚","🖐","✋","🖖","👌","🤌","🤏","✌","🤞","🤟","🤘","🤙","👈","👉","👆","👇","☝","👍","👎","✊","👊","🤛","🤜","👏","🙌","👐","🤲","🤝","🙏","✍","💅","🤳","💪","🦾","🦵","🦶","👂","🦻","👃","👶","🧒","👦","👧","🧑","👱","👨","🧔","👩","🧓","👴","👵","🙍","🙎","🙅","🙆","💁","🙋","🧏","🙇","🤦","🤷"),
+                      "Animals" to listOf("🐶","🐱","🐭","🐹","🐰","🦊","🐻","🐼","🐨","🐯","🦁","🐮","🐷","🐸","🐵","🙈","🙉","🙊","🐔","🐧","🐦","🐤","🦆","🦅","🦉","🦇","🐺","🐗","🐴","🦄","🐝","🐛","🦋","🐌","🐞","🐜","🦟","🦗","🦂","🐢","🐍","🦎","🦖","🦕","🐙","🦑","🦐","🦞","🦀","🐡","🐠","🐟","🐬","🐳","🐋","🦈","🐊","🐅","🐆","🦓","🦍"),
+                      "Food" to listOf("🍕","🍔","🍟","🌭","🍿","🧂","🥓","🥚","🍳","🧇","🥞","🧈","🍞","🥐","🥖","🥨","🧀","🥗","🥙","🥪","🌮","🌯","🧆","🥜","🫘","🍱","🍘","🍙","🍚","🍛","🍜","🍝","🍠","🍢","🍣","🍤","🍥","🥮","🍡","🥟","🦪","🍦","🍧","🍨","🍩","🍪","🎂","🍰","🧁","🥧","🍫","🍬","🍭","🍮","🍯","🍷","🍸","🍹","🍺","🍻"),
+                      "Activities" to listOf("⚽","🏀","🏈","⚾","🥎","🏐","🏉","🥏","🎾","🪃","🏸","🏒","🏑","🥍","🏏","🎯","🪀","🪁","🎱","🔮","🪄","🎮","🕹","🎲","🧩","🧸","🎭","🎨","🖼","🎰","🎟","🎪","🤹","🎬","🎤","🎧","🎼","🎹","🥁","🪘","🎷","🎺","🎸","🪕","🎻","🎳","🏹","🛹","🛼","🛷","⛸","🥌","🎿","⛷","🏂","🪂","🏋","🤸","🤺","🏇","🧘"),
+                      "Objects" to listOf("⌚","📱","💻","⌨","🖥","🖨","🖱","🖲","🕹","🗜","💽","💾","💿","📀","📼","📷","📸","📹","🎥","📽","🎞","📞","☎","📟","📠","📺","📻","🎙","🎚","🎛","🧭","⏱","⏲","⏰","🕰","⌛","📡","🔋","🔌","💡","🔦","🕯","🪔","🧯","🛢","💸","💵","💴","💶","💷","🪙","💰","💳","💎","⚖","🧰","🔧","🔨","⚒","🛠","⛏","🔩","🔗","⛓","🧲","🪝","🧱","🪜","🛗","🚪","🛏","🛋","🚽","🚿","🛁","🪒","🧴","🧷","🧹","🧺","🧻","🧼","🪥","🗝","🔑","🔐","🔏","🔓","🪪")
+                  )
+              }
+          }
+          ENDOFFILE
+
+      - name: Write EmojiAdapter.kt
         run: |
-          python3 -c "
-          content = open('/dev/stdin').read()
-          with open('app/src/main/java/com/greyb/launcher/ClipboardAdapter.kt', 'w') as f:
-              f.write(content)
-          " << 'PYEOF'
-package com.greyb.launcher
+          cat > app/src/main/java/com/greyb/launcher/EmojiAdapter.kt << 'ENDOFFILE'
+          package com.greyb.launcher
 
-import android.view.LayoutInflater
-import android.view.View
-import android.view.ViewGroup
-import android.widget.TextView
-import androidx.recyclerview.widget.RecyclerView
+          import android.view.LayoutInflater
+          import android.view.View
+          import android.view.ViewGroup
+          import android.widget.TextView
+          import androidx.recyclerview.widget.RecyclerView
 
-class ClipboardAdapter(private val items: List<String>) :
-    RecyclerView.Adapter<ClipboardAdapter.ClipboardViewHolder>() {
+          class EmojiAdapter(private val emojiData: Map<String, List<String>>) :
+              RecyclerView.Adapter<EmojiAdapter.EmojiViewHolder>() {
 
-    class ClipboardViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
-        val clipboardText: TextView = itemView.findViewById(R.id.clipboardItem)
-    }
+              private val allEmojis = emojiData.values.flatten()
 
-    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ClipboardViewHolder {
-        val view = LayoutInflater.from(parent.context)
-            .inflate(R.layout.item_clipboard, parent, false)
-        return ClipboardViewHolder(view)
-    }
+              class EmojiViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
+                  val emojiText: TextView = itemView.findViewById(R.id.emojiItem)
+              }
 
-    override fun onBindViewHolder(holder: ClipboardViewHolder, position: Int) {
-        holder.clipboardText.text = items[position]
-    }
+              override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): EmojiViewHolder {
+                  val view = LayoutInflater.from(parent.context)
+                      .inflate(R.layout.item_emoji, parent, false)
+                  return EmojiViewHolder(view)
+              }
 
-    override fun getItemCount(): Int = items.size
-}
-PYEOF
+              override fun onBindViewHolder(holder: EmojiViewHolder, position: Int) {
+                  holder.emojiText.text = allEmojis[position]
+              }
 
-      - name: Generate layout files
+              override fun getItemCount(): Int = allEmojis.size
+          }
+          ENDOFFILE
+
+      - name: Write ClipboardAdapter.kt
         run: |
-          # activity_main.xml
-          python3 -c "
-          content = '''<?xml version=\"1.0\" encoding=\"utf-8\"?>
-          <androidx.constraintlayout.widget.ConstraintLayout xmlns:android=\"http://schemas.android.com/apk/res/android\"
-              xmlns:app=\"http://schemas.android.com/apk/res-auto\"
-              android:layout_width=\"match_parent\"
-              android:layout_height=\"match_parent\"
-              android:background=\"#1e1e1e\">
+          cat > app/src/main/java/com/greyb/launcher/ClipboardAdapter.kt << 'ENDOFFILE'
+          package com.greyb.launcher
 
+          import android.view.LayoutInflater
+          import android.view.View
+          import android.view.ViewGroup
+          import android.widget.TextView
+          import androidx.recyclerview.widget.RecyclerView
+
+          class ClipboardAdapter(private val items: List<String>) :
+              RecyclerView.Adapter<ClipboardAdapter.ClipboardViewHolder>() {
+
+              class ClipboardViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
+                  val clipboardText: TextView = itemView.findViewById(R.id.clipboardItem)
+              }
+
+              override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ClipboardViewHolder {
+                  val view = LayoutInflater.from(parent.context)
+                      .inflate(R.layout.item_clipboard, parent, false)
+                  return ClipboardViewHolder(view)
+              }
+
+              override fun onBindViewHolder(holder: ClipboardViewHolder, position: Int) {
+                  holder.clipboardText.text = items[position]
+              }
+
+              override fun getItemCount(): Int = items.size
+          }
+          ENDOFFILE
+
+      - name: Write activity_main.xml
+        run: |
+          cat > app/src/main/res/layout/activity_main.xml << 'ENDOFFILE'
+          <?xml version="1.0" encoding="utf-8"?>
+          <androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+              xmlns:app="http://schemas.android.com/apk/res-auto"
+              android:layout_width="match_parent"
+              android:layout_height="match_parent"
+              android:background="#1e1e1e">
               <androidx.recyclerview.widget.RecyclerView
-                  android:id=\"@+id/emojiRecyclerView\"
-                  android:layout_width=\"0dp\"
-                  android:layout_height=\"0dp\"
-                  android:layout_marginBottom=\"8dp\"
-                  app:layout_constraintTop_toTopOf=\"parent\"
-                  app:layout_constraintStart_toStartOf=\"parent\"
-                  app:layout_constraintEnd_toEndOf=\"parent\"
-                  app:layout_constraintBottom_toTopOf=\"@+id/clipboardRecyclerView\" />
-
+                  android:id="@+id/emojiRecyclerView"
+                  android:layout_width="0dp"
+                  android:layout_height="0dp"
+                  android:layout_marginBottom="8dp"
+                  app:layout_constraintTop_toTopOf="parent"
+                  app:layout_constraintStart_toStartOf="parent"
+                  app:layout_constraintEnd_toEndOf="parent"
+                  app:layout_constraintBottom_toTopOf="@+id/clipboardRecyclerView" />
               <androidx.recyclerview.widget.RecyclerView
-                  android:id=\"@+id/clipboardRecyclerView\"
-                  android:layout_width=\"0dp\"
-                  android:layout_height=\"0dp\"
-                  android:layout_marginTop=\"8dp\"
-                  app:layout_constraintTop_toBottomOf=\"@+id/emojiRecyclerView\"
-                  app:layout_constraintStart_toStartOf=\"parent\"
-                  app:layout_constraintEnd_toEndOf=\"parent\"
-                  app:layout_constraintBottom_toBottomOf=\"parent\" />
+                  android:id="@+id/clipboardRecyclerView"
+                  android:layout_width="0dp"
+                  android:layout_height="0dp"
+                  android:layout_marginTop="8dp"
+                  app:layout_constraintTop_toBottomOf="@+id/emojiRecyclerView"
+                  app:layout_constraintStart_toStartOf="parent"
+                  app:layout_constraintEnd_toEndOf="parent"
+                  app:layout_constraintBottom_toBottomOf="parent" />
+          </androidx.constraintlayout.widget.ConstraintLayout>
+          ENDOFFILE
 
-          </androidx.constraintlayout.widget.ConstraintLayout>'''
-          with open('app/src/main/res/layout/activity_main.xml', 'w') as f:
-              f.write(content)
-          "
+      - name: Write item_emoji.xml
+        run: |
+          cat > app/src/main/res/layout/item_emoji.xml << 'ENDOFFILE'
+          <?xml version="1.0" encoding="utf-8"?>
+          <TextView xmlns:android="http://schemas.android.com/apk/res/android"
+              android:id="@+id/emojiItem"
+              android:layout_width="match_parent"
+              android:layout_height="wrap_content"
+              android:gravity="center"
+              android:padding="12dp"
+              android:textSize="28sp"
+              android:textColor="#FFFFFF" />
+          ENDOFFILE
 
-          # item_emoji.xml
-          python3 -c "
-          content = '''<?xml version=\"1.0\" encoding=\"utf-8\"?>
-          <TextView xmlns:android=\"http://schemas.android.com/apk/res/android\"
-              android:id=\"@+id/emojiItem\"
-              android:layout_width=\"match_parent\"
-              android:layout_height=\"wrap_content\"
-              android:gravity=\"center\"
-              android:padding=\"12dp\"
-              android:textSize=\"28sp\"
-              android:textColor=\"#FFFFFF\" />'''
-          with open('app/src/main/res/layout/item_emoji.xml', 'w') as f:
-              f.write(content)
-          "
+      - name: Write item_clipboard.xml
+        run: |
+          cat > app/src/main/res/layout/item_clipboard.xml << 'ENDOFFILE'
+          <?xml version="1.0" encoding="utf-8"?>
+          <TextView xmlns:android="http://schemas.android.com/apk/res/android"
+              android:id="@+id/clipboardItem"
+              android:layout_width="match_parent"
+              android:layout_height="wrap_content"
+              android:padding="12dp"
+              android:textSize="16sp"
+              android:textColor="#FFFFFF"
+              android:maxLines="2"
+              android:ellipsize="end" />
+          ENDOFFILE
 
-          # item_clipboard.xml
-          python3 -c "
-          content = '''<?xml version=\"1.0\" encoding=\"utf-8\"?>
-          <TextView xmlns:android=\"http://schemas.android.com/apk/res/android\"
-              android:id=\"@+id/clipboardItem\"
-              android:layout_width=\"match_parent\"
-              android:layout_height=\"wrap_content\"
-              android:padding=\"12dp\"
-              android:textSize=\"16sp\"
-              android:textColor=\"#FFFFFF\"
-              android:maxLines=\"2\"
-              android:ellipsize=\"end\" />'''
-          with open('app/src/main/res/layout/item_clipboard.xml', 'w') as f:
-              f.write(content)
-          "
-
-          # colors.xml
-          python3 -c "
-          content = '''<?xml version=\"1.0\" encoding=\"utf-8\"?>
+      - name: Write colors.xml
+        run: |
+          cat > app/src/main/res/values/colors.xml << 'ENDOFFILE'
+          <?xml version="1.0" encoding="utf-8"?>
           <resources>
-              <color name=\"colorPrimary\">#1e1e1e</color>
-              <color name=\"colorSurface\">#2c2c2c</color>
-              <color name=\"colorAccent\">#1565C0</color>
-              <color name=\"textColorNormal\">#FFFFFF</color>
-              <color name=\"textColorSecondary\">#AAAAAA</color>
-          </resources>'''
-          with open('app/src/main/res/values/colors.xml', 'w') as f:
-              f.write(content)
-          "
+              <color name="colorPrimary">#1e1e1e</color>
+              <color name="colorSurface">#2c2c2c</color>
+              <color name="colorAccent">#1565C0</color>
+              <color name="textColorNormal">#FFFFFF</color>
+              <color name="textColorSecondary">#AAAAAA</color>
+          </resources>
+          ENDOFFILE
 
-          # styles.xml
-          python3 -c "
-          content = '''<?xml version=\"1.0\" encoding=\"utf-8\"?>
+      - name: Write styles.xml
+        run: |
+          cat > app/src/main/res/values/styles.xml << 'ENDOFFILE'
+          <?xml version="1.0" encoding="utf-8"?>
           <resources>
-              <style name=\"AppTheme\" parent=\"Theme.AppCompat.Light.NoActionBar\">
-                  <item name=\"android:windowBackground\">@color/colorPrimary</item>
-                  <item name=\"android:navigationBarColor\">@color/colorPrimary</item>
+              <style name="AppTheme" parent="Theme.AppCompat.Light.NoActionBar">
+                  <item name="android:windowBackground">@color/colorPrimary</item>
+                  <item name="android:navigationBarColor">@color/colorPrimary</item>
               </style>
-          </resources>'''
-          with open('app/src/main/res/values/styles.xml', 'w') as f:
-              f.write(content)
-          "
+          </resources>
+          ENDOFFILE
 
       - name: Generate launcher icons
         run: |
           rm -rf app/src/main/res/mipmap-*
           pip3 install Pillow --quiet --break-system-packages 2>/dev/null || pip install Pillow --quiet
-          python3 << 'PYEOF'
-from PIL import Image, ImageDraw
-import os
+          python3 << 'ENDOFFILE'
+          from PIL import Image, ImageDraw
+          import os
 
-def make_icon(size):
-    BG     = (42, 45, 52, 255)
-    ACCENT = (90, 93, 100, 255)
-    WHITE  = (255, 255, 255, 255)
-    img = Image.new('RGBA', (size, size), BG)
-    d   = ImageDraw.Draw(img)
-    margin = size // 5
-    key_w  = (size - 2 * margin) // 4
-    key_h  = (size - 2 * margin) // 5
-    gap    = max(1, size // 40)
-    start_y = margin + key_h
-    for row in range(3):
-        y = start_y + row * (key_h + gap)
-        keys_in_row = [4, 4, 3]
-        row_margin = (size - keys_in_row[row] * (key_w + gap) + gap) // 2
-        for col in range(keys_in_row[row]):
-            x = row_margin + col * (key_w + gap)
-            color = ACCENT if (row == 0 and col == 0) else WHITE
-            d.rounded_rectangle([x, y, x + key_w, y + key_h], radius=key_w // 5, fill=color)
-    space_y = start_y + 3 * (key_h + gap)
-    space_w = key_w * 2 + gap
-    space_x = (size - space_w) // 2
-    d.rounded_rectangle([space_x, space_y, space_x + space_w, space_y + key_h], radius=key_w // 5, fill=ACCENT)
-    return img
+          def make_icon(size):
+              BG     = (42, 45, 52, 255)
+              ACCENT = (90, 93, 100, 255)
+              WHITE  = (255, 255, 255, 255)
+              img = Image.new('RGBA', (size, size), BG)
+              d   = ImageDraw.Draw(img)
+              margin = size // 5
+              key_w  = (size - 2 * margin) // 4
+              key_h  = (size - 2 * margin) // 5
+              gap    = max(1, size // 40)
+              start_y = margin + key_h
+              for row in range(3):
+                  y = start_y + row * (key_h + gap)
+                  keys_in_row = [4, 4, 3]
+                  row_margin = (size - keys_in_row[row] * (key_w + gap) + gap) // 2
+                  for col in range(keys_in_row[row]):
+                      x = row_margin + col * (key_w + gap)
+                      color = ACCENT if (row == 0 and col == 0) else WHITE
+                      d.rounded_rectangle([x, y, x + key_w, y + key_h], radius=key_w // 5, fill=color)
+              space_y = start_y + 3 * (key_h + gap)
+              space_w = key_w * 2 + gap
+              space_x = (size - space_w) // 2
+              d.rounded_rectangle([space_x, space_y, space_x + space_w, space_y + key_h], radius=key_w // 5, fill=ACCENT)
+              return img
 
-sizes = {'mdpi': 48, 'hdpi': 72, 'xhdpi': 96, 'xxhdpi': 144, 'xxxhdpi': 192}
-for density, s in sizes.items():
-    path = f'app/src/main/res/mipmap-{density}'
-    os.makedirs(path, exist_ok=True)
-    icon = make_icon(s)
-    icon.save(f'{path}/ic_launcher.png')
-    icon.save(f'{path}/ic_launcher_round.png')
-print("Icons generated!")
-PYEOF
+          sizes = {'mdpi': 48, 'hdpi': 72, 'xhdpi': 96, 'xxhdpi': 144, 'xxxhdpi': 192}
+          for density, s in sizes.items():
+              path = f'app/src/main/res/mipmap-{density}'
+              os.makedirs(path, exist_ok=True)
+              icon = make_icon(s)
+              icon.save(f'{path}/ic_launcher.png')
+              icon.save(f'{path}/ic_launcher_round.png')
+          print("Icons generated!")
+          ENDOFFILE
 
-      - name: Generate Gradle Scripts
-        env:
-          BUILD_NUMBER: ${{ github.run_number }}
+      - name: Write settings.gradle.kts
         run: |
-          # settings.gradle.kts
-          python3 -c "
-          content = '''pluginManagement {
+          cat > settings.gradle.kts << 'ENDOFFILE'
+          pluginManagement {
               repositories { google(); mavenCentral(); gradlePluginPortal() }
           }
           dependencyResolutionManagement {
               repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
               repositories { google(); mavenCentral() }
           }
-          rootProject.name = \"GreyB Launcher\"
-          include(\":app\")'''
-          with open('settings.gradle.kts', 'w') as f:
-              f.write(content)
-          "
+          rootProject.name = "GreyB Launcher"
+          include(":app")
+          ENDOFFILE
 
-          # build.gradle.kts
-          python3 -c "
-          content = '''plugins {
-              id(\"com.android.application\") version \"8.9.1\" apply false
-              id(\"org.jetbrains.kotlin.android\") version \"2.2.0\" apply false
-          }'''
-          with open('build.gradle.kts', 'w') as f:
-              f.write(content)
-          "
+      - name: Write build.gradle.kts
+        run: |
+          cat > build.gradle.kts << 'ENDOFFILE'
+          plugins {
+              id("com.android.application") version "8.9.1" apply false
+              id("org.jetbrains.kotlin.android") version "2.2.0" apply false
+          }
+          ENDOFFILE
 
-          # app/build.gradle.kts
-          python3 -c "
-          build_number = '${BUILD_NUMBER}'
-          content = f'''plugins {{
-              id(\"com.android.application\")
-              id(\"org.jetbrains.kotlin.android\")
-          }}
+      - name: Write app/build.gradle.kts
+        env:
+          BUILD_NUMBER: ${{ github.run_number }}
+        run: |
+          cat > app/build.gradle.kts << ENDOFFILE
+          plugins {
+              id("com.android.application")
+              id("org.jetbrains.kotlin.android")
+          }
 
-          android {{
-              namespace  = \"com.greyb.launcher\"
+          android {
+              namespace  = "com.greyb.launcher"
               compileSdk = 36
 
-              defaultConfig {{
-                  applicationId = \"com.greyb.launcher\"
+              defaultConfig {
+                  applicationId = "com.greyb.launcher"
                   minSdk        = 26
                   targetSdk     = 36
-                  versionCode   = {build_number}
-                  versionName   = \"{build_number}\"
-              }}
+                  versionCode   = ${BUILD_NUMBER}
+                  versionName   = "${BUILD_NUMBER}"
+              }
 
-              signingConfigs {{
-                  create(\"release\") {{
-                      storeFile     = file(\"release.keystore\")
-                      storePassword = \"greyb2024\"
-                      keyAlias      = \"greyb\"
-                      keyPassword   = \"greyb2024\"
-                  }}
-              }}
+              signingConfigs {
+                  create("release") {
+                      storeFile     = file("release.keystore")
+                      storePassword = "greyb2024"
+                      keyAlias      = "greyb"
+                      keyPassword   = "greyb2024"
+                  }
+              }
 
-              buildTypes {{
-                  release {{
+              buildTypes {
+                  release {
                       isMinifyEnabled   = true
                       isShrinkResources = true
-                      proguardFiles(getDefaultProguardFile(\"proguard-android-optimize.txt\"))
-                      signingConfig = signingConfigs.getByName(\"release\")
-                  }}
-              }}
+                      proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"))
+                      signingConfig = signingConfigs.getByName("release")
+                  }
+              }
 
-              compileOptions {{
+              compileOptions {
                   sourceCompatibility = JavaVersion.VERSION_17
                   targetCompatibility = JavaVersion.VERSION_17
-              }}
-              kotlinOptions {{ jvmTarget = \"17\" }}
-          }}
+              }
+              kotlinOptions { jvmTarget = "17" }
+          }
 
-          dependencies {{
-              implementation(\"androidx.core:core-ktx:1.13.1\")
-              implementation(\"androidx.appcompat:appcompat:1.7.0\")
-              implementation(\"com.google.android.material:material:1.12.0\")
-              implementation(\"androidx.constraintlayout:constraintlayout:2.2.0\")
-              implementation(\"androidx.recyclerview:recyclerview:1.3.2\")
-          }}'''
-          with open('app/build.gradle.kts', 'w') as f:
-              f.write(content)
-          "
+          dependencies {
+              implementation("androidx.core:core-ktx:1.13.1")
+              implementation("androidx.appcompat:appcompat:1.7.0")
+              implementation("com.google.android.material:material:1.12.0")
+              implementation("androidx.constraintlayout:constraintlayout:2.2.0")
+              implementation("androidx.recyclerview:recyclerview:1.3.2")
+          }
+          ENDOFFILE
 
-          # gradle.properties
-          python3 -c "
-          content = '''android.useAndroidX=true
+      - name: Write gradle.properties
+        run: |
+          cat > gradle.properties << 'ENDOFFILE'
+          android.useAndroidX=true
           android.enableJetifier=true
           org.gradle.jvmargs=-Xmx4g -XX:MaxMetaspaceSize=512m -XX:+UseParallelGC
           kotlin.code.style=official
-          android.suppressUnsupportedCompileSdk=36'''
-          with open('gradle.properties', 'w') as f:
-              f.write(content)
-          "
+          android.suppressUnsupportedCompileSdk=36
+          ENDOFFILE
 
       - name: Generate fixed keystore
         run: |
@@ -539,17 +503,14 @@ PYEOF
           mkdir -p GreyB-Launcher-release
           cp app/build/outputs/apk/release/app-release.apk GreyB-Launcher-release/GreyBLauncher.apk
           APK_SIZE=$(ls -lh app/build/outputs/apk/release/app-release.apk | awk '{print $5}')
-          
-          python3 -c "
-          content = f'''Build:      #${{ github.run_number }}
+          cat > GreyB-Launcher-release/BUILD_INFO.txt << ENDOFFILE
+          Build:      #${{ github.run_number }}
           Commit:     ${{ github.sha }}
           Timestamp:  $(date -u '+%Y-%m-%d %H:%M:%S UTC')
           Signed:     Yes (fixed key)
           APK Size:   ${APK_SIZE}
-          Optimized:  Yes (ProGuard/R8 enabled)'''
-          with open('GreyB-Launcher-release/BUILD_INFO.txt', 'w') as f:
-              f.write(content)
-          "
+          Optimized:  Yes (ProGuard/R8 enabled)
+          ENDOFFILE
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
