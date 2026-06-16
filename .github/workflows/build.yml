@@ -760,7 +760,7 @@ jobs:
           }
           ENDOFFILE
 
-      # ---------- Keyboard.kt (updated touch handling) ----------
+      # ---------- Keyboard.kt (fixed touch handling) ----------
       - name: Generate Keyboard.kt
         run: |
           cat > app/src/main/java/com/greyb/keyboard/Keyboard.kt << 'ENDOFFILE'
@@ -911,7 +911,8 @@ jobs:
                   setupKey(v.findViewById<TextView>(R.id.btn_symbols)) { showMode(Mode.SYMBOLS) }
                   setupKey(v.findViewById<TextView>(R.id.btn_emoji)) { showMode(Mode.EMOJI) }
                   setupKey(v.findViewById<TextView>(R.id.btn_clipboard)) { openClipboard() }
-                  setupKey(v.findViewById<TextView>(R.id.btn_tools)) { showToolsPopup(it) }
+                  val toolsBtn = v.findViewById<TextView>(R.id.btn_tools)
+                  setupKey(toolsBtn) { showToolsPopup(toolsBtn) }
 
                   return v
               }
@@ -958,7 +959,8 @@ jobs:
                   setupKey(v.findViewById<TextView>(R.id.btn_abc)) { showMode(Mode.QWERTY) }
                   setupKey(v.findViewById<TextView>(R.id.btn_emoji)) { showMode(Mode.EMOJI) }
                   setupKey(v.findViewById<TextView>(R.id.btn_clipboard)) { openClipboard() }
-                  setupKey(v.findViewById<TextView>(R.id.btn_tools)) { showToolsPopup(it) }
+                  val toolsBtn = v.findViewById<TextView>(R.id.btn_tools)
+                  setupKey(toolsBtn) { showToolsPopup(toolsBtn) }
 
                   return v
               }
@@ -984,7 +986,8 @@ jobs:
 
                   setupKey(v.findViewById<TextView>(R.id.btn_abc)) { showMode(Mode.QWERTY) }
                   setupKey(v.findViewById<TextView>(R.id.btn_clipboard)) { openClipboard() }
-                  setupKey(v.findViewById<TextView>(R.id.btn_tools)) { showToolsPopup(it) }
+                  val toolsBtn = v.findViewById<TextView>(R.id.btn_tools)
+                  setupKey(toolsBtn) { showToolsPopup(toolsBtn) }
 
                   return v
               }
