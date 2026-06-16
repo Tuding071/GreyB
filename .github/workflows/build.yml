@@ -152,7 +152,7 @@ jobs:
           </resources>
           ENDOFFILE
 
-      # ---------- Keyboard layouts (equal key widths) ----------
+      # ---------- Keyboard layouts (unchanged) ----------
       - name: Generate qwerty.xml
         run: |
           cat > app/src/main/res/layout/qwerty.xml << 'ENDOFFILE'
@@ -760,7 +760,7 @@ jobs:
           }
           ENDOFFILE
 
-      # ---------- Keyboard.kt ----------
+      # ---------- Keyboard.kt (updated touch handling) ----------
       - name: Generate Keyboard.kt
         run: |
           cat > app/src/main/java/com/greyb/keyboard/Keyboard.kt << 'ENDOFFILE'
@@ -811,6 +811,10 @@ jobs:
               private val bsHandler = Handler(Looper.getMainLooper())
               private var bsRunnable: Runnable? = null
 
+              // Touch handling: remembers the view that was initially pressed
+              private var pressedView: View? = null
+              private val viewActions = HashMap<View, () -> Unit>()
+
               override fun onCreate() {
                   super.onCreate()
                   loadClipboard()
@@ -841,8 +845,34 @@ jobs:
                   })
               }
 
+              // Assign a touch listener that triggers the given action on UP if the touch started on this view
+              private fun setupKey(view: TextView, action: () -> Unit) {
+                  viewActions[view] = action
+                  view.setOnTouchListener { v, event ->
+                      when (event.action) {
+                          MotionEvent.ACTION_DOWN -> {
+                              pressedView = v
+                              // Optional: visual feedback – set alpha or background
+                              v.alpha = 0.6f
+                              true
+                          }
+                          MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
+                              v.alpha = 1.0f
+                              if (pressedView != null) {
+                                  viewActions[pressedView]?.invoke()
+                                  pressedView = null
+                              }
+                              true
+                          }
+                          else -> true
+                      }
+                  }
+              }
+
               private fun buildQwerty(): View {
                   val v = layoutInflater.inflate(R.layout.qwerty, null)
+
+                  // Letter keys
                   val letters = "qwertyuiopasdfghjklzxcvbnm"
                   val ids = listOf(
                       R.id.kq,R.id.kw,R.id.ke,R.id.kr,R.id.kt,R.id.ky,R.id.ku,R.id.ki,R.id.ko,R.id.kp,
@@ -850,36 +880,45 @@ jobs:
                       R.id.kz,R.id.kx,R.id.kc,R.id.kv,R.id.kb,R.id.kn,R.id.km
                   )
                   ids.forEachIndexed { i, id ->
-                      v.findViewById<TextView>(id).setOnClickListener { typeChar(letters[i]) }
+                      setupKey(v.findViewById<TextView>(id)) { typeChar(letters[i]) }
                   }
+
+                  // Number keys
                   val numIds = listOf(R.id.k1,R.id.k2,R.id.k3,R.id.k4,R.id.k5,
                                       R.id.k6,R.id.k7,R.id.k8,R.id.k9,R.id.k0)
                   "1234567890".forEachIndexed { i, c ->
-                      v.findViewById<TextView>(numIds[i]).setOnClickListener { typeText(c.toString()) }
+                      setupKey(v.findViewById<TextView>(numIds[i])) { typeText(c.toString()) }
                   }
-                  v.findViewById<TextView>(R.id.btn_shift).setOnClickListener { handleShift(v) }
-                  v.findViewById<TextView>(R.id.btn_backspace).apply {
-                      setOnClickListener     { doBackspace() }
-                      setOnLongClickListener { startBackspaceRepeat(); true }
-                      setOnTouchListener     { _, e ->
-                          if (e.action == MotionEvent.ACTION_UP ||
-                              e.action == MotionEvent.ACTION_CANCEL) stopBackspaceRepeat()
-                          false
-                      }
+
+                  // Shift
+                  setupKey(v.findViewById<TextView>(R.id.btn_shift)) { handleShift(v) }
+
+                  // Backspace – keep repeat logic, but use setupKey for single delete
+                  val backspace = v.findViewById<TextView>(R.id.btn_backspace)
+                  setupKey(backspace) { doBackspace() }
+                  backspace.setOnLongClickListener { startBackspaceRepeat(); true }
+                  backspace.setOnTouchListener { _, e ->
+                      if (e.action == MotionEvent.ACTION_UP ||
+                          e.action == MotionEvent.ACTION_CANCEL) stopBackspaceRepeat()
+                      false // let the setupKey listener also fire
                   }
-                  v.findViewById<TextView>(R.id.btn_space).setOnClickListener   { typeText(" ") }
-                  v.findViewById<TextView>(R.id.btn_comma).setOnClickListener   { typeText(",") }
-                  v.findViewById<TextView>(R.id.btn_period).setOnClickListener  { typeText(".") }
-                  v.findViewById<TextView>(R.id.btn_enter).setOnClickListener   { doEnter() }
-                  v.findViewById<TextView>(R.id.btn_symbols).setOnClickListener { showMode(Mode.SYMBOLS) }
-                  v.findViewById<TextView>(R.id.btn_emoji).setOnClickListener   { showMode(Mode.EMOJI) }
-                  v.findViewById<TextView>(R.id.btn_clipboard).setOnClickListener { openClipboard() }
-                  v.findViewById<TextView>(R.id.btn_tools).setOnClickListener   { showToolsPopup(it) }
+
+                  // Space, comma, period, enter, symbols, emoji, clipboard, tools
+                  setupKey(v.findViewById<TextView>(R.id.btn_space)) { typeText(" ") }
+                  setupKey(v.findViewById<TextView>(R.id.btn_comma)) { typeText(",") }
+                  setupKey(v.findViewById<TextView>(R.id.btn_period)) { typeText(".") }
+                  setupKey(v.findViewById<TextView>(R.id.btn_enter)) { doEnter() }
+                  setupKey(v.findViewById<TextView>(R.id.btn_symbols)) { showMode(Mode.SYMBOLS) }
+                  setupKey(v.findViewById<TextView>(R.id.btn_emoji)) { showMode(Mode.EMOJI) }
+                  setupKey(v.findViewById<TextView>(R.id.btn_clipboard)) { openClipboard() }
+                  setupKey(v.findViewById<TextView>(R.id.btn_tools)) { showToolsPopup(it) }
+
                   return v
               }
 
               private fun buildSymbols(): View {
                   val v = layoutInflater.inflate(R.layout.symbols, null)
+
                   val syms = listOf(
                       "!","@","#","$","%","&","*","(",")","+",
                       "-","=","/",":",";","\"","'","?","~","_",
@@ -894,30 +933,33 @@ jobs:
                       R.id.ks26,R.id.ks27,R.id.ks28,R.id.ks29
                   )
                   symIds.forEachIndexed { i, id ->
-                      v.findViewById<TextView>(id).setOnClickListener { typeText(syms[i]) }
+                      setupKey(v.findViewById<TextView>(id)) { typeText(syms[i]) }
                   }
+
                   val numIds = listOf(R.id.k1,R.id.k2,R.id.k3,R.id.k4,R.id.k5,
                                       R.id.k6,R.id.k7,R.id.k8,R.id.k9,R.id.k0)
                   "1234567890".forEachIndexed { i, c ->
-                      v.findViewById<TextView>(numIds[i]).setOnClickListener { typeText(c.toString()) }
+                      setupKey(v.findViewById<TextView>(numIds[i])) { typeText(c.toString()) }
                   }
-                  v.findViewById<TextView>(R.id.btn_backspace).apply {
-                      setOnClickListener     { doBackspace() }
-                      setOnLongClickListener { startBackspaceRepeat(); true }
-                      setOnTouchListener     { _, e ->
-                          if (e.action == MotionEvent.ACTION_UP ||
-                              e.action == MotionEvent.ACTION_CANCEL) stopBackspaceRepeat()
-                          false
-                      }
+
+                  val backspace = v.findViewById<TextView>(R.id.btn_backspace)
+                  setupKey(backspace) { doBackspace() }
+                  backspace.setOnLongClickListener { startBackspaceRepeat(); true }
+                  backspace.setOnTouchListener { _, e ->
+                      if (e.action == MotionEvent.ACTION_UP ||
+                          e.action == MotionEvent.ACTION_CANCEL) stopBackspaceRepeat()
+                      false
                   }
-                  v.findViewById<TextView>(R.id.btn_space).setOnClickListener  { typeText(" ") }
-                  v.findViewById<TextView>(R.id.btn_comma).setOnClickListener  { typeText(",") }
-                  v.findViewById<TextView>(R.id.btn_period).setOnClickListener { typeText(".") }
-                  v.findViewById<TextView>(R.id.btn_enter).setOnClickListener  { doEnter() }
-                  v.findViewById<TextView>(R.id.btn_abc).setOnClickListener    { showMode(Mode.QWERTY) }
-                  v.findViewById<TextView>(R.id.btn_emoji).setOnClickListener  { showMode(Mode.EMOJI) }
-                  v.findViewById<TextView>(R.id.btn_clipboard).setOnClickListener { openClipboard() }
-                  v.findViewById<TextView>(R.id.btn_tools).setOnClickListener  { showToolsPopup(it) }
+
+                  setupKey(v.findViewById<TextView>(R.id.btn_space)) { typeText(" ") }
+                  setupKey(v.findViewById<TextView>(R.id.btn_comma)) { typeText(",") }
+                  setupKey(v.findViewById<TextView>(R.id.btn_period)) { typeText(".") }
+                  setupKey(v.findViewById<TextView>(R.id.btn_enter)) { doEnter() }
+                  setupKey(v.findViewById<TextView>(R.id.btn_abc)) { showMode(Mode.QWERTY) }
+                  setupKey(v.findViewById<TextView>(R.id.btn_emoji)) { showMode(Mode.EMOJI) }
+                  setupKey(v.findViewById<TextView>(R.id.btn_clipboard)) { openClipboard() }
+                  setupKey(v.findViewById<TextView>(R.id.btn_tools)) { showToolsPopup(it) }
+
                   return v
               }
 
@@ -925,6 +967,7 @@ jobs:
                   val v = layoutInflater.inflate(R.layout.emoji, null)
                   val grid = v.findViewById<GridLayout>(R.id.emoji_grid)
                   loadEmojiGrid(grid, currentEmojiCategory)
+
                   mapOf(
                       R.id.tab_faces      to "faces",
                       R.id.tab_people     to "people",
@@ -933,14 +976,16 @@ jobs:
                       R.id.tab_activities to "activities",
                       R.id.tab_objects    to "objects"
                   ).forEach { (id, cat) ->
-                      v.findViewById<TextView>(id).setOnClickListener {
+                      setupKey(v.findViewById<TextView>(id)) {
                           currentEmojiCategory = cat
                           loadEmojiGrid(grid, cat)
                       }
                   }
-                  v.findViewById<TextView>(R.id.btn_abc).setOnClickListener       { showMode(Mode.QWERTY) }
-                  v.findViewById<TextView>(R.id.btn_clipboard).setOnClickListener { openClipboard() }
-                  v.findViewById<TextView>(R.id.btn_tools).setOnClickListener     { showToolsPopup(it) }
+
+                  setupKey(v.findViewById<TextView>(R.id.btn_abc)) { showMode(Mode.QWERTY) }
+                  setupKey(v.findViewById<TextView>(R.id.btn_clipboard)) { openClipboard() }
+                  setupKey(v.findViewById<TextView>(R.id.btn_tools)) { showToolsPopup(it) }
+
                   return v
               }
 
@@ -949,7 +994,7 @@ jobs:
                   val emojis = emojiCategories[category] ?: return
                   val cellSize = (resources.displayMetrics.widthPixels - 32.dp) / 8
                   emojis.forEach { emoji ->
-                      grid.addView(TextView(this).apply {
+                      val tv = TextView(this).apply {
                           text = emoji
                           textSize = 38f
                           gravity = Gravity.CENTER
@@ -957,8 +1002,9 @@ jobs:
                               width  = cellSize
                               height = cellSize
                           }
-                          setOnClickListener { typeText(emoji) }
-                      })
+                      }
+                      setupKey(tv) { typeText(emoji) }
+                      grid.addView(tv)
                   }
               }
 
