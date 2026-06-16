@@ -311,7 +311,7 @@ jobs:
                   android:orientation="horizontal"
                   android:paddingStart="3dp"
                   android:paddingEnd="3dp">
-                  <TextView android:id="@+id/btn_symbols" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1.5" android:gravity="center" android:text="?123" android:textColor="#fff" android:textSize="16sp" android:background="@drawable/key_bg_dark"/>
+                  <TextView android:id="@+id/btn_symbols" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1.5" android:gravity="center" android:text="\?123" android:textColor="#fff" android:textSize="16sp" android:background="@drawable/key_bg_dark"/>
                   <TextView android:id="@+id/btn_emoji" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="Emj" android:textColor="#fff" android:textSize="13sp" android:background="@drawable/key_bg_dark"/>
                   <TextView android:id="@+id/btn_comma" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="," android:textColor="#fff" android:textSize="24sp" android:background="@drawable/key_bg"/>
                   <TextView android:id="@+id/btn_space" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="4" android:gravity="center" android:text="" android:textColor="#888" android:textSize="18sp" android:background="@drawable/key_bg_dark"/>
@@ -412,8 +412,6 @@ jobs:
               }
 
               // ── Physical key sender ────────────────────────────────────────
-              // Core of the physical keyboard simulation. Sends real KeyEvent
-              // pairs (DOWN + UP) exactly as a USB/BT keyboard would.
               private fun sendKey(keyCode: Int, meta: Int = 0) {
                   val ic = currentInputConnection ?: return
                   val t = SystemClock.uptimeMillis()
@@ -465,7 +463,6 @@ jobs:
 
               // ── Sheet content ──────────────────────────────────────────────
               private fun createSymbolsContent(): View {
-                  // Symbols use commitText — special chars have no reliable keycodes
                   val symbols = listOf(
                       "!","@","#","$","%","&","*","(",")","+",
                       "-","=","/",":",";","\"","'","?","~","_",
