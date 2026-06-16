@@ -237,11 +237,11 @@ jobs:
 
               </LinearLayout>
 
-              <!-- Number row (20% taller) -->
+              <!-- Number row (weight 1.44, previously 1.2) -->
               <LinearLayout
                   android:layout_width="match_parent"
                   android:layout_height="0dp"
-                  android:layout_weight="1.2"
+                  android:layout_weight="1.44"
                   android:orientation="horizontal"
                   android:paddingStart="8dp"
                   android:paddingEnd="8dp"
@@ -259,7 +259,7 @@ jobs:
                   <TextView android:id="@+id/k0" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="0" android:textColor="#fff" android:textSize="32sp" android:background="@drawable/key_bg"/>
               </LinearLayout>
 
-              <!-- QWERTY row -->
+              <!-- QWERTY row (weight 1) -->
               <LinearLayout
                   android:layout_width="match_parent"
                   android:layout_height="0dp"
@@ -281,7 +281,7 @@ jobs:
                   <TextView android:id="@+id/kp" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="p" android:textColor="#fff" android:textSize="32sp" android:background="@drawable/key_bg"/>
               </LinearLayout>
 
-              <!-- ASDF row -->
+              <!-- ASDF row (weight 1) -->
               <LinearLayout
                   android:layout_width="match_parent"
                   android:layout_height="0dp"
@@ -302,11 +302,11 @@ jobs:
                   <Space android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="0.5"/>
               </LinearLayout>
 
-              <!-- ZXCV row (20% taller) -->
+              <!-- ZXCV row (weight 1.44, previously 1.2) -->
               <LinearLayout
                   android:layout_width="match_parent"
                   android:layout_height="0dp"
-                  android:layout_weight="1.2"
+                  android:layout_weight="1.44"
                   android:orientation="horizontal"
                   android:paddingStart="8dp"
                   android:paddingEnd="8dp"
@@ -431,11 +431,11 @@ jobs:
 
               </LinearLayout>
 
-              <!-- Number row (20% taller) -->
+              <!-- Number row (weight 1.44) -->
               <LinearLayout
                   android:layout_width="match_parent"
                   android:layout_height="0dp"
-                  android:layout_weight="1.2"
+                  android:layout_weight="1.44"
                   android:orientation="horizontal"
                   android:paddingStart="8dp"
                   android:paddingEnd="8dp"
@@ -453,7 +453,7 @@ jobs:
                   <TextView android:id="@+id/k0" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="0" android:textColor="#fff" android:textSize="32sp" android:background="@drawable/key_bg"/>
               </LinearLayout>
 
-              <!-- Symbol row 1 -->
+              <!-- Symbol row 1 (weight 1) -->
               <LinearLayout
                   android:layout_width="match_parent"
                   android:layout_height="0dp"
@@ -475,7 +475,7 @@ jobs:
                   <TextView android:id="@+id/ks10" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="+" android:textColor="#fff" android:textSize="32sp" android:background="@drawable/key_bg"/>
               </LinearLayout>
 
-              <!-- Symbol row 2 -->
+              <!-- Symbol row 2 (weight 1) -->
               <LinearLayout
                   android:layout_width="match_parent"
                   android:layout_height="0dp"
@@ -497,11 +497,11 @@ jobs:
                   <TextView android:id="@+id/ks20" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="_" android:textColor="#fff" android:textSize="32sp" android:background="@drawable/key_bg"/>
               </LinearLayout>
 
-              <!-- Symbol row 3 (20% taller) -->
+              <!-- Symbol row 3 (weight 1.44, previously 1.2) -->
               <LinearLayout
                   android:layout_width="match_parent"
                   android:layout_height="0dp"
-                  android:layout_weight="1.2"
+                  android:layout_weight="1.44"
                   android:orientation="horizontal"
                   android:paddingStart="8dp"
                   android:paddingEnd="8dp"
@@ -757,7 +757,7 @@ jobs:
           }
           ENDOFFILE
 
-      # ---------- Keyboard.kt (unchanged) ----------
+      # ---------- Keyboard.kt ----------
       - name: Generate Keyboard.kt
         run: |
           cat > app/src/main/java/com/greyb/keyboard/Keyboard.kt << 'ENDOFFILE'
