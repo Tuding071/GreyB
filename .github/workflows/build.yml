@@ -164,10 +164,10 @@ jobs:
               android:orientation="vertical"
               android:background="#1e1e1e">
 
-              <!-- Suggestion row (60dp) -->
+              <!-- Suggestion row (75dp) -->
               <LinearLayout
                   android:layout_width="match_parent"
-                  android:layout_height="60dp"
+                  android:layout_height="75dp"
                   android:orientation="horizontal"
                   android:gravity="center_vertical"
                   android:paddingStart="8dp"
@@ -323,10 +323,10 @@ jobs:
                   <TextView android:id="@+id/btn_backspace" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1.4" android:gravity="center" android:text="⌫" android:textColor="#fff" android:textSize="35sp" android:background="@drawable/key_bg_dark"/>
               </LinearLayout>
 
-              <!-- Action row (60dp) -->
+              <!-- Action row (75dp) -->
               <LinearLayout
                   android:layout_width="match_parent"
-                  android:layout_height="60dp"
+                  android:layout_height="75dp"
                   android:orientation="horizontal"
                   android:paddingStart="8dp"
                   android:paddingEnd="8dp"
@@ -359,10 +359,10 @@ jobs:
               android:orientation="vertical"
               android:background="#1e1e1e">
 
-              <!-- Suggestion row (60dp) -->
+              <!-- Suggestion row (75dp) -->
               <LinearLayout
                   android:layout_width="match_parent"
-                  android:layout_height="60dp"
+                  android:layout_height="75dp"
                   android:orientation="horizontal"
                   android:gravity="center_vertical"
                   android:paddingStart="8dp"
@@ -520,10 +520,10 @@ jobs:
                   <TextView android:id="@+id/btn_backspace" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1.4" android:gravity="center" android:text="⌫" android:textColor="#fff" android:textSize="35sp" android:background="@drawable/key_bg_dark"/>
               </LinearLayout>
 
-              <!-- Action row (60dp) -->
+              <!-- Action row (75dp) -->
               <LinearLayout
                   android:layout_width="match_parent"
-                  android:layout_height="60dp"
+                  android:layout_height="75dp"
                   android:orientation="horizontal"
                   android:paddingStart="8dp"
                   android:paddingEnd="8dp"
@@ -556,10 +556,10 @@ jobs:
               android:orientation="vertical"
               android:background="#1e1e1e">
 
-              <!-- Top bar (60dp) -->
+              <!-- Top bar (75dp) -->
               <LinearLayout
                   android:layout_width="match_parent"
-                  android:layout_height="60dp"
+                  android:layout_height="75dp"
                   android:orientation="horizontal"
                   android:gravity="center_vertical"
                   android:paddingStart="8dp"
@@ -686,10 +686,10 @@ jobs:
 
               </androidx.core.widget.NestedScrollView>
 
-              <!-- ABC bar (60dp) -->
+              <!-- ABC bar (75dp) -->
               <LinearLayout
                   android:layout_width="match_parent"
-                  android:layout_height="60dp"
+                  android:layout_height="75dp"
                   android:orientation="horizontal"
                   android:paddingStart="8dp"
                   android:paddingEnd="8dp"
