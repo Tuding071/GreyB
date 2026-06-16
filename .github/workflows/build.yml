@@ -152,7 +152,7 @@ jobs:
           </resources>
           ENDOFFILE
 
-      # ---------- Keyboard layouts (unchanged) ----------
+      # ---------- Keyboard layouts (qwerty unchanged) ----------
       - name: Generate qwerty.xml
         run: |
           cat > app/src/main/res/layout/qwerty.xml << 'ENDOFFILE'
@@ -348,373 +348,6 @@ jobs:
           </LinearLayout>
           ENDOFFILE
 
-      - name: Generate symbols.xml
-        run: |
-          cat > app/src/main/res/layout/symbols.xml << 'ENDOFFILE'
-          <?xml version="1.0" encoding="utf-8"?>
-          <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-              android:id="@+id/symbols_root"
-              android:layout_width="match_parent"
-              android:layout_height="330dp"
-              android:orientation="vertical"
-              android:background="#1e1e1e">
-
-              <!-- Suggestion row -->
-              <LinearLayout
-                  android:layout_width="match_parent"
-                  android:layout_height="55dp"
-                  android:orientation="horizontal"
-                  android:gravity="center_vertical"
-                  android:paddingStart="6dp"
-                  android:paddingEnd="6dp"
-                  android:paddingTop="5dp"
-                  android:paddingBottom="5dp">
-
-                  <TextView
-                      android:id="@+id/btn_clipboard"
-                      android:layout_width="42dp"
-                      android:layout_height="match_parent"
-                      android:gravity="center"
-                      android:text="⧉"
-                      android:textColor="#ffffff"
-                      android:textSize="36sp"
-                      android:background="@drawable/key_bg_dark"
-                      android:layout_marginEnd="6dp" />
-
-                  <LinearLayout
-                      android:layout_width="0dp"
-                      android:layout_height="match_parent"
-                      android:layout_weight="1"
-                      android:orientation="horizontal"
-                      android:layout_marginStart="6dp"
-                      android:layout_marginEnd="6dp"
-                      android:gravity="center_vertical">
-
-                      <TextView android:id="@+id/sug1"
-                          android:layout_width="0dp"
-                          android:layout_height="match_parent"
-                          android:layout_weight="1"
-                          android:gravity="center"
-                          android:background="@drawable/key_bg_dark"
-                          android:textColor="#ffffff"
-                          android:textSize="22sp"
-                          android:layout_marginEnd="6dp" />
-
-                      <TextView android:id="@+id/sug2"
-                          android:layout_width="0dp"
-                          android:layout_height="match_parent"
-                          android:layout_weight="1"
-                          android:gravity="center"
-                          android:background="@drawable/key_bg_dark"
-                          android:textColor="#ffffff"
-                          android:textSize="22sp"
-                          android:layout_marginEnd="6dp" />
-
-                      <TextView android:id="@+id/sug3"
-                          android:layout_width="0dp"
-                          android:layout_height="match_parent"
-                          android:layout_weight="1"
-                          android:gravity="center"
-                          android:background="@drawable/key_bg_dark"
-                          android:textColor="#ffffff"
-                          android:textSize="22sp" />
-
-                  </LinearLayout>
-
-                  <TextView
-                      android:id="@+id/btn_tools"
-                      android:layout_width="42dp"
-                      android:layout_height="match_parent"
-                      android:gravity="center"
-                      android:text="✎"
-                      android:textColor="#ffffff"
-                      android:textSize="36sp"
-                      android:background="@drawable/key_bg_dark"
-                      android:layout_marginStart="6dp" />
-
-              </LinearLayout>
-
-              <!-- Number row -->
-              <LinearLayout
-                  android:layout_width="match_parent"
-                  android:layout_height="55dp"
-                  android:orientation="horizontal"
-                  android:paddingStart="6dp"
-                  android:paddingEnd="6dp"
-                  android:paddingTop="5dp"
-                  android:paddingBottom="5dp">
-                  <TextView android:id="@+id/k1" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="1" android:textColor="#fff" android:textSize="32sp" android:background="@drawable/key_bg" android:layout_marginEnd="6dp"/>
-                  <TextView android:id="@+id/k2" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="2" android:textColor="#fff" android:textSize="32sp" android:background="@drawable/key_bg" android:layout_marginEnd="6dp"/>
-                  <TextView android:id="@+id/k3" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="3" android:textColor="#fff" android:textSize="32sp" android:background="@drawable/key_bg" android:layout_marginEnd="6dp"/>
-                  <TextView android:id="@+id/k4" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="4" android:textColor="#fff" android:textSize="32sp" android:background="@drawable/key_bg" android:layout_marginEnd="6dp"/>
-                  <TextView android:id="@+id/k5" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="5" android:textColor="#fff" android:textSize="32sp" android:background="@drawable/key_bg" android:layout_marginEnd="6dp"/>
-                  <TextView android:id="@+id/k6" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="6" android:textColor="#fff" android:textSize="32sp" android:background="@drawable/key_bg" android:layout_marginEnd="6dp"/>
-                  <TextView android:id="@+id/k7" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="7" android:textColor="#fff" android:textSize="32sp" android:background="@drawable/key_bg" android:layout_marginEnd="6dp"/>
-                  <TextView android:id="@+id/k8" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="8" android:textColor="#fff" android:textSize="32sp" android:background="@drawable/key_bg" android:layout_marginEnd="6dp"/>
-                  <TextView android:id="@+id/k9" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="9" android:textColor="#fff" android:textSize="32sp" android:background="@drawable/key_bg" android:layout_marginEnd="6dp"/>
-                  <TextView android:id="@+id/k0" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="0" android:textColor="#fff" android:textSize="32sp" android:background="@drawable/key_bg"/>
-              </LinearLayout>
-
-              <!-- Symbol row 1 -->
-              <LinearLayout
-                  android:layout_width="match_parent"
-                  android:layout_height="55dp"
-                  android:orientation="horizontal"
-                  android:paddingStart="6dp"
-                  android:paddingEnd="6dp"
-                  android:paddingTop="5dp"
-                  android:paddingBottom="5dp">
-                  <TextView android:id="@+id/ks1" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="!" android:textColor="#fff" android:textSize="32sp" android:background="@drawable/key_bg" android:layout_marginEnd="6dp"/>
-                  <TextView android:id="@+id/ks2" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="@" android:textColor="#fff" android:textSize="32sp" android:background="@drawable/key_bg" android:layout_marginEnd="6dp"/>
-                  <TextView android:id="@+id/ks3" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="#" android:textColor="#fff" android:textSize="32sp" android:background="@drawable/key_bg" android:layout_marginEnd="6dp"/>
-                  <TextView android:id="@+id/ks4" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="$" android:textColor="#fff" android:textSize="32sp" android:background="@drawable/key_bg" android:layout_marginEnd="6dp"/>
-                  <TextView android:id="@+id/ks5" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="%" android:textColor="#fff" android:textSize="32sp" android:background="@drawable/key_bg" android:layout_marginEnd="6dp"/>
-                  <TextView android:id="@+id/ks6" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="&amp;" android:textColor="#fff" android:textSize="32sp" android:background="@drawable/key_bg" android:layout_marginEnd="6dp"/>
-                  <TextView android:id="@+id/ks7" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="*" android:textColor="#fff" android:textSize="32sp" android:background="@drawable/key_bg" android:layout_marginEnd="6dp"/>
-                  <TextView android:id="@+id/ks8" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="(" android:textColor="#fff" android:textSize="32sp" android:background="@drawable/key_bg" android:layout_marginEnd="6dp"/>
-                  <TextView android:id="@+id/ks9" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text=")" android:textColor="#fff" android:textSize="32sp" android:background="@drawable/key_bg" android:layout_marginEnd="6dp"/>
-                  <TextView android:id="@+id/ks10" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="+" android:textColor="#fff" android:textSize="32sp" android:background="@drawable/key_bg"/>
-              </LinearLayout>
-
-              <!-- Symbol row 2 -->
-              <LinearLayout
-                  android:layout_width="match_parent"
-                  android:layout_height="55dp"
-                  android:orientation="horizontal"
-                  android:paddingStart="6dp"
-                  android:paddingEnd="6dp"
-                  android:paddingTop="5dp"
-                  android:paddingBottom="5dp">
-                  <TextView android:id="@+id/ks11" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="-" android:textColor="#fff" android:textSize="32sp" android:background="@drawable/key_bg" android:layout_marginEnd="6dp"/>
-                  <TextView android:id="@+id/ks12" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="=" android:textColor="#fff" android:textSize="32sp" android:background="@drawable/key_bg" android:layout_marginEnd="6dp"/>
-                  <TextView android:id="@+id/ks13" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="/" android:textColor="#fff" android:textSize="32sp" android:background="@drawable/key_bg" android:layout_marginEnd="6dp"/>
-                  <TextView android:id="@+id/ks14" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text=":" android:textColor="#fff" android:textSize="32sp" android:background="@drawable/key_bg" android:layout_marginEnd="6dp"/>
-                  <TextView android:id="@+id/ks15" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text=";" android:textColor="#fff" android:textSize="32sp" android:background="@drawable/key_bg" android:layout_marginEnd="6dp"/>
-                  <TextView android:id="@+id/ks16" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="&quot;" android:textColor="#fff" android:textSize="32sp" android:background="@drawable/key_bg" android:layout_marginEnd="6dp"/>
-                  <TextView android:id="@+id/ks17" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="'" android:textColor="#fff" android:textSize="32sp" android:background="@drawable/key_bg" android:layout_marginEnd="6dp"/>
-                  <TextView android:id="@+id/ks18" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="?" android:textColor="#fff" android:textSize="32sp" android:background="@drawable/key_bg" android:layout_marginEnd="6dp"/>
-                  <TextView android:id="@+id/ks19" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="~" android:textColor="#fff" android:textSize="32sp" android:background="@drawable/key_bg" android:layout_marginEnd="6dp"/>
-                  <TextView android:id="@+id/ks20" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="_" android:textColor="#fff" android:textSize="32sp" android:background="@drawable/key_bg"/>
-              </LinearLayout>
-
-              <!-- Symbol row 3 -->
-              <LinearLayout
-                  android:layout_width="match_parent"
-                  android:layout_height="55dp"
-                  android:orientation="horizontal"
-                  android:paddingStart="6dp"
-                  android:paddingEnd="6dp"
-                  android:paddingTop="5dp"
-                  android:paddingBottom="5dp">
-                  <TextView android:id="@+id/ks21" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1.5" android:gravity="center" android:text="[" android:textColor="#fff" android:textSize="32sp" android:background="@drawable/key_bg" android:layout_marginEnd="6dp"/>
-                  <TextView android:id="@+id/ks22" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="]" android:textColor="#fff" android:textSize="32sp" android:background="@drawable/key_bg" android:layout_marginEnd="6dp"/>
-                  <TextView android:id="@+id/ks23" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="{" android:textColor="#fff" android:textSize="32sp" android:background="@drawable/key_bg" android:layout_marginEnd="6dp"/>
-                  <TextView android:id="@+id/ks24" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="}" android:textColor="#fff" android:textSize="32sp" android:background="@drawable/key_bg" android:layout_marginEnd="6dp"/>
-                  <TextView android:id="@+id/ks25" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="&lt;" android:textColor="#fff" android:textSize="32sp" android:background="@drawable/key_bg" android:layout_marginEnd="6dp"/>
-                  <TextView android:id="@+id/ks26" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="&gt;" android:textColor="#fff" android:textSize="32sp" android:background="@drawable/key_bg" android:layout_marginEnd="6dp"/>
-                  <TextView android:id="@+id/ks27" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="|" android:textColor="#fff" android:textSize="32sp" android:background="@drawable/key_bg" android:layout_marginEnd="6dp"/>
-                  <TextView android:id="@+id/ks28" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="\\" android:textColor="#fff" android:textSize="32sp" android:background="@drawable/key_bg" android:layout_marginEnd="6dp"/>
-                  <TextView android:id="@+id/ks29" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="^" android:textColor="#fff" android:textSize="32sp" android:background="@drawable/key_bg" android:layout_marginEnd="6dp"/>
-                  <TextView android:id="@+id/btn_backspace" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1.5" android:gravity="center" android:text="⌫" android:textColor="#fff" android:textSize="35sp" android:background="@drawable/key_bg_dark"/>
-              </LinearLayout>
-
-              <!-- Action row -->
-              <LinearLayout
-                  android:layout_width="match_parent"
-                  android:layout_height="55dp"
-                  android:orientation="horizontal"
-                  android:paddingStart="6dp"
-                  android:paddingEnd="6dp"
-                  android:paddingTop="5dp"
-                  android:paddingBottom="5dp">
-                  <TextView android:id="@+id/btn_abc" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1.5" android:gravity="center" android:text="ABC" android:textColor="#fff" android:textSize="26sp" android:background="@drawable/key_bg_dark" android:layout_marginEnd="6dp"/>
-                  <TextView android:id="@+id/btn_emoji" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="☺" android:textColor="#fff" android:textSize="35sp" android:background="@drawable/key_bg_dark" android:layout_marginEnd="6dp"/>
-                  <TextView android:id="@+id/btn_comma" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="," android:textColor="#fff" android:textSize="32sp" android:background="@drawable/key_bg" android:layout_marginEnd="6dp"/>
-                  <TextView android:id="@+id/btn_space" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="4" android:gravity="center" android:text="space" android:textColor="#888" android:textSize="26sp" android:background="@drawable/key_bg_dark" android:layout_marginEnd="6dp"/>
-                  <TextView android:id="@+id/btn_period" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="." android:textColor="#fff" android:textSize="32sp" android:background="@drawable/key_bg" android:layout_marginEnd="6dp"/>
-                  <TextView android:id="@+id/btn_enter" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1.5" android:gravity="center" android:text="↵" android:textColor="#fff" android:textSize="35sp" android:background="@drawable/key_bg_action"/>
-              </LinearLayout>
-
-              <View
-                  android:layout_width="match_parent"
-                  android:layout_height="0dp"
-                  android:background="#1e1e1e"/>
-
-          </LinearLayout>
-          ENDOFFILE
-
-      - name: Generate emoji.xml
-        run: |
-          cat > app/src/main/res/layout/emoji.xml << 'ENDOFFILE'
-          <?xml version="1.0" encoding="utf-8"?>
-          <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-              android:id="@+id/emoji_root"
-              android:layout_width="match_parent"
-              android:layout_height="330dp"
-              android:orientation="vertical"
-              android:background="#1e1e1e">
-
-              <!-- Top bar -->
-              <LinearLayout
-                  android:layout_width="match_parent"
-                  android:layout_height="55dp"
-                  android:orientation="horizontal"
-                  android:gravity="center_vertical"
-                  android:paddingStart="6dp"
-                  android:paddingEnd="6dp"
-                  android:paddingTop="5dp"
-                  android:paddingBottom="5dp">
-
-                  <TextView
-                      android:id="@+id/btn_clipboard"
-                      android:layout_width="42dp"
-                      android:layout_height="match_parent"
-                      android:gravity="center"
-                      android:text="⧉"
-                      android:textColor="#ffffff"
-                      android:textSize="36sp"
-                      android:background="@drawable/key_bg_dark"
-                      android:layout_marginEnd="6dp" />
-
-                  <HorizontalScrollView
-                      android:layout_width="0dp"
-                      android:layout_height="match_parent"
-                      android:layout_weight="1"
-                      android:layout_marginStart="6dp"
-                      android:layout_marginEnd="6dp"
-                      android:scrollbars="none">
-
-                      <LinearLayout
-                          android:id="@+id/emoji_tabs"
-                          android:layout_width="wrap_content"
-                          android:layout_height="match_parent"
-                          android:orientation="horizontal"
-                          android:gravity="center_vertical">
-
-                          <TextView android:id="@+id/tab_faces"
-                              android:layout_width="wrap_content"
-                              android:layout_height="match_parent"
-                              android:text="😊"
-                              android:gravity="center"
-                              android:paddingStart="12dp"
-                              android:paddingEnd="12dp"
-                              android:textSize="32sp"
-                              android:background="@drawable/key_bg_dark"
-                              android:layout_marginEnd="6dp"/>
-
-                          <TextView android:id="@+id/tab_people"
-                              android:layout_width="wrap_content"
-                              android:layout_height="match_parent"
-                              android:text="👋"
-                              android:gravity="center"
-                              android:paddingStart="12dp"
-                              android:paddingEnd="12dp"
-                              android:textSize="32sp"
-                              android:background="@drawable/key_bg_dark"
-                              android:layout_marginEnd="6dp"/>
-
-                          <TextView android:id="@+id/tab_animals"
-                              android:layout_width="wrap_content"
-                              android:layout_height="match_parent"
-                              android:text="🐶"
-                              android:gravity="center"
-                              android:paddingStart="12dp"
-                              android:paddingEnd="12dp"
-                              android:textSize="32sp"
-                              android:background="@drawable/key_bg_dark"
-                              android:layout_marginEnd="6dp"/>
-
-                          <TextView android:id="@+id/tab_food"
-                              android:layout_width="wrap_content"
-                              android:layout_height="match_parent"
-                              android:text="🍕"
-                              android:gravity="center"
-                              android:paddingStart="12dp"
-                              android:paddingEnd="12dp"
-                              android:textSize="32sp"
-                              android:background="@drawable/key_bg_dark"
-                              android:layout_marginEnd="6dp"/>
-
-                          <TextView android:id="@+id/tab_activities"
-                              android:layout_width="wrap_content"
-                              android:layout_height="match_parent"
-                              android:text="⚽"
-                              android:gravity="center"
-                              android:paddingStart="12dp"
-                              android:paddingEnd="12dp"
-                              android:textSize="32sp"
-                              android:background="@drawable/key_bg_dark"
-                              android:layout_marginEnd="6dp"/>
-
-                          <TextView android:id="@+id/tab_objects"
-                              android:layout_width="wrap_content"
-                              android:layout_height="match_parent"
-                              android:text="💡"
-                              android:gravity="center"
-                              android:paddingStart="12dp"
-                              android:paddingEnd="12dp"
-                              android:textSize="32sp"
-                              android:background="@drawable/key_bg_dark"/>
-
-                      </LinearLayout>
-                  </HorizontalScrollView>
-
-                  <TextView
-                      android:id="@+id/btn_tools"
-                      android:layout_width="42dp"
-                      android:layout_height="match_parent"
-                      android:gravity="center"
-                      android:text="✎"
-                      android:textColor="#ffffff"
-                      android:textSize="36sp"
-                      android:background="@drawable/key_bg_dark"
-                      android:layout_marginStart="6dp" />
-
-              </LinearLayout>
-
-              <androidx.core.widget.NestedScrollView
-                  android:layout_width="match_parent"
-                  android:layout_height="0dp"
-                  android:layout_weight="1">
-
-                  <GridLayout
-                      android:id="@+id/emoji_grid"
-                      android:layout_width="match_parent"
-                      android:layout_height="wrap_content"
-                      android:columnCount="8"
-                      android:useDefaultMargins="true"/>
-
-              </androidx.core.widget.NestedScrollView>
-
-              <!-- ABC bar -->
-              <LinearLayout
-                  android:layout_width="match_parent"
-                  android:layout_height="55dp"
-                  android:orientation="horizontal"
-                  android:paddingStart="6dp"
-                  android:paddingEnd="6dp"
-                  android:paddingTop="5dp"
-                  android:paddingBottom="5dp">
-
-                  <TextView android:id="@+id/btn_abc"
-                      android:layout_width="match_parent"
-                      android:layout_height="match_parent"
-                      android:gravity="center"
-                      android:text="ABC"
-                      android:textColor="#fff"
-                      android:textSize="26sp"
-                      android:background="@drawable/key_bg_dark"/>
-
-              </LinearLayout>
-
-              <View
-                  android:layout_width="match_parent"
-                  android:layout_height="0dp"
-                  android:background="#1e1e1e"/>
-
-          </LinearLayout>
-          ENDOFFILE
-
       # ---------- MainActivity (launcher) ----------
       - name: Generate MainActivity.kt
         run: |
@@ -760,7 +393,7 @@ jobs:
           }
           ENDOFFILE
 
-      # ---------- Keyboard.kt (fixed touch handling) ----------
+      # ---------- Keyboard.kt (fixed backspace + bottom sheets) ----------
       - name: Generate Keyboard.kt
         run: |
           cat > app/src/main/java/com/greyb/keyboard/Keyboard.kt << 'ENDOFFILE'
@@ -778,35 +411,18 @@ jobs:
 
           class Keyboard : InputMethodService() {
 
-              enum class Mode { QWERTY, SYMBOLS, EMOJI }
-              private var mode = Mode.QWERTY
-
-              enum class ShiftState { OFF, ONCE, LOCKED }
-              private var shiftState = ShiftState.OFF
-              private var lastShiftTap = 0L
-
               private lateinit var rootFrame: FrameLayout
               private lateinit var qwertyView: View
-              private lateinit var symbolsView: View
-              private lateinit var emojiView: View
               private var toolsPopup: PopupWindow? = null
               private var clipboardPopup: PopupWindow? = null
+              private var bottomSheetContainer: FrameLayout? = null
+              private var isBottomSheetVisible = false
 
               private val clipboardItems = mutableListOf<String>()
               private val PREFS_NAME = "greyb_kb"
               private val PREFS_CLIP = "clipboard"
               private val MAX_CLIP = 10
               private var clipAdapter: ClipboardAdapter? = null
-
-              private val emojiCategories = mapOf(
-                  "faces"      to listOf("😀","😁","😂","🤣","😃","😄","😅","😆","😇","😉","😊","😋","😌","😍","🥰","😎","😏","😐","😑","😒","😓","😔","😕","😖","😗","😘","😙","😚","😛","😜","😝","😞","😟","😠","😡","😢","😣","😤","😥","😦","😧","😨","😩","😪","😫","😬","😭","😮","😯","😰","😱","😲","😳","😴","😵","😶","😷","🙁","🙂","🙃","🙄"),
-                  "people"     to listOf("👋","🤚","🖐","✋","🖖","👌","🤌","🤏","✌","🤞","🤟","🤘","🤙","👈","👉","👆","👇","☝","👍","👎","✊","👊","🤛","🤜","👏","🙌","👐","🤲","🤝","🙏","✍","💅","🤳","💪","🦾","🦵","🦶","👂","🦻","👃","👶","🧒","👦","👧","🧑","👱","👨","🧔","👩","🧓","👴","👵","🙍","🙎","🙅","🙆","💁","🙋","🧏","🙇","🤦","🤷"),
-                  "animals"    to listOf("🐶","🐱","🐭","🐹","🐰","🦊","🐻","🐼","🐨","🐯","🦁","🐮","🐷","🐸","🐵","🙈","🙉","🙊","🐔","🐧","🐦","🐤","🦆","🦅","🦉","🦇","🐺","🐗","🐴","🦄","🐝","🐛","🦋","🐌","🐞","🐜","🦟","🦗","🦂","🐢","🐍","🦎","🦖","🦕","🐙","🦑","🦐","🦞","🦀","🐡","🐠","🐟","🐬","🐳","🐋","🦈","🐊","🐅","🐆","🦓","🦍"),
-                  "food"       to listOf("🍕","🍔","🍟","🌭","🍿","🧂","🥓","🥚","🍳","🧇","🥞","🧈","🍞","🥐","🥖","🥨","🧀","🥗","🥙","🥪","🌮","🌯","🧆","🥜","🌰","🍱","🍘","🍙","🍚","🍛","🍜","🍝","🍠","🍢","🍣","🍤","🍥","🥮","🍡","🥟","🦪","🍦","🍧","🍨","🍩","🍪","🎂","🍰","🧁","🥧","🍫","🍬","🍭","🍮","🍯","🍷","🍸","🍹","🍺","🍻"),
-                  "activities" to listOf("⚽","🏀","🏈","⚾","🥎","🏐","🏉","🥏","🎾","🪃","🏸","🏒","🏑","🥍","🏏","🎯","🪀","🪁","🎱","🔮","🪄","🎮","🕹","🎲","🧩","🧸","🎭","🎨","🖼","🎰","🎟","🎪","🤹","🎬","🎤","🎧","🎼","🎹","🥁","🪘","🎷","🎺","🎸","🪕","🎻","🎳","🏹","🛹","🛼","🛷","⛸","🥌","🎿","⛷","🏂","🪂","🏋","🤸","🤺","🏇","🧘"),
-                  "objects"    to listOf("💡","🔦","🕯","🪔","🧯","🛢","💰","💳","💎","⚖","🔧","🔨","⚒","🛠","⛏","🔩","🪛","🔗","⛓","🪝","🧲","🪜","🧰","🪤","🪣","🚪","🛏","🛋","🪑","🚽","🚿","🛁","🧴","🧷","🧹","🧺","🧻","🧼","🫧","🪥","🧽","🪒","🔑","🗝","🔐","🔏","🔒","🔓","🪪","📱","💻","🖥","🖨","🖱","💾","💿","📀","📷","📸")
-              )
-              private var currentEmojiCategory = "faces"
 
               private val bsHandler = Handler(Looper.getMainLooper())
               private var bsRunnable: Runnable? = null
@@ -828,31 +444,140 @@ jobs:
                           ViewGroup.LayoutParams.WRAP_CONTENT
                       )
                   }
-                  qwertyView    = buildQwerty()
-                  symbolsView   = buildSymbols()
-                  emojiView     = buildEmoji()
-                  showMode(Mode.QWERTY)
+                  qwertyView = buildQwerty()
+                  rootFrame.addView(qwertyView)
                   return rootFrame
               }
 
-              private fun showMode(m: Mode) {
-                  mode = m
-                  rootFrame.removeAllViews()
-                  rootFrame.addView(when (m) {
-                      Mode.QWERTY    -> qwertyView
-                      Mode.SYMBOLS   -> symbolsView
-                      Mode.EMOJI     -> emojiView
-                  })
+              // ── Bottom sheet helper ────────────────────────────────────────
+              private fun showBottomSheet(contentView: View) {
+                  if (isBottomSheetVisible) dismissBottomSheet()
+
+                  bottomSheetContainer = FrameLayout(this).apply {
+                      setBackgroundColor(0x80000000.toInt())  // semi‑transparent overlay
+                      setOnClickListener { dismissBottomSheet() } // tap outside to dismiss
+                  }
+
+                  val bottomSheet = LinearLayout(this).apply {
+                      orientation = LinearLayout.VERTICAL
+                      setBackgroundColor(0xFF2C2C2C.toInt())
+                      layoutParams = FrameLayout.LayoutParams(
+                          ViewGroup.LayoutParams.MATCH_PARENT,
+                          ViewGroup.LayoutParams.WRAP_CONTENT
+                      ).apply { gravity = Gravity.BOTTOM }
+                  }
+
+                  // simple handle / title
+                  val titleBar = TextView(this).apply {
+                      text = ""
+                      textSize = 16f
+                      setTextColor(0xFFFFFFFF.toInt())
+                      gravity = Gravity.CENTER
+                      setPadding(0, 12.dp, 0, 12.dp)
+                  }
+                  bottomSheet.addView(titleBar)
+                  bottomSheet.addView(contentView)
+
+                  bottomSheetContainer?.addView(bottomSheet)
+                  rootFrame.addView(bottomSheetContainer)
+
+                  // slide‑up animation
+                  bottomSheet.translationY = 500f
+                  bottomSheet.animate().translationY(0f).setDuration(250).start()
+                  isBottomSheetVisible = true
               }
 
-              // Assign a touch listener that triggers the given action on UP if the touch started on this view
+              private fun dismissBottomSheet() {
+                  if (!isBottomSheetVisible) return
+                  val container = bottomSheetContainer
+                  if (container != null) {
+                      container.animate().alpha(0f).setDuration(200).withEndAction {
+                          rootFrame.removeView(container)
+                      }.start()
+                  }
+                  bottomSheetContainer = null
+                  isBottomSheetVisible = false
+              }
+
+              // ── Bottom sheet content builders ──────────────────────────────
+              private fun createSymbolsContent(): View {
+                  val symbols = listOf(
+                      "!","@","#","$","%","&","*","(",")","+",
+                      "-","=","/",":",";","\"","'","?","~","_",
+                      "[","]","{","}","<",">","|","\\","^"
+                  )
+                  val grid = GridLayout(this).apply {
+                      columnCount = 10
+                      useDefaultMargins = true
+                      layoutParams = LinearLayout.LayoutParams(
+                          ViewGroup.LayoutParams.MATCH_PARENT,
+                          ViewGroup.LayoutParams.WRAP_CONTENT
+                      )
+                  }
+                  val cellSize = (resources.displayMetrics.widthPixels - 64.dp) / 10
+                  symbols.forEach { sym ->
+                      val tv = TextView(this).apply {
+                          text = sym
+                          textSize = 22f
+                          gravity = Gravity.CENTER
+                          setTextColor(0xFFFFFFFF.toInt())
+                          layoutParams = GridLayout.LayoutParams().apply {
+                              width = cellSize
+                              height = cellSize
+                          }
+                      }
+                      setupKey(tv) { typeText(sym); dismissBottomSheet() }
+                      grid.addView(tv)
+                  }
+                  return grid
+              }
+
+              private fun createEmojiContent(): View {
+                  val emojis = listOf("😀","😂","😍","🥰","😎","👍","🔥","🎉")  // only 8 emojis
+                  val grid = GridLayout(this).apply {
+                      columnCount = 4
+                      useDefaultMargins = true
+                      layoutParams = LinearLayout.LayoutParams(
+                          ViewGroup.LayoutParams.MATCH_PARENT,
+                          ViewGroup.LayoutParams.WRAP_CONTENT
+                      )
+                  }
+                  val cellSize = (resources.displayMetrics.widthPixels - 64.dp) / 4
+                  emojis.forEach { emoji ->
+                      val tv = TextView(this).apply {
+                          text = emoji
+                          textSize = 38f
+                          gravity = Gravity.CENTER
+                          layoutParams = GridLayout.LayoutParams().apply {
+                              width = cellSize
+                              height = cellSize
+                          }
+                      }
+                      setupKey(tv) { typeText(emoji); dismissBottomSheet() }
+                      grid.addView(tv)
+                  }
+                  return grid
+              }
+
+              private fun createClipboardContent(): View {
+                  val rv = RecyclerView(this).apply {
+                      layoutManager = LinearLayoutManager(this@Keyboard)
+                      adapter = clipAdapter
+                      layoutParams = LinearLayout.LayoutParams(
+                          ViewGroup.LayoutParams.MATCH_PARENT,
+                          (200 * resources.displayMetrics.density).toInt()
+                      )
+                  }
+                  return rv
+              }
+
+              // ── Key setup (touch‑forgiving) ────────────────────────────────
               private fun setupKey(view: TextView, action: () -> Unit) {
                   viewActions[view] = action
                   view.setOnTouchListener { v, event ->
                       when (event.action) {
                           MotionEvent.ACTION_DOWN -> {
                               pressedView = v
-                              // Optional: visual feedback – set alpha or background
                               v.alpha = 0.6f
                               true
                           }
@@ -869,6 +594,7 @@ jobs:
                   }
               }
 
+              // ── Build QWERTY ───────────────────────────────────────────────
               private fun buildQwerty(): View {
                   val v = layoutInflater.inflate(R.layout.qwerty, null)
 
@@ -893,129 +619,64 @@ jobs:
                   // Shift
                   setupKey(v.findViewById<TextView>(R.id.btn_shift)) { handleShift(v) }
 
-                  // Backspace – keep repeat logic, but use setupKey for single delete
+                  // Backspace – integrated tap + long‑press
                   val backspace = v.findViewById<TextView>(R.id.btn_backspace)
-                  setupKey(backspace) { doBackspace() }
-                  backspace.setOnLongClickListener { startBackspaceRepeat(); true }
-                  backspace.setOnTouchListener { _, e ->
-                      if (e.action == MotionEvent.ACTION_UP ||
-                          e.action == MotionEvent.ACTION_CANCEL) stopBackspaceRepeat()
-                      false // let the setupKey listener also fire
-                  }
-
-                  // Space, comma, period, enter, symbols, emoji, clipboard, tools
-                  setupKey(v.findViewById<TextView>(R.id.btn_space)) { typeText(" ") }
-                  setupKey(v.findViewById<TextView>(R.id.btn_comma)) { typeText(",") }
-                  setupKey(v.findViewById<TextView>(R.id.btn_period)) { typeText(".") }
-                  setupKey(v.findViewById<TextView>(R.id.btn_enter)) { doEnter() }
-                  setupKey(v.findViewById<TextView>(R.id.btn_symbols)) { showMode(Mode.SYMBOLS) }
-                  setupKey(v.findViewById<TextView>(R.id.btn_emoji)) { showMode(Mode.EMOJI) }
-                  setupKey(v.findViewById<TextView>(R.id.btn_clipboard)) { openClipboard() }
-                  val toolsBtn = v.findViewById<TextView>(R.id.btn_tools)
-                  setupKey(toolsBtn) { showToolsPopup(toolsBtn) }
-
-                  return v
-              }
-
-              private fun buildSymbols(): View {
-                  val v = layoutInflater.inflate(R.layout.symbols, null)
-
-                  val syms = listOf(
-                      "!","@","#","$","%","&","*","(",")","+",
-                      "-","=","/",":",";","\"","'","?","~","_",
-                      "[","]","{","}","<",">","|","\\","^"
-                  )
-                  val symIds = listOf(
-                      R.id.ks1,R.id.ks2,R.id.ks3,R.id.ks4,R.id.ks5,
-                      R.id.ks6,R.id.ks7,R.id.ks8,R.id.ks9,R.id.ks10,
-                      R.id.ks11,R.id.ks12,R.id.ks13,R.id.ks14,R.id.ks15,
-                      R.id.ks16,R.id.ks17,R.id.ks18,R.id.ks19,R.id.ks20,
-                      R.id.ks21,R.id.ks22,R.id.ks23,R.id.ks24,R.id.ks25,
-                      R.id.ks26,R.id.ks27,R.id.ks28,R.id.ks29
-                  )
-                  symIds.forEachIndexed { i, id ->
-                      setupKey(v.findViewById<TextView>(id)) { typeText(syms[i]) }
-                  }
-
-                  val numIds = listOf(R.id.k1,R.id.k2,R.id.k3,R.id.k4,R.id.k5,
-                                      R.id.k6,R.id.k7,R.id.k8,R.id.k9,R.id.k0)
-                  "1234567890".forEachIndexed { i, c ->
-                      setupKey(v.findViewById<TextView>(numIds[i])) { typeText(c.toString()) }
-                  }
-
-                  val backspace = v.findViewById<TextView>(R.id.btn_backspace)
-                  setupKey(backspace) { doBackspace() }
-                  backspace.setOnLongClickListener { startBackspaceRepeat(); true }
-                  backspace.setOnTouchListener { _, e ->
-                      if (e.action == MotionEvent.ACTION_UP ||
-                          e.action == MotionEvent.ACTION_CANCEL) stopBackspaceRepeat()
-                      false
-                  }
-
-                  setupKey(v.findViewById<TextView>(R.id.btn_space)) { typeText(" ") }
-                  setupKey(v.findViewById<TextView>(R.id.btn_comma)) { typeText(",") }
-                  setupKey(v.findViewById<TextView>(R.id.btn_period)) { typeText(".") }
-                  setupKey(v.findViewById<TextView>(R.id.btn_enter)) { doEnter() }
-                  setupKey(v.findViewById<TextView>(R.id.btn_abc)) { showMode(Mode.QWERTY) }
-                  setupKey(v.findViewById<TextView>(R.id.btn_emoji)) { showMode(Mode.EMOJI) }
-                  setupKey(v.findViewById<TextView>(R.id.btn_clipboard)) { openClipboard() }
-                  val toolsBtn = v.findViewById<TextView>(R.id.btn_tools)
-                  setupKey(toolsBtn) { showToolsPopup(toolsBtn) }
-
-                  return v
-              }
-
-              private fun buildEmoji(): View {
-                  val v = layoutInflater.inflate(R.layout.emoji, null)
-                  val grid = v.findViewById<GridLayout>(R.id.emoji_grid)
-                  loadEmojiGrid(grid, currentEmojiCategory)
-
-                  mapOf(
-                      R.id.tab_faces      to "faces",
-                      R.id.tab_people     to "people",
-                      R.id.tab_animals    to "animals",
-                      R.id.tab_food       to "food",
-                      R.id.tab_activities to "activities",
-                      R.id.tab_objects    to "objects"
-                  ).forEach { (id, cat) ->
-                      setupKey(v.findViewById<TextView>(id)) {
-                          currentEmojiCategory = cat
-                          loadEmojiGrid(grid, cat)
-                      }
-                  }
-
-                  setupKey(v.findViewById<TextView>(R.id.btn_abc)) { showMode(Mode.QWERTY) }
-                  setupKey(v.findViewById<TextView>(R.id.btn_clipboard)) { openClipboard() }
-                  val toolsBtn = v.findViewById<TextView>(R.id.btn_tools)
-                  setupKey(toolsBtn) { showToolsPopup(toolsBtn) }
-
-                  return v
-              }
-
-              private fun loadEmojiGrid(grid: GridLayout, category: String) {
-                  grid.removeAllViews()
-                  val emojis = emojiCategories[category] ?: return
-                  val cellSize = (resources.displayMetrics.widthPixels - 32.dp) / 8
-                  emojis.forEach { emoji ->
-                      val tv = TextView(this).apply {
-                          text = emoji
-                          textSize = 38f
-                          gravity = Gravity.CENTER
-                          layoutParams = GridLayout.LayoutParams().apply {
-                              width  = cellSize
-                              height = cellSize
+                  val backspaceAction = { doBackspace() }
+                  viewActions[backspace] = backspaceAction
+                  backspace.setOnTouchListener { _, event ->
+                      when (event.action) {
+                          MotionEvent.ACTION_DOWN -> {
+                              pressedView = backspace
+                              backspace.alpha = 0.6f
+                              // start repeat after 400ms
+                              bsRunnable = object : Runnable {
+                                  override fun run() { doBackspace(); bsHandler.postDelayed(this, 50) }
+                              }
+                              bsHandler.postDelayed(bsRunnable!!, 400)
+                              true
                           }
+                          MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
+                              backspace.alpha = 1.0f
+                              stopBackspaceRepeat()
+                              // if it was a quick tap, perform single delete
+                              if (pressedView == backspace) {
+                                  viewActions[backspace]?.invoke()
+                                  pressedView = null
+                              }
+                              true
+                          }
+                          else -> true
                       }
-                      setupKey(tv) { typeText(emoji) }
-                      grid.addView(tv)
                   }
+
+                  // Space, comma, period, enter
+                  setupKey(v.findViewById<TextView>(R.id.btn_space)) { typeText(" ") }
+                  setupKey(v.findViewById<TextView>(R.id.btn_comma)) { typeText(",") }
+                  setupKey(v.findViewById<TextView>(R.id.btn_period)) { typeText(".") }
+                  setupKey(v.findViewById<TextView>(R.id.btn_enter)) { doEnter() }
+
+                  // Symbols, emoji, clipboard → bottom sheets
+                  setupKey(v.findViewById<TextView>(R.id.btn_symbols)) {
+                      showBottomSheet(createSymbolsContent())
+                  }
+                  setupKey(v.findViewById<TextView>(R.id.btn_emoji)) {
+                      showBottomSheet(createEmojiContent())
+                  }
+                  setupKey(v.findViewById<TextView>(R.id.btn_clipboard)) {
+                      openClipboard()
+                  }
+
+                  // Tools popup (unchanged)
+                  val toolsBtn = v.findViewById<TextView>(R.id.btn_tools)
+                  setupKey(toolsBtn) { showToolsPopup(toolsBtn) }
+
+                  return v
               }
 
-              // Capture selected text, then show clipboard popup
+              // ── Clipboard (popup, not bottom sheet for now) ────────────────
               private fun openClipboard() {
                   val sel = currentInputConnection?.getSelectedText(0)
                   if (!sel.isNullOrEmpty()) addToClipboard(sel.toString())
-                  // Also grab the system clipboard if list is still empty
                   if (clipboardItems.isEmpty()) {
                       val clip = (getSystemService(Context.CLIPBOARD_SERVICE) as? ClipboardManager)
                           ?.primaryClip?.getItemAt(0)?.text?.toString()
@@ -1026,8 +687,6 @@ jobs:
 
               private fun showClipboardPopup() {
                   clipboardPopup?.dismiss()
-
-                  // If still empty, show a hint
                   if (clipboardItems.isEmpty()) {
                       val hintLayout = LinearLayout(this).apply {
                           orientation = LinearLayout.VERTICAL
@@ -1057,17 +716,12 @@ jobs:
 
                   clipAdapter = ClipboardAdapter(
                       clipboardItems,
-                      onPaste  = { item ->
-                          typeText(item)
-                          // keep popup open after paste
-                      },
+                      onPaste  = { item -> typeText(item) },
                       onDelete = { pos ->
                           clipboardItems.removeAt(pos)
                           clipAdapter?.notifyItemRemoved(pos)
                           saveClipboard()
-                          if (clipboardItems.isEmpty()) {
-                              clipboardPopup?.dismiss()
-                          }
+                          if (clipboardItems.isEmpty()) clipboardPopup?.dismiss()
                       }
                   )
 
@@ -1146,27 +800,7 @@ jobs:
                   }
               }
 
-              private fun addToClipboard(text: String) {
-                  clipboardItems.remove(text)
-                  clipboardItems.add(0, text)
-                  if (clipboardItems.size > MAX_CLIP) clipboardItems.removeAt(clipboardItems.size - 1)
-                  saveClipboard()
-                  clipAdapter?.notifyDataSetChanged()
-              }
-
-              private fun saveClipboard() {
-                  getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE).edit()
-                      .putString(PREFS_CLIP, clipboardItems.take(MAX_CLIP).joinToString("\u001F"))
-                      .apply()
-              }
-
-              private fun loadClipboard() {
-                  val s = getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
-                      .getString(PREFS_CLIP, "") ?: ""
-                  clipboardItems.clear()
-                  if (s.isNotEmpty()) clipboardItems.addAll(s.split("\u001F"))
-              }
-
+              // ── Input helpers ──────────────────────────────────────────────
               private fun typeChar(c: Char) {
                   val out = if (shiftState != ShiftState.OFF) c.uppercaseChar() else c.lowercaseChar()
                   typeText(out.toString())
@@ -1203,6 +837,11 @@ jobs:
                   }
               }
 
+              // ── Shift state ────────────────────────────────────────────────
+              private var shiftState = ShiftState.OFF
+              private var lastShiftTap = 0L
+              private enum class ShiftState { OFF, ONCE, LOCKED }
+
               private fun handleShift(v: View) {
                   val now = System.currentTimeMillis()
                   shiftState = when {
@@ -1236,9 +875,78 @@ jobs:
                   }
               }
 
+              // ── Clipboard adapter ──────────────────────────────────────────
+              class ClipboardAdapter(
+                  private val items: MutableList<String>,
+                  private val onPaste: (String) -> Unit,
+                  private val onDelete: (Int) -> Unit
+              ) : RecyclerView.Adapter<ClipboardAdapter.VH>() {
+
+                  inner class VH(val root: LinearLayout, val tv: TextView, val del: TextView)
+                      : RecyclerView.ViewHolder(root)
+
+                  override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): VH {
+                      val ctx = parent.context
+                      val root = LinearLayout(ctx).apply {
+                          orientation = LinearLayout.HORIZONTAL
+                          setPadding(20, 16, 20, 16)
+                          layoutParams = RecyclerView.LayoutParams(
+                              ViewGroup.LayoutParams.MATCH_PARENT,
+                              ViewGroup.LayoutParams.WRAP_CONTENT
+                          )
+                      }
+                      val tv = TextView(ctx).apply {
+                          layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
+                          setTextColor(0xFFFFFFFF.toInt())
+                          textSize = 22f
+                          maxLines = 2
+                          ellipsize = android.text.TextUtils.TruncateAt.END
+                      }
+                      val del = TextView(ctx).apply {
+                          text = "✕"
+                          setTextColor(0xFF888888.toInt())
+                          textSize = 26f
+                          setPadding(26, 0, 6, 0)
+                      }
+                      root.addView(tv)
+                      root.addView(del)
+                      return VH(root, tv, del)
+                  }
+
+                  override fun onBindViewHolder(h: VH, pos: Int) {
+                      h.tv.text = items[pos]
+                      h.root.setOnClickListener { onPaste(items[pos]) }
+                      h.del.setOnClickListener  { onDelete(h.adapterPosition) }
+                  }
+
+                  override fun getItemCount() = items.size
+              }
+
+              // ── Clipboard persistence ──────────────────────────────────────
+              private fun addToClipboard(text: String) {
+                  clipboardItems.remove(text)
+                  clipboardItems.add(0, text)
+                  if (clipboardItems.size > MAX_CLIP) clipboardItems.removeAt(clipboardItems.size - 1)
+                  saveClipboard()
+                  clipAdapter?.notifyDataSetChanged()
+              }
+
+              private fun saveClipboard() {
+                  getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE).edit()
+                      .putString(PREFS_CLIP, clipboardItems.take(MAX_CLIP).joinToString("\u001F"))
+                      .apply()
+              }
+
+              private fun loadClipboard() {
+                  val s = getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+                      .getString(PREFS_CLIP, "") ?: ""
+                  clipboardItems.clear()
+                  if (s.isNotEmpty()) clipboardItems.addAll(s.split("\u001F"))
+              }
+
               override fun onStartInputView(info: EditorInfo, restarting: Boolean) {
                   super.onStartInputView(info, restarting)
-                  val v = if (mode == Mode.SYMBOLS) symbolsView else qwertyView
+                  val v = qwertyView
                   v.findViewById<TextView>(R.id.btn_enter)?.text =
                       when (info.imeOptions and EditorInfo.IME_MASK_ACTION) {
                           EditorInfo.IME_ACTION_SEARCH -> "🔍"
@@ -1256,53 +964,8 @@ jobs:
                   stopBackspaceRepeat()
                   toolsPopup?.dismiss()
                   clipboardPopup?.dismiss()
+                  dismissBottomSheet()
               }
-          }
-
-          class ClipboardAdapter(
-              private val items: MutableList<String>,
-              private val onPaste: (String) -> Unit,
-              private val onDelete: (Int) -> Unit
-          ) : RecyclerView.Adapter<ClipboardAdapter.VH>() {
-
-              inner class VH(val root: LinearLayout, val tv: TextView, val del: TextView)
-                  : RecyclerView.ViewHolder(root)
-
-              override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): VH {
-                  val ctx = parent.context
-                  val root = LinearLayout(ctx).apply {
-                      orientation = LinearLayout.HORIZONTAL
-                      setPadding(20, 16, 20, 16)
-                      layoutParams = RecyclerView.LayoutParams(
-                          ViewGroup.LayoutParams.MATCH_PARENT,
-                          ViewGroup.LayoutParams.WRAP_CONTENT
-                      )
-                  }
-                  val tv = TextView(ctx).apply {
-                      layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
-                      setTextColor(0xFFFFFFFF.toInt())
-                      textSize = 22f
-                      maxLines = 2
-                      ellipsize = android.text.TextUtils.TruncateAt.END
-                  }
-                  val del = TextView(ctx).apply {
-                      text = "✕"
-                      setTextColor(0xFF888888.toInt())
-                      textSize = 26f
-                      setPadding(26, 0, 6, 0)
-                  }
-                  root.addView(tv)
-                  root.addView(del)
-                  return VH(root, tv, del)
-              }
-
-              override fun onBindViewHolder(h: VH, pos: Int) {
-                  h.tv.text = items[pos]
-                  h.root.setOnClickListener { onPaste(items[pos]) }
-                  h.del.setOnClickListener  { onDelete(h.adapterPosition) }
-              }
-
-              override fun getItemCount() = items.size
           }
           ENDOFFILE
 
@@ -1478,8 +1141,6 @@ jobs:
           cp app/src/main/java/com/greyb/keyboard/Keyboard.kt GreyB-release/
           cp app/src/main/java/com/greyb/keyboard/MainActivity.kt GreyB-release/
           cp app/src/main/res/layout/qwerty.xml GreyB-release/
-          cp app/src/main/res/layout/symbols.xml GreyB-release/
-          cp app/src/main/res/layout/emoji.xml GreyB-release/
           cp .github/workflows/build.yml GreyB-release/
 
           APK_SIZE=$(ls -lh app/build/outputs/apk/release/app-release.apk | awk '{print $5}')
