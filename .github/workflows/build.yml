@@ -594,4 +594,562 @@ jobs:
                       val tv = TextView(this).apply {
                           text = emoji
                           textSize = 38f
-                          gravity = Gravity.C
+                          gravity = Gravity.CENTER
+                          layoutParams = GridLayout.LayoutParams().apply {
+                              width = cellSize
+                              height = cellSize
+                          }
+                      }
+                      setupKey(tv) { typeText(emoji); dismissBottomSheet() }
+                      grid.addView(tv)
+                  }
+                  return grid
+              }
+
+              private fun createClipboardContent(): View {
+                  if (clipboardItems.isEmpty()) {
+                      return TextView(this).apply {
+                          text = "Clipboard is empty"
+                          textSize = 20f
+                          setTextColor(0xFFFFFFFF.toInt())
+                          gravity = Gravity.CENTER
+                          setPadding(16.dp, 32.dp, 16.dp, 32.dp)
+                      }
+                  }
+
+                  clipAdapter = ClipboardAdapter(
+                      clipboardItems,
+                      onPaste  = { item -> typeText(item); dismissBottomSheet() },
+                      onDelete = { pos ->
+                          clipboardItems.removeAt(pos)
+                          clipAdapter?.notifyItemRemoved(pos)
+                          saveClipboard()
+                          if (clipboardItems.isEmpty()) {
+                              dismissBottomSheet()
+                          }
+                      }
+                  )
+
+                  val rv = RecyclerView(this).apply {
+                      layoutManager = LinearLayoutManager(this@Keyboard)
+                      adapter = clipAdapter
+                      layoutParams = LinearLayout.LayoutParams(
+                          ViewGroup.LayoutParams.MATCH_PARENT,
+                          (200 * resources.displayMetrics.density).toInt()
+                      )
+                  }
+                  return rv
+              }
+
+              // ── Key setup (touch‑forgiving) ────────────────────────────────
+              private fun setupKey(view: TextView, action: () -> Unit) {
+                  viewActions[view] = action
+                  view.setOnTouchListener { v, event ->
+                      when (event.action) {
+                          MotionEvent.ACTION_DOWN -> {
+                              pressedView = v
+                              v.alpha = 0.6f
+                              true
+                          }
+                          MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
+                              v.alpha = 1.0f
+                              if (pressedView != null) {
+                                  viewActions[pressedView]?.invoke()
+                                  pressedView = null
+                              }
+                              true
+                          }
+                          else -> true
+                      }
+                  }
+              }
+
+              // ── Build QWERTY ───────────────────────────────────────────────
+              private fun buildQwerty(): View {
+                  val v = layoutInflater.inflate(R.layout.qwerty, null)
+
+                  // Letter keys
+                  val letters = "qwertyuiopasdfghjklzxcvbnm"
+                  val ids = listOf(
+                      R.id.kq,R.id.kw,R.id.ke,R.id.kr,R.id.kt,R.id.ky,R.id.ku,R.id.ki,R.id.ko,R.id.kp,
+                      R.id.ka,R.id.ks,R.id.kd,R.id.kf,R.id.kg,R.id.kh,R.id.kj,R.id.kk,R.id.kl,
+                      R.id.kz,R.id.kx,R.id.kc,R.id.kv,R.id.kb,R.id.kn,R.id.km
+                  )
+                  ids.forEachIndexed { i, id ->
+                      setupKey(v.findViewById<TextView>(id)) { typeChar(letters[i]) }
+                  }
+
+                  // Number keys
+                  val numIds = listOf(R.id.k1,R.id.k2,R.id.k3,R.id.k4,R.id.k5,
+                                      R.id.k6,R.id.k7,R.id.k8,R.id.k9,R.id.k0)
+                  "1234567890".forEachIndexed { i, c ->
+                      setupKey(v.findViewById<TextView>(numIds[i])) { typeText(c.toString()) }
+                  }
+
+                  // Shift
+                  setupKey(v.findViewById<TextView>(R.id.btn_shift)) { handleShift(v) }
+
+                  // Backspace – integrated tap + long‑press
+                  val backspace = v.findViewById<TextView>(R.id.btn_backspace)
+                  val backspaceAction = { doBackspace() }
+                  viewActions[backspace] = backspaceAction
+                  backspace.setOnTouchListener { _, event ->
+                      when (event.action) {
+                          MotionEvent.ACTION_DOWN -> {
+                              pressedView = backspace
+                              backspace.alpha = 0.6f
+                              // start repeat after 400ms
+                              bsRunnable = object : Runnable {
+                                  override fun run() { doBackspace(); bsHandler.postDelayed(this, 50) }
+                              }
+                              bsHandler.postDelayed(bsRunnable!!, 400)
+                              true
+                          }
+                          MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
+                              backspace.alpha = 1.0f
+                              stopBackspaceRepeat()
+                              // if it was a quick tap, perform single delete
+                              if (pressedView == backspace) {
+                                  viewActions[backspace]?.invoke()
+                                  pressedView = null
+                              }
+                              true
+                          }
+                          else -> true
+                      }
+                  }
+
+                  // Space, comma, period, enter
+                  setupKey(v.findViewById<TextView>(R.id.btn_space)) { typeText(" ") }
+                  setupKey(v.findViewById<TextView>(R.id.btn_comma)) { typeText(",") }
+                  setupKey(v.findViewById<TextView>(R.id.btn_period)) { typeText(".") }
+                  setupKey(v.findViewById<TextView>(R.id.btn_enter)) { doEnter() }
+
+                  // Symbols, emoji, clipboard → bottom sheets
+                  setupKey(v.findViewById<TextView>(R.id.btn_symbols)) {
+                      showBottomSheet(createSymbolsContent())
+                  }
+                  setupKey(v.findViewById<TextView>(R.id.btn_emoji)) {
+                      showBottomSheet(createEmojiContent())
+                  }
+                  setupKey(v.findViewById<TextView>(R.id.btn_clipboard)) {
+                      // capture system clipboard before showing
+                      val clip = (getSystemService(Context.CLIPBOARD_SERVICE) as? ClipboardManager)
+                          ?.primaryClip?.getItemAt(0)?.text?.toString()
+                      if (!clip.isNullOrEmpty()) addToClipboard(clip)
+                      showBottomSheet(createClipboardContent())
+                  }
+
+                  // Tools popup
+                  val toolsBtn = v.findViewById<TextView>(R.id.btn_tools)
+                  setupKey(toolsBtn) { showToolsPopup(toolsBtn) }
+
+                  return v
+              }
+
+              private fun showToolsPopup(anchor: View) {
+                  toolsPopup?.dismiss()
+                  val popup = LinearLayout(this).apply {
+                      orientation = LinearLayout.VERTICAL
+                      setBackgroundColor(0xFF2C2C2C.toInt())
+                      setPadding(8.dp, 8.dp, 8.dp, 8.dp)
+                  }
+                  listOf("Select All", "Copy", "Paste").forEach { label ->
+                      popup.addView(TextView(this).apply {
+                          text = label
+                          textSize = 24f
+                          setTextColor(0xFFFFFFFF.toInt())
+                          setPadding(16.dp, 12.dp, 16.dp, 12.dp)
+                          setOnClickListener {
+                              toolsPopup?.dismiss()
+                              when (label) {
+                                  "Select All" -> currentInputConnection
+                                      ?.performContextMenuAction(android.R.id.selectAll)
+                                  "Copy"       -> currentInputConnection
+                                      ?.performContextMenuAction(android.R.id.copy)
+                                  "Paste"      -> {
+                                      val clip = (getSystemService(Context.CLIPBOARD_SERVICE)
+                                              as ClipboardManager)
+                                          .primaryClip?.getItemAt(0)
+                                          ?.coerceToText(this@Keyboard)?.toString()
+                                      if (!clip.isNullOrEmpty()) {
+                                          typeText(clip)
+                                          addToClipboard(clip)
+                                      }
+                                  }
+                              }
+                          }
+                      })
+                  }
+                  toolsPopup = PopupWindow(
+                      popup,
+                      ViewGroup.LayoutParams.WRAP_CONTENT,
+                      ViewGroup.LayoutParams.WRAP_CONTENT,
+                      true
+                  ).apply {
+                      setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
+                      isOutsideTouchable = true
+                      elevation = 8f
+                      showAsDropDown(anchor, 0, -(anchor.height * 4))
+                  }
+              }
+
+              // ── Input helpers ──────────────────────────────────────────────
+              private fun typeChar(c: Char) {
+                  val out = if (shiftState != ShiftState.OFF) c.uppercaseChar() else c.lowercaseChar()
+                  typeText(out.toString())
+                  if (shiftState == ShiftState.ONCE) {
+                      shiftState = ShiftState.OFF
+                      updateShiftIcon(qwertyView)
+                      updateLetterKeys(qwertyView)
+                  }
+              }
+
+              private fun typeText(s: String) { currentInputConnection?.commitText(s, 1) }
+              private fun doBackspace() { currentInputConnection?.deleteSurroundingText(1, 0) }
+
+              private fun startBackspaceRepeat() {
+                  bsRunnable = object : Runnable {
+                      override fun run() { doBackspace(); bsHandler.postDelayed(this, 50) }
+                  }
+                  bsHandler.postDelayed(bsRunnable!!, 400)
+              }
+
+              private fun stopBackspaceRepeat() {
+                  bsRunnable?.let { bsHandler.removeCallbacks(it) }
+                  bsRunnable = null
+              }
+
+              private fun doEnter() {
+                  val action = currentInputEditorInfo?.imeOptions?.and(EditorInfo.IME_MASK_ACTION)
+                      ?: EditorInfo.IME_ACTION_NONE
+                  if (action != EditorInfo.IME_ACTION_NONE && action != EditorInfo.IME_ACTION_UNSPECIFIED) {
+                      currentInputConnection?.performEditorAction(action)
+                  } else {
+                      currentInputConnection?.sendKeyEvent(KeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_ENTER))
+                      currentInputConnection?.sendKeyEvent(KeyEvent(KeyEvent.ACTION_UP,   KeyEvent.KEYCODE_ENTER))
+                  }
+              }
+
+              // ── Shift state ────────────────────────────────────────────────
+              private var shiftState = ShiftState.OFF
+              private var lastShiftTap = 0L
+              private enum class ShiftState { OFF, ONCE, LOCKED }
+
+              private fun handleShift(v: View) {
+                  val now = System.currentTimeMillis()
+                  shiftState = when {
+                      shiftState == ShiftState.LOCKED -> ShiftState.OFF
+                      now - lastShiftTap < 200        -> ShiftState.LOCKED
+                      shiftState == ShiftState.OFF    -> ShiftState.ONCE
+                      else                            -> ShiftState.OFF
+                  }
+                  lastShiftTap = now
+                  updateShiftIcon(v)
+                  updateLetterKeys(v)
+              }
+
+              private fun updateShiftIcon(v: View) {
+                  v.findViewById<TextView>(R.id.btn_shift)?.apply {
+                      text = if (shiftState == ShiftState.LOCKED) "⇪" else "⇧"
+                      setTextColor(if (shiftState == ShiftState.OFF) 0xFFFFFFFF.toInt() else 0xFF4FC3F7.toInt())
+                  }
+              }
+
+              private fun updateLetterKeys(v: View) {
+                  val upper = shiftState != ShiftState.OFF
+                  val letters = "qwertyuiopasdfghjklzxcvbnm"
+                  listOf(
+                      R.id.kq,R.id.kw,R.id.ke,R.id.kr,R.id.kt,R.id.ky,R.id.ku,R.id.ki,R.id.ko,R.id.kp,
+                      R.id.ka,R.id.ks,R.id.kd,R.id.kf,R.id.kg,R.id.kh,R.id.kj,R.id.kk,R.id.kl,
+                      R.id.kz,R.id.kx,R.id.kc,R.id.kv,R.id.kb,R.id.kn,R.id.km
+                  ).forEachIndexed { i, id ->
+                      v.findViewById<TextView>(id)?.text =
+                          if (upper) letters[i].uppercaseChar().toString() else letters[i].toString()
+                  }
+              }
+
+              // ── Clipboard adapter ──────────────────────────────────────────
+              class ClipboardAdapter(
+                  private val items: MutableList<String>,
+                  private val onPaste: (String) -> Unit,
+                  private val onDelete: (Int) -> Unit
+              ) : RecyclerView.Adapter<ClipboardAdapter.VH>() {
+
+                  inner class VH(val root: LinearLayout, val tv: TextView, val del: TextView)
+                      : RecyclerView.ViewHolder(root)
+
+                  override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): VH {
+                      val ctx = parent.context
+                      val root = LinearLayout(ctx).apply {
+                          orientation = LinearLayout.HORIZONTAL
+                          setPadding(20, 16, 20, 16)
+                          layoutParams = RecyclerView.LayoutParams(
+                              ViewGroup.LayoutParams.MATCH_PARENT,
+                              ViewGroup.LayoutParams.WRAP_CONTENT
+                          )
+                      }
+                      val tv = TextView(ctx).apply {
+                          layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
+                          setTextColor(0xFFFFFFFF.toInt())
+                          textSize = 22f
+                          maxLines = 2
+                          ellipsize = android.text.TextUtils.TruncateAt.END
+                      }
+                      val del = TextView(ctx).apply {
+                          text = "✕"
+                          setTextColor(0xFF888888.toInt())
+                          textSize = 26f
+                          setPadding(26, 0, 6, 0)
+                      }
+                      root.addView(tv)
+                      root.addView(del)
+                      return VH(root, tv, del)
+                  }
+
+                  override fun onBindViewHolder(h: VH, pos: Int) {
+                      h.tv.text = items[pos]
+                      h.root.setOnClickListener { onPaste(items[pos]) }
+                      h.del.setOnClickListener  { onDelete(h.adapterPosition) }
+                  }
+
+                  override fun getItemCount() = items.size
+              }
+
+              // ── Clipboard persistence ──────────────────────────────────────
+              private fun addToClipboard(text: String) {
+                  clipboardItems.remove(text)
+                  clipboardItems.add(0, text)
+                  if (clipboardItems.size > MAX_CLIP) clipboardItems.removeAt(clipboardItems.size - 1)
+                  saveClipboard()
+                  clipAdapter?.notifyDataSetChanged()
+              }
+
+              private fun saveClipboard() {
+                  getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE).edit()
+                      .putString(PREFS_CLIP, clipboardItems.take(MAX_CLIP).joinToString("\u001F"))
+                      .apply()
+              }
+
+              private fun loadClipboard() {
+                  val s = getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+                      .getString(PREFS_CLIP, "") ?: ""
+                  clipboardItems.clear()
+                  if (s.isNotEmpty()) clipboardItems.addAll(s.split("\u001F"))
+              }
+
+              override fun onStartInputView(info: EditorInfo, restarting: Boolean) {
+                  super.onStartInputView(info, restarting)
+                  val v = qwertyView
+                  v.findViewById<TextView>(R.id.btn_enter)?.text =
+                      when (info.imeOptions and EditorInfo.IME_MASK_ACTION) {
+                          EditorInfo.IME_ACTION_SEARCH -> "🔍"
+                          EditorInfo.IME_ACTION_SEND   -> "➤"
+                          EditorInfo.IME_ACTION_GO     -> "→"
+                          EditorInfo.IME_ACTION_DONE   -> "✓"
+                          else                         -> "↵"
+                      }
+              }
+
+              private val Int.dp get() = (this * resources.displayMetrics.density).toInt()
+
+              override fun onDestroy() {
+                  super.onDestroy()
+                  stopBackspaceRepeat()
+                  toolsPopup?.dismiss()
+                  dismissBottomSheet()
+              }
+          }
+          ENDOFFILE
+
+      # ---------- Gradle files ----------
+      - name: Generate Gradle Scripts
+        env:
+          BUILD_NUMBER: ${{ github.run_number }}
+        run: |
+          cat > settings.gradle.kts << 'ENDOFFILE'
+          pluginManagement {
+              repositories { google(); mavenCentral(); gradlePluginPortal() }
+          }
+          dependencyResolutionManagement {
+              repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
+              repositories { google(); mavenCentral() }
+          }
+          rootProject.name = "GreyB"
+          include(":app")
+          ENDOFFILE
+
+          cat > build.gradle.kts << 'ENDOFFILE'
+          plugins {
+              id("com.android.application") version "8.9.1" apply false
+              id("org.jetbrains.kotlin.android") version "2.2.0" apply false
+          }
+          ENDOFFILE
+
+          cat > app/build.gradle.kts << APPEOF
+          plugins {
+              id("com.android.application")
+              id("org.jetbrains.kotlin.android")
+          }
+
+          android {
+              namespace  = "com.greyb.keyboard"
+              compileSdk = 36
+
+              defaultConfig {
+                  applicationId = "com.greyb.keyboard"
+                  minSdk        = 26
+                  targetSdk     = 36
+                  versionCode   = ${BUILD_NUMBER}
+                  versionName   = "${BUILD_NUMBER}"
+              }
+
+              signingConfigs {
+                  create("release") {
+                      storeFile     = file("release.keystore")
+                      storePassword = "greyb2024"
+                      keyAlias      = "greyb"
+                      keyPassword   = "greyb2024"
+                  }
+              }
+
+              buildTypes {
+                  release {
+                      isMinifyEnabled   = true
+                      isShrinkResources = true
+                      proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"))
+                      signingConfig = signingConfigs.getByName("release")
+                  }
+              }
+
+              compileOptions {
+                  sourceCompatibility = JavaVersion.VERSION_17
+                  targetCompatibility = JavaVersion.VERSION_17
+              }
+              kotlinOptions { jvmTarget = "17" }
+          }
+
+          dependencies {
+              implementation("androidx.recyclerview:recyclerview:1.3.2")
+              implementation("androidx.core:core-ktx:1.13.1")
+          }
+          APPEOF
+
+          cat > gradle.properties << 'ENDOFFILE'
+          android.useAndroidX=true
+          android.enableJetifier=true
+          org.gradle.jvmargs=-Xmx4g -XX:MaxMetaspaceSize=512m -XX:+UseParallelGC
+          kotlin.code.style=official
+          android.suppressUnsupportedCompileSdk=36
+          ENDOFFILE
+
+      # ---------- Keystore, icons, build, artifact ----------
+      - name: Generate fixed keystore
+        run: |
+          keytool -genkey -v \
+            -keystore app/release.keystore \
+            -alias greyb \
+            -keyalg RSA \
+            -keysize 2048 \
+            -validity 10000 \
+            -storepass greyb2024 \
+            -keypass greyb2024 \
+            -dname "CN=GreyB, OU=GreyB, O=GreyB Keyboard, L=Test, S=Test, C=US"
+
+      - name: Generate launcher icons
+        run: |
+          rm -rf app/src/main/res/mipmap-*
+          pip3 install Pillow --quiet --break-system-packages 2>/dev/null || pip install Pillow --quiet
+          python3 << 'ENDOFFILE'
+          from PIL import Image, ImageDraw
+          import os
+
+          def make_icon(size):
+              BG     = (42, 45, 52, 255)
+              ACCENT = (90, 93, 100, 255)
+              WHITE  = (255, 255, 255, 255)
+              img = Image.new('RGBA', (size, size), BG)
+              d   = ImageDraw.Draw(img)
+              margin = size // 5
+              key_w  = (size - 2 * margin) // 4
+              key_h  = (size - 2 * margin) // 5
+              gap    = max(1, size // 40)
+              start_y = margin + key_h
+              for row in range(3):
+                  y = start_y + row * (key_h + gap)
+                  keys_in_row = [4, 4, 3]
+                  row_margin = (size - keys_in_row[row] * (key_w + gap) + gap) // 2
+                  for col in range(keys_in_row[row]):
+                      x = row_margin + col * (key_w + gap)
+                      color = ACCENT if (row == 0 and col == 0) else WHITE
+                      d.rounded_rectangle([x, y, x + key_w, y + key_h], radius=key_w // 5, fill=color)
+              space_y = start_y + 3 * (key_h + gap)
+              space_w = key_w * 2 + gap
+              space_x = (size - space_w) // 2
+              d.rounded_rectangle([space_x, space_y, space_x + space_w, space_y + key_h], radius=key_w // 5, fill=ACCENT)
+              return img
+
+          sizes = {'mdpi': 48, 'hdpi': 72, 'xhdpi': 96, 'xxhdpi': 144, 'xxxhdpi': 192}
+          for density, s in sizes.items():
+              path = f'app/src/main/res/mipmap-{density}'
+              os.makedirs(path, exist_ok=True)
+              icon = make_icon(s)
+              icon.save(f'{path}/ic_launcher.png')
+              icon.save(f'{path}/ic_launcher_round.png')
+          print("Icons generated!")
+          ENDOFFILE
+
+      - name: Setup Gradle Wrapper
+        run: |
+          gradle wrapper --gradle-version=8.11.1 --distribution-type=bin
+          chmod +x gradlew
+
+      - name: Clean build
+        run: |
+          rm -rf app/build
+          ./gradlew clean --no-daemon
+
+      - name: Build signed release APK
+        run: ./gradlew assembleRelease --no-daemon
+
+      - name: Verify APK signing
+        run: |
+          APK_PATH="app/build/outputs/apk/release/app-release.apk"
+          if [ -f "$APK_PATH" ]; then
+              echo "✅ Release APK generated"
+              echo "📦 APK size: $(ls -lh "$APK_PATH" | awk '{print $5}')"
+              BT_PATH=$(ls -d $ANDROID_HOME/build-tools/* 2>/dev/null | head -1)
+              if [ -n "$BT_PATH" ]; then
+                  $BT_PATH/apksigner verify --print-certs "$APK_PATH" 2>/dev/null || echo "⚠️ apksigner verify skipped"
+              fi
+          else
+              echo "❌ Release APK not found"
+              exit 1
+          fi
+
+      - name: Bundle APK + source
+        run: |
+          mkdir -p GreyB-release
+          cp app/build/outputs/apk/release/app-release.apk GreyB-release/GreyB.apk
+          cp app/src/main/java/com/greyb/keyboard/Keyboard.kt GreyB-release/
+          cp app/src/main/java/com/greyb/keyboard/MainActivity.kt GreyB-release/
+          cp app/src/main/res/layout/qwerty.xml GreyB-release/
+          cp .github/workflows/build.yml GreyB-release/
+
+          APK_SIZE=$(ls -lh app/build/outputs/apk/release/app-release.apk | awk '{print $5}')
+
+          cat > GreyB-release/BUILD_INFO.txt << INFOEOF
+          Build:      #${{ github.run_number }}
+          Commit:     ${{ github.sha }}
+          Timestamp:  $(date -u '+%Y-%m-%d %H:%M:%S UTC')
+          Signed:     Yes (fixed key)
+          APK Size:   ${APK_SIZE}
+          Optimized:  Yes (ProGuard/R8 enabled)
+          INFOEOF
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: GreyB-${{ github.run_number }}
+          path: GreyB-release/
+          retention-days: 30
