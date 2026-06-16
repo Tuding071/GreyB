@@ -208,7 +208,7 @@ jobs:
           </resources>
           ENDOFFILE
 
-      # ---------- Keyboard layout (A and L touch area expanded) ----------
+      # ---------- Keyboard layout (ASDF row restored with Spaces, A/L touch expansion in code) ----------
       - name: Generate qwerty.xml
         run: |
           cat > app/src/main/res/layout/qwerty.xml << 'ENDOFFILE'
@@ -337,14 +337,19 @@ jobs:
                   <TextView android:id="@+id/kp" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="p" android:textColor="#fff" android:textSize="32sp" android:background="@drawable/key_bg" android:paddingStart="3dp" android:paddingEnd="3dp"/>
               </LinearLayout>
 
-              <!-- ASDF row (A and L touch areas extended) -->
+              <!-- ASDF row (Spaces restored) -->
               <LinearLayout
                   android:layout_width="match_parent"
                   android:layout_height="55dp"
                   android:orientation="horizontal"
                   android:paddingStart="3dp"
                   android:paddingEnd="3dp">
-                  <TextView android:id="@+id/ka" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="a" android:textColor="#fff" android:textSize="32sp" android:background="@drawable/key_bg" android:paddingStart="9dp" android:paddingEnd="3dp"/>
+                  <Space
+                      android:id="@+id/asdf_spacer_left"
+                      android:layout_width="0dp"
+                      android:layout_height="match_parent"
+                      android:layout_weight="0.5" />
+                  <TextView android:id="@+id/ka" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="a" android:textColor="#fff" android:textSize="32sp" android:background="@drawable/key_bg" android:paddingStart="3dp" android:paddingEnd="3dp"/>
                   <TextView android:id="@+id/ks" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="s" android:textColor="#fff" android:textSize="32sp" android:background="@drawable/key_bg" android:paddingStart="3dp" android:paddingEnd="3dp"/>
                   <TextView android:id="@+id/kd" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="d" android:textColor="#fff" android:textSize="32sp" android:background="@drawable/key_bg" android:paddingStart="3dp" android:paddingEnd="3dp"/>
                   <TextView android:id="@+id/kf" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="f" android:textColor="#fff" android:textSize="32sp" android:background="@drawable/key_bg" android:paddingStart="3dp" android:paddingEnd="3dp"/>
@@ -352,7 +357,12 @@ jobs:
                   <TextView android:id="@+id/kh" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="h" android:textColor="#fff" android:textSize="32sp" android:background="@drawable/key_bg" android:paddingStart="3dp" android:paddingEnd="3dp"/>
                   <TextView android:id="@+id/kj" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="j" android:textColor="#fff" android:textSize="32sp" android:background="@drawable/key_bg" android:paddingStart="3dp" android:paddingEnd="3dp"/>
                   <TextView android:id="@+id/kk" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="k" android:textColor="#fff" android:textSize="32sp" android:background="@drawable/key_bg" android:paddingStart="3dp" android:paddingEnd="3dp"/>
-                  <TextView android:id="@+id/kl" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="l" android:textColor="#fff" android:textSize="32sp" android:background="@drawable/key_bg" android:paddingStart="3dp" android:paddingEnd="9dp"/>
+                  <TextView android:id="@+id/kl" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="l" android:textColor="#fff" android:textSize="32sp" android:background="@drawable/key_bg" android:paddingStart="3dp" android:paddingEnd="3dp"/>
+                  <Space
+                      android:id="@+id/asdf_spacer_right"
+                      android:layout_width="0dp"
+                      android:layout_height="match_parent"
+                      android:layout_weight="0.5" />
               </LinearLayout>
 
               <!-- ZXCV row -->
@@ -441,7 +451,7 @@ jobs:
           }
           ENDOFFILE
 
-      # ---------- Keyboard.kt (unchanged) ----------
+      # ---------- Keyboard.kt (A/L touch expansion via spacers) ----------
       - name: Generate Keyboard.kt
         run: |
           cat > app/src/main/java/com/greyb/keyboard/Keyboard.kt << 'ENDOFFILE'
@@ -501,8 +511,8 @@ jobs:
                   if (isBottomSheetVisible) dismissBottomSheet()
 
                   bottomSheetContainer = FrameLayout(this).apply {
-                      setBackgroundColor(0x80000000.toInt())  // semi‑transparent overlay
-                      setOnClickListener { dismissBottomSheet() } // tap outside to dismiss
+                      setBackgroundColor(0x80000000.toInt())
+                      setOnClickListener { dismissBottomSheet() }
                   }
 
                   val bottomSheet = LinearLayout(this).apply {
@@ -514,7 +524,6 @@ jobs:
                       ).apply { gravity = Gravity.BOTTOM }
                   }
 
-                  // simple handle / title
                   val titleBar = TextView(this).apply {
                       text = ""
                       textSize = 16f
@@ -528,7 +537,6 @@ jobs:
                   bottomSheetContainer?.addView(bottomSheet)
                   rootFrame.addView(bottomSheetContainer)
 
-                  // slide‑up animation
                   bottomSheet.translationY = 500f
                   bottomSheet.animate().translationY(0f).setDuration(250).start()
                   isBottomSheetVisible = true
@@ -580,7 +588,7 @@ jobs:
               }
 
               private fun createEmojiContent(): View {
-                  val emojis = listOf("😀","😂","😍","🥰","😎","👍","🔥","🎉")  // only 8 emojis
+                  val emojis = listOf("😀","😂","😍","🥰","😎","👍","🔥","🎉")
                   val grid = GridLayout(this).apply {
                       columnCount = 4
                       useDefaultMargins = true
@@ -642,17 +650,17 @@ jobs:
               }
 
               // ── Key setup (touch‑forgiving) ────────────────────────────────
-              private fun setupKey(view: TextView, action: () -> Unit) {
+              private fun setupKey(view: View, action: () -> Unit) {
                   viewActions[view] = action
                   view.setOnTouchListener { v, event ->
                       when (event.action) {
                           MotionEvent.ACTION_DOWN -> {
                               pressedView = v
-                              v.alpha = 0.6f
+                              if (v is TextView) v.alpha = 0.6f
                               true
                           }
                           MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
-                              v.alpha = 1.0f
+                              if (v is TextView) v.alpha = 1.0f
                               if (pressedView != null) {
                                   viewActions[pressedView]?.invoke()
                                   pressedView = null
@@ -698,7 +706,6 @@ jobs:
                           MotionEvent.ACTION_DOWN -> {
                               pressedView = backspace
                               backspace.alpha = 0.6f
-                              // start repeat after 400ms
                               bsRunnable = object : Runnable {
                                   override fun run() { doBackspace(); bsHandler.postDelayed(this, 50) }
                               }
@@ -708,7 +715,6 @@ jobs:
                           MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
                               backspace.alpha = 1.0f
                               stopBackspaceRepeat()
-                              // if it was a quick tap, perform single delete
                               if (pressedView == backspace) {
                                   viewActions[backspace]?.invoke()
                                   pressedView = null
@@ -733,7 +739,6 @@ jobs:
                       showBottomSheet(createEmojiContent())
                   }
                   setupKey(v.findViewById<TextView>(R.id.btn_clipboard)) {
-                      // capture system clipboard before showing
                       val clip = (getSystemService(Context.CLIPBOARD_SERVICE) as? ClipboardManager)
                           ?.primaryClip?.getItemAt(0)?.text?.toString()
                       if (!clip.isNullOrEmpty()) addToClipboard(clip)
@@ -743,6 +748,16 @@ jobs:
                   // Tools popup
                   val toolsBtn = v.findViewById<TextView>(R.id.btn_tools)
                   setupKey(toolsBtn) { showToolsPopup(toolsBtn) }
+
+                  // Expand A and L touch areas by including the Space views
+                  val spacerLeft = v.findViewById<Space>(R.id.asdf_spacer_left)
+                  val spacerRight = v.findViewById<Space>(R.id.asdf_spacer_right)
+                  if (spacerLeft != null) {
+                      setupKey(spacerLeft) { typeChar('a') }
+                  }
+                  if (spacerRight != null) {
+                      setupKey(spacerRight) { typeChar('l') }
+                  }
 
                   return v
               }
