@@ -43,7 +43,6 @@ jobs:
           mkdir -p app/src/main/res/values
           mkdir -p gradle/wrapper
 
-      # ---------- Manifest ----------
       - name: Generate AndroidManifest.xml
         run: |
           cat > app/src/main/AndroidManifest.xml << 'ENDOFFILE'
@@ -80,7 +79,6 @@ jobs:
           </manifest>
           ENDOFFILE
 
-      # ---------- Keyboard service resources ----------
       - name: Generate method.xml
         run: |
           cat > app/src/main/res/xml/method.xml << 'ENDOFFILE'
@@ -93,9 +91,8 @@ jobs:
           </input-method>
           ENDOFFILE
 
-      - name: Generate drawables (3dp horizontal inset, 5dp vertical inset)
+      - name: Generate drawables
         run: |
-          # key_bg.xml (normal keys)
           cat > app/src/main/res/drawable/key_bg.xml << 'ENDOFFILE'
           <?xml version="1.0" encoding="utf-8"?>
           <layer-list xmlns:android="http://schemas.android.com/apk/res/android">
@@ -117,7 +114,6 @@ jobs:
           </layer-list>
           ENDOFFILE
 
-          # key_bg_dark.xml (shift, backspace, suggestion bar, space bar)
           cat > app/src/main/res/drawable/key_bg_dark.xml << 'ENDOFFILE'
           <?xml version="1.0" encoding="utf-8"?>
           <layer-list xmlns:android="http://schemas.android.com/apk/res/android">
@@ -139,7 +135,6 @@ jobs:
           </layer-list>
           ENDOFFILE
 
-          # key_bg_action.xml (enter key)
           cat > app/src/main/res/drawable/key_bg_action.xml << 'ENDOFFILE'
           <?xml version="1.0" encoding="utf-8"?>
           <layer-list xmlns:android="http://schemas.android.com/apk/res/android">
@@ -161,7 +156,6 @@ jobs:
           </layer-list>
           ENDOFFILE
 
-          # key_bg_accent.xml (clipboard active)
           cat > app/src/main/res/drawable/key_bg_accent.xml << 'ENDOFFILE'
           <?xml version="1.0" encoding="utf-8"?>
           <layer-list xmlns:android="http://schemas.android.com/apk/res/android">
@@ -206,7 +200,6 @@ jobs:
           </resources>
           ENDOFFILE
 
-      # ---------- Keyboard layout (ASDF row uses <View> spacers) ----------
       - name: Generate qwerty.xml
         run: |
           cat > app/src/main/res/layout/qwerty.xml << 'ENDOFFILE'
@@ -333,7 +326,7 @@ jobs:
                   <TextView android:id="@+id/kp" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="p" android:textColor="#fff" android:textSize="32sp" android:background="@drawable/key_bg" android:paddingStart="3dp" android:paddingEnd="3dp"/>
               </LinearLayout>
 
-              <!-- ASDF row — View spacers for reliable touch -->
+              <!-- ASDF row -->
               <LinearLayout
                   android:layout_width="match_parent"
                   android:layout_height="55dp"
@@ -408,7 +401,6 @@ jobs:
           </LinearLayout>
           ENDOFFILE
 
-      # ---------- MainActivity (launcher) ----------
       - name: Generate MainActivity.kt
         run: |
           cat > app/src/main/java/com/greyb/keyboard/MainActivity.kt << 'ENDOFFILE'
@@ -453,7 +445,6 @@ jobs:
           }
           ENDOFFILE
 
-      # ---------- Keyboard.kt (spacers visually darken A/L when tapped) ----------
       - name: Generate Keyboard.kt
         run: |
           cat > app/src/main/java/com/greyb/keyboard/Keyboard.kt << 'ENDOFFILE'
@@ -486,9 +477,8 @@ jobs:
               private val bsHandler = Handler(Looper.getMainLooper())
               private var bsRunnable: Runnable? = null
 
-              // Touch handling: remembers the view that was initially pressed
-              private var pressedView: View? = null
-              private val viewActions = HashMap<View, () -> Unit>()
+              // Enter key: cache last seen action to avoid redundant view updates
+              private var lastImeAction = -1
 
               override fun onCreate() {
                   super.onCreate()
@@ -508,7 +498,7 @@ jobs:
                   return rootFrame
               }
 
-              // ── Bottom sheet helper ────────────────────────────────────────
+              // ── Bottom sheet ───────────────────────────────────────────────
               private fun showBottomSheet(contentView: View) {
                   if (isBottomSheetVisible) dismissBottomSheet()
 
@@ -535,7 +525,6 @@ jobs:
                   }
                   bottomSheet.addView(titleBar)
                   bottomSheet.addView(contentView)
-
                   bottomSheetContainer?.addView(bottomSheet)
                   rootFrame.addView(bottomSheetContainer)
 
@@ -556,7 +545,7 @@ jobs:
                   isBottomSheetVisible = false
               }
 
-              // ── Bottom sheet content builders ──────────────────────────────
+              // ── Sheet content builders ─────────────────────────────────────
               private fun createSymbolsContent(): View {
                   val symbols = listOf(
                       "!","@","#","$","%","&","*","(",")","+",
@@ -626,7 +615,6 @@ jobs:
                           setPadding(16.dp, 32.dp, 16.dp, 32.dp)
                       }
                   }
-
                   clipAdapter = ClipboardAdapter(
                       clipboardItems,
                       onPaste  = { item -> typeText(item); dismissBottomSheet() },
@@ -634,13 +622,10 @@ jobs:
                           clipboardItems.removeAt(pos)
                           clipAdapter?.notifyItemRemoved(pos)
                           saveClipboard()
-                          if (clipboardItems.isEmpty()) {
-                              dismissBottomSheet()
-                          }
+                          if (clipboardItems.isEmpty()) dismissBottomSheet()
                       }
                   )
-
-                  val rv = RecyclerView(this).apply {
+                  return RecyclerView(this).apply {
                       layoutManager = LinearLayoutManager(this@Keyboard)
                       adapter = clipAdapter
                       layoutParams = LinearLayout.LayoutParams(
@@ -648,25 +633,20 @@ jobs:
                           (200 * resources.displayMetrics.density).toInt()
                       )
                   }
-                  return rv
               }
 
-              // ── Key setup (touch‑forgiving) ────────────────────────────────
+              // ── Key setup: fires on ACTION_DOWN for instant response ────────
+              // ACTION_CANCEL does NOT fire the action (touch was interrupted).
               private fun setupKey(view: View, action: () -> Unit) {
-                  viewActions[view] = action
                   view.setOnTouchListener { v, event ->
-                      when (event.action) {
+                      when (event.actionMasked) {
                           MotionEvent.ACTION_DOWN -> {
-                              pressedView = v
                               if (v is TextView) v.alpha = 0.6f
+                              action()
                               true
                           }
                           MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
                               if (v is TextView) v.alpha = 1.0f
-                              if (pressedView != null) {
-                                  viewActions[pressedView]?.invoke()
-                                  pressedView = null
-                              }
                               true
                           }
                           else -> true
@@ -699,28 +679,26 @@ jobs:
                   // Shift
                   setupKey(v.findViewById<TextView>(R.id.btn_shift)) { handleShift(v) }
 
-                  // Backspace – integrated tap + long‑press
+                  // Backspace: fires one delete immediately on DOWN, then repeats
+                  // after 300 ms. UP/CANCEL only stops the repeat — no extra delete.
                   val backspace = v.findViewById<TextView>(R.id.btn_backspace)
-                  val backspaceAction = { doBackspace() }
-                  viewActions[backspace] = backspaceAction
                   backspace.setOnTouchListener { _, event ->
-                      when (event.action) {
+                      when (event.actionMasked) {
                           MotionEvent.ACTION_DOWN -> {
-                              pressedView = backspace
                               backspace.alpha = 0.6f
+                              doBackspace()                         // immediate first delete
                               bsRunnable = object : Runnable {
-                                  override fun run() { doBackspace(); bsHandler.postDelayed(this, 50) }
+                                  override fun run() {
+                                      doBackspace()
+                                      bsHandler.postDelayed(this, 50)
+                                  }
                               }
-                              bsHandler.postDelayed(bsRunnable!!, 400)
+                              bsHandler.postDelayed(bsRunnable!!, 300) // repeat starts after 300 ms
                               true
                           }
                           MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
                               backspace.alpha = 1.0f
                               stopBackspaceRepeat()
-                              if (pressedView == backspace) {
-                                  viewActions[backspace]?.invoke()
-                                  pressedView = null
-                              }
                               true
                           }
                           else -> true
@@ -751,36 +729,34 @@ jobs:
                   val toolsBtn = v.findViewById<TextView>(R.id.btn_tools)
                   setupKey(toolsBtn) { showToolsPopup(toolsBtn) }
 
-                  // ── Spacer → A / L visual linkage ─────────────────────────
+                  // Spacers: fire on DOWN, visually reflect on A/L key
                   val keyA = v.findViewById<TextView>(R.id.ka)
                   val keyL = v.findViewById<TextView>(R.id.kl)
 
-                  val spacerLeft = v.findViewById<View>(R.id.asdf_spacer_left)
-                  spacerLeft?.setOnTouchListener { _, event ->
-                      when (event.action) {
+                  v.findViewById<View>(R.id.asdf_spacer_left)?.setOnTouchListener { _, event ->
+                      when (event.actionMasked) {
                           MotionEvent.ACTION_DOWN -> {
-                              keyA?.alpha = 0.6f    // darken the A key
+                              keyA?.alpha = 0.6f
+                              typeChar('a')
                               true
                           }
                           MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
                               keyA?.alpha = 1.0f
-                              typeChar('a')
                               true
                           }
                           else -> true
                       }
                   }
 
-                  val spacerRight = v.findViewById<View>(R.id.asdf_spacer_right)
-                  spacerRight?.setOnTouchListener { _, event ->
-                      when (event.action) {
+                  v.findViewById<View>(R.id.asdf_spacer_right)?.setOnTouchListener { _, event ->
+                      when (event.actionMasked) {
                           MotionEvent.ACTION_DOWN -> {
-                              keyL?.alpha = 0.6f    // darken the L key
+                              keyL?.alpha = 0.6f
+                              typeChar('l')
                               true
                           }
                           MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
                               keyL?.alpha = 1.0f
-                              typeChar('l')
                               true
                           }
                           else -> true
@@ -867,7 +843,7 @@ jobs:
                   }
               }
 
-              // ── Shift state ────────────────────────────────────────────────
+              // ── Shift ──────────────────────────────────────────────────────
               private var shiftState = ShiftState.OFF
               private var lastShiftTap = 0L
               private enum class ShiftState { OFF, ONCE, LOCKED }
@@ -903,6 +879,40 @@ jobs:
                       v.findViewById<TextView>(id)?.text =
                           if (upper) letters[i].uppercaseChar().toString() else letters[i].toString()
                   }
+              }
+
+              // ── Enter key label ────────────────────────────────────────────
+              // Called on focus AND on every selection change (cheap: only
+              // updates the view when the action code actually changes).
+              private fun updateEnterKey() {
+                  val info = currentInputEditorInfo ?: return
+                  val action = info.imeOptions and EditorInfo.IME_MASK_ACTION
+                  if (action == lastImeAction) return   // no change, skip view update
+                  lastImeAction = action
+                  qwertyView.findViewById<TextView>(R.id.btn_enter)?.text = when (action) {
+                      EditorInfo.IME_ACTION_SEARCH -> "🔍"
+                      EditorInfo.IME_ACTION_SEND   -> "➤"
+                      EditorInfo.IME_ACTION_GO     -> "→"
+                      EditorInfo.IME_ACTION_DONE   -> "✓"
+                      else                         -> "↵"
+                  }
+              }
+
+              override fun onStartInputView(info: EditorInfo, restarting: Boolean) {
+                  super.onStartInputView(info, restarting)
+                  lastImeAction = -1   // always refresh on a new field focus
+                  updateEnterKey()
+              }
+
+              // Catches apps that change imeOptions between fields without a full
+              // IME rebind (e.g. chat apps switching send↔newline mid-session).
+              override fun onUpdateSelection(
+                  oldSelStart: Int, oldSelEnd: Int,
+                  newSelStart: Int, newSelEnd: Int,
+                  candidatesStart: Int, candidatesEnd: Int
+              ) {
+                  super.onUpdateSelection(oldSelStart, oldSelEnd, newSelStart, newSelEnd, candidatesStart, candidatesEnd)
+                  updateEnterKey()
               }
 
               // ── Clipboard adapter ──────────────────────────────────────────
@@ -974,19 +984,6 @@ jobs:
                   if (s.isNotEmpty()) clipboardItems.addAll(s.split("\u001F"))
               }
 
-              override fun onStartInputView(info: EditorInfo, restarting: Boolean) {
-                  super.onStartInputView(info, restarting)
-                  val v = qwertyView
-                  v.findViewById<TextView>(R.id.btn_enter)?.text =
-                      when (info.imeOptions and EditorInfo.IME_MASK_ACTION) {
-                          EditorInfo.IME_ACTION_SEARCH -> "🔍"
-                          EditorInfo.IME_ACTION_SEND   -> "➤"
-                          EditorInfo.IME_ACTION_GO     -> "→"
-                          EditorInfo.IME_ACTION_DONE   -> "✓"
-                          else                         -> "↵"
-                      }
-              }
-
               private val Int.dp get() = (this * resources.displayMetrics.density).toInt()
 
               override fun onDestroy() {
@@ -998,7 +995,6 @@ jobs:
           }
           ENDOFFILE
 
-      # ---------- Gradle files ----------
       - name: Generate Gradle Scripts
         env:
           BUILD_NUMBER: ${{ github.run_number }}
@@ -1079,7 +1075,6 @@ jobs:
           android.suppressUnsupportedCompileSdk=36
           ENDOFFILE
 
-      # ---------- Keystore, icons, build, artifact ----------
       - name: Generate fixed keystore
         run: |
           keytool -genkey -v \
