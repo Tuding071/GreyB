@@ -152,7 +152,7 @@ jobs:
           </resources>
           ENDOFFILE
 
-      # ---------- Keyboard layouts (side padding 6dp, key gaps 6dp) ----------
+      # ---------- Keyboard layouts (equal key widths) ----------
       - name: Generate qwerty.xml
         run: |
           cat > app/src/main/res/layout/qwerty.xml << 'ENDOFFILE'
@@ -290,7 +290,7 @@ jobs:
                   android:paddingEnd="6dp"
                   android:paddingTop="5dp"
                   android:paddingBottom="5dp">
-                  <Space android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="0.3"/>
+                  <Space android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="0.5"/>
                   <TextView android:id="@+id/ka" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="a" android:textColor="#fff" android:textSize="32sp" android:background="@drawable/key_bg" android:layout_marginEnd="6dp"/>
                   <TextView android:id="@+id/ks" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="s" android:textColor="#fff" android:textSize="32sp" android:background="@drawable/key_bg" android:layout_marginEnd="6dp"/>
                   <TextView android:id="@+id/kd" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="d" android:textColor="#fff" android:textSize="32sp" android:background="@drawable/key_bg" android:layout_marginEnd="6dp"/>
@@ -300,7 +300,7 @@ jobs:
                   <TextView android:id="@+id/kj" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="j" android:textColor="#fff" android:textSize="32sp" android:background="@drawable/key_bg" android:layout_marginEnd="6dp"/>
                   <TextView android:id="@+id/kk" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="k" android:textColor="#fff" android:textSize="32sp" android:background="@drawable/key_bg" android:layout_marginEnd="6dp"/>
                   <TextView android:id="@+id/kl" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="l" android:textColor="#fff" android:textSize="32sp" android:background="@drawable/key_bg"/>
-                  <Space android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="0.3"/>
+                  <Space android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="0.5"/>
               </LinearLayout>
 
               <!-- ZXCV row -->
@@ -312,7 +312,7 @@ jobs:
                   android:paddingEnd="6dp"
                   android:paddingTop="5dp"
                   android:paddingBottom="5dp">
-                  <TextView android:id="@+id/btn_shift" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1.4" android:gravity="center" android:text="⇧" android:textColor="#fff" android:textSize="35sp" android:background="@drawable/key_bg_dark" android:layout_marginEnd="6dp"/>
+                  <TextView android:id="@+id/btn_shift" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1.5" android:gravity="center" android:text="⇧" android:textColor="#fff" android:textSize="35sp" android:background="@drawable/key_bg_dark" android:layout_marginEnd="6dp"/>
                   <TextView android:id="@+id/kz" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="z" android:textColor="#fff" android:textSize="32sp" android:background="@drawable/key_bg" android:layout_marginEnd="6dp"/>
                   <TextView android:id="@+id/kx" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="x" android:textColor="#fff" android:textSize="32sp" android:background="@drawable/key_bg" android:layout_marginEnd="6dp"/>
                   <TextView android:id="@+id/kc" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="c" android:textColor="#fff" android:textSize="32sp" android:background="@drawable/key_bg" android:layout_marginEnd="6dp"/>
@@ -320,7 +320,7 @@ jobs:
                   <TextView android:id="@+id/kb" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="b" android:textColor="#fff" android:textSize="32sp" android:background="@drawable/key_bg" android:layout_marginEnd="6dp"/>
                   <TextView android:id="@+id/kn" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="n" android:textColor="#fff" android:textSize="32sp" android:background="@drawable/key_bg" android:layout_marginEnd="6dp"/>
                   <TextView android:id="@+id/km" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="m" android:textColor="#fff" android:textSize="32sp" android:background="@drawable/key_bg" android:layout_marginEnd="6dp"/>
-                  <TextView android:id="@+id/btn_backspace" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1.4" android:gravity="center" android:text="⌫" android:textColor="#fff" android:textSize="35sp" android:background="@drawable/key_bg_dark"/>
+                  <TextView android:id="@+id/btn_backspace" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1.5" android:gravity="center" android:text="⌫" android:textColor="#fff" android:textSize="35sp" android:background="@drawable/key_bg_dark"/>
               </LinearLayout>
 
               <!-- Action row -->
@@ -332,12 +332,12 @@ jobs:
                   android:paddingEnd="6dp"
                   android:paddingTop="5dp"
                   android:paddingBottom="5dp">
-                  <TextView android:id="@+id/btn_symbols" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1.3" android:gravity="center" android:text="\?123" android:textColor="#fff" android:textSize="26sp" android:background="@drawable/key_bg_dark" android:layout_marginEnd="6dp"/>
+                  <TextView android:id="@+id/btn_symbols" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1.5" android:gravity="center" android:text="\?123" android:textColor="#fff" android:textSize="26sp" android:background="@drawable/key_bg_dark" android:layout_marginEnd="6dp"/>
                   <TextView android:id="@+id/btn_emoji" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="☺" android:textColor="#fff" android:textSize="35sp" android:background="@drawable/key_bg_dark" android:layout_marginEnd="6dp"/>
                   <TextView android:id="@+id/btn_comma" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="," android:textColor="#fff" android:textSize="32sp" android:background="@drawable/key_bg" android:layout_marginEnd="6dp"/>
                   <TextView android:id="@+id/btn_space" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="4" android:gravity="center" android:text="space" android:textColor="#888" android:textSize="26sp" android:background="@drawable/key_bg_dark" android:layout_marginEnd="6dp"/>
                   <TextView android:id="@+id/btn_period" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="." android:textColor="#fff" android:textSize="32sp" android:background="@drawable/key_bg" android:layout_marginEnd="6dp"/>
-                  <TextView android:id="@+id/btn_enter" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1.3" android:gravity="center" android:text="↵" android:textColor="#fff" android:textSize="35sp" android:background="@drawable/key_bg_action"/>
+                  <TextView android:id="@+id/btn_enter" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1.5" android:gravity="center" android:text="↵" android:textColor="#fff" android:textSize="35sp" android:background="@drawable/key_bg_action"/>
               </LinearLayout>
 
               <View
@@ -506,7 +506,7 @@ jobs:
                   android:paddingEnd="6dp"
                   android:paddingTop="5dp"
                   android:paddingBottom="5dp">
-                  <TextView android:id="@+id/ks21" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1.4" android:gravity="center" android:text="[" android:textColor="#fff" android:textSize="32sp" android:background="@drawable/key_bg" android:layout_marginEnd="6dp"/>
+                  <TextView android:id="@+id/ks21" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1.5" android:gravity="center" android:text="[" android:textColor="#fff" android:textSize="32sp" android:background="@drawable/key_bg" android:layout_marginEnd="6dp"/>
                   <TextView android:id="@+id/ks22" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="]" android:textColor="#fff" android:textSize="32sp" android:background="@drawable/key_bg" android:layout_marginEnd="6dp"/>
                   <TextView android:id="@+id/ks23" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="{" android:textColor="#fff" android:textSize="32sp" android:background="@drawable/key_bg" android:layout_marginEnd="6dp"/>
                   <TextView android:id="@+id/ks24" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="}" android:textColor="#fff" android:textSize="32sp" android:background="@drawable/key_bg" android:layout_marginEnd="6dp"/>
@@ -515,7 +515,7 @@ jobs:
                   <TextView android:id="@+id/ks27" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="|" android:textColor="#fff" android:textSize="32sp" android:background="@drawable/key_bg" android:layout_marginEnd="6dp"/>
                   <TextView android:id="@+id/ks28" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="\\" android:textColor="#fff" android:textSize="32sp" android:background="@drawable/key_bg" android:layout_marginEnd="6dp"/>
                   <TextView android:id="@+id/ks29" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="^" android:textColor="#fff" android:textSize="32sp" android:background="@drawable/key_bg" android:layout_marginEnd="6dp"/>
-                  <TextView android:id="@+id/btn_backspace" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1.4" android:gravity="center" android:text="⌫" android:textColor="#fff" android:textSize="35sp" android:background="@drawable/key_bg_dark"/>
+                  <TextView android:id="@+id/btn_backspace" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1.5" android:gravity="center" android:text="⌫" android:textColor="#fff" android:textSize="35sp" android:background="@drawable/key_bg_dark"/>
               </LinearLayout>
 
               <!-- Action row -->
@@ -527,12 +527,12 @@ jobs:
                   android:paddingEnd="6dp"
                   android:paddingTop="5dp"
                   android:paddingBottom="5dp">
-                  <TextView android:id="@+id/btn_abc" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1.3" android:gravity="center" android:text="ABC" android:textColor="#fff" android:textSize="26sp" android:background="@drawable/key_bg_dark" android:layout_marginEnd="6dp"/>
+                  <TextView android:id="@+id/btn_abc" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1.5" android:gravity="center" android:text="ABC" android:textColor="#fff" android:textSize="26sp" android:background="@drawable/key_bg_dark" android:layout_marginEnd="6dp"/>
                   <TextView android:id="@+id/btn_emoji" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="☺" android:textColor="#fff" android:textSize="35sp" android:background="@drawable/key_bg_dark" android:layout_marginEnd="6dp"/>
                   <TextView android:id="@+id/btn_comma" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="," android:textColor="#fff" android:textSize="32sp" android:background="@drawable/key_bg" android:layout_marginEnd="6dp"/>
                   <TextView android:id="@+id/btn_space" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="4" android:gravity="center" android:text="space" android:textColor="#888" android:textSize="26sp" android:background="@drawable/key_bg_dark" android:layout_marginEnd="6dp"/>
                   <TextView android:id="@+id/btn_period" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="." android:textColor="#fff" android:textSize="32sp" android:background="@drawable/key_bg" android:layout_marginEnd="6dp"/>
-                  <TextView android:id="@+id/btn_enter" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1.3" android:gravity="center" android:text="↵" android:textColor="#fff" android:textSize="35sp" android:background="@drawable/key_bg_action"/>
+                  <TextView android:id="@+id/btn_enter" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1.5" android:gravity="center" android:text="↵" android:textColor="#fff" android:textSize="35sp" android:background="@drawable/key_bg_action"/>
               </LinearLayout>
 
               <View
