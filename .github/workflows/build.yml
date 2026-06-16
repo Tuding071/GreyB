@@ -208,7 +208,7 @@ jobs:
           </resources>
           ENDOFFILE
 
-      # ---------- Keyboard layout (ASDF row restored with Spaces) ----------
+      # ---------- Keyboard layout (ASDF row with touchable spacers) ----------
       - name: Generate qwerty.xml
         run: |
           cat > app/src/main/res/layout/qwerty.xml << 'ENDOFFILE'
@@ -337,7 +337,7 @@ jobs:
                   <TextView android:id="@+id/kp" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="p" android:textColor="#fff" android:textSize="32sp" android:background="@drawable/key_bg" android:paddingStart="3dp" android:paddingEnd="3dp"/>
               </LinearLayout>
 
-              <!-- ASDF row -->
+              <!-- ASDF row with touchable spacers -->
               <LinearLayout
                   android:layout_width="match_parent"
                   android:layout_height="55dp"
@@ -348,7 +348,10 @@ jobs:
                       android:id="@+id/asdf_spacer_left"
                       android:layout_width="0dp"
                       android:layout_height="match_parent"
-                      android:layout_weight="0.5" />
+                      android:layout_weight="0.5"
+                      android:focusable="true"
+                      android:clickable="true"
+                      android:background="#00000000" />
                   <TextView android:id="@+id/ka" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="a" android:textColor="#fff" android:textSize="32sp" android:background="@drawable/key_bg" android:paddingStart="3dp" android:paddingEnd="3dp"/>
                   <TextView android:id="@+id/ks" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="s" android:textColor="#fff" android:textSize="32sp" android:background="@drawable/key_bg" android:paddingStart="3dp" android:paddingEnd="3dp"/>
                   <TextView android:id="@+id/kd" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="d" android:textColor="#fff" android:textSize="32sp" android:background="@drawable/key_bg" android:paddingStart="3dp" android:paddingEnd="3dp"/>
@@ -362,7 +365,10 @@ jobs:
                       android:id="@+id/asdf_spacer_right"
                       android:layout_width="0dp"
                       android:layout_height="match_parent"
-                      android:layout_weight="0.5" />
+                      android:layout_weight="0.5"
+                      android:focusable="true"
+                      android:clickable="true"
+                      android:background="#00000000" />
               </LinearLayout>
 
               <!-- ZXCV row -->
@@ -451,7 +457,7 @@ jobs:
           }
           ENDOFFILE
 
-      # ---------- Keyboard.kt (A/L touch expansion via spacers, now clickable) ----------
+      # ---------- Keyboard.kt (spacers now truly touchable) ----------
       - name: Generate Keyboard.kt
         run: |
           cat > app/src/main/java/com/greyb/keyboard/Keyboard.kt << 'ENDOFFILE'
@@ -749,15 +755,20 @@ jobs:
                   val toolsBtn = v.findViewById<TextView>(R.id.btn_tools)
                   setupKey(toolsBtn) { showToolsPopup(toolsBtn) }
 
-                  // Expand A and L touch areas by making spacers clickable + attaching listeners
+                  // Make A and L spacers touchable (already focusable/clickable in XML)
                   val spacerLeft = v.findViewById<Space>(R.id.asdf_spacer_left)
                   if (spacerLeft != null) {
+                      // Ensure touchable
+                      spacerLeft.isFocusable = true
                       spacerLeft.isClickable = true
+                      spacerLeft.setBackgroundColor(Color.TRANSPARENT)
                       setupKey(spacerLeft) { typeChar('a') }
                   }
                   val spacerRight = v.findViewById<Space>(R.id.asdf_spacer_right)
                   if (spacerRight != null) {
+                      spacerRight.isFocusable = true
                       spacerRight.isClickable = true
+                      spacerRight.setBackgroundColor(Color.TRANSPARENT)
                       setupKey(spacerRight) { typeChar('l') }
                   }
 
