@@ -152,7 +152,7 @@ jobs:
           </resources>
           ENDOFFILE
 
-      # ---------- Keyboard layouts (all rows 53dp, padding 6dp) ----------
+      # ---------- Keyboard layouts (all rows 54dp, padding 6dp) ----------
       - name: Generate qwerty.xml
         run: |
           cat > app/src/main/res/layout/qwerty.xml << 'ENDOFFILE'
@@ -160,14 +160,14 @@ jobs:
           <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
               android:id="@+id/qwerty_root"
               android:layout_width="match_parent"
-              android:layout_height="318dp"
+              android:layout_height="324dp"
               android:orientation="vertical"
               android:background="#1e1e1e">
 
-              <!-- Suggestion row (53dp) -->
+              <!-- Suggestion row (54dp) -->
               <LinearLayout
                   android:layout_width="match_parent"
-                  android:layout_height="53dp"
+                  android:layout_height="54dp"
                   android:orientation="horizontal"
                   android:gravity="center_vertical"
                   android:paddingStart="8dp"
@@ -237,10 +237,10 @@ jobs:
 
               </LinearLayout>
 
-              <!-- Number row (53dp) -->
+              <!-- Number row (54dp) -->
               <LinearLayout
                   android:layout_width="match_parent"
-                  android:layout_height="53dp"
+                  android:layout_height="54dp"
                   android:orientation="horizontal"
                   android:paddingStart="8dp"
                   android:paddingEnd="8dp"
@@ -258,10 +258,10 @@ jobs:
                   <TextView android:id="@+id/k0" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="0" android:textColor="#fff" android:textSize="32sp" android:background="@drawable/key_bg"/>
               </LinearLayout>
 
-              <!-- QWERTY row (53dp) -->
+              <!-- QWERTY row (54dp) -->
               <LinearLayout
                   android:layout_width="match_parent"
-                  android:layout_height="53dp"
+                  android:layout_height="54dp"
                   android:orientation="horizontal"
                   android:paddingStart="8dp"
                   android:paddingEnd="8dp"
@@ -279,10 +279,10 @@ jobs:
                   <TextView android:id="@+id/kp" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="p" android:textColor="#fff" android:textSize="32sp" android:background="@drawable/key_bg"/>
               </LinearLayout>
 
-              <!-- ASDF row (53dp) -->
+              <!-- ASDF row (54dp) -->
               <LinearLayout
                   android:layout_width="match_parent"
-                  android:layout_height="53dp"
+                  android:layout_height="54dp"
                   android:orientation="horizontal"
                   android:paddingTop="6dp"
                   android:paddingBottom="6dp">
@@ -299,10 +299,10 @@ jobs:
                   <Space android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="0.5"/>
               </LinearLayout>
 
-              <!-- ZXCV row (53dp) -->
+              <!-- ZXCV row (54dp) -->
               <LinearLayout
                   android:layout_width="match_parent"
-                  android:layout_height="53dp"
+                  android:layout_height="54dp"
                   android:orientation="horizontal"
                   android:paddingStart="8dp"
                   android:paddingEnd="8dp"
@@ -319,10 +319,10 @@ jobs:
                   <TextView android:id="@+id/btn_backspace" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1.4" android:gravity="center" android:text="⌫" android:textColor="#fff" android:textSize="35sp" android:background="@drawable/key_bg_dark"/>
               </LinearLayout>
 
-              <!-- Action row (53dp) -->
+              <!-- Action row (54dp) -->
               <LinearLayout
                   android:layout_width="match_parent"
-                  android:layout_height="53dp"
+                  android:layout_height="54dp"
                   android:orientation="horizontal"
                   android:paddingStart="8dp"
                   android:paddingEnd="8dp"
@@ -351,14 +351,14 @@ jobs:
           <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
               android:id="@+id/symbols_root"
               android:layout_width="match_parent"
-              android:layout_height="318dp"
+              android:layout_height="324dp"
               android:orientation="vertical"
               android:background="#1e1e1e">
 
-              <!-- Suggestion row (53dp) -->
+              <!-- Suggestion row (54dp) -->
               <LinearLayout
                   android:layout_width="match_parent"
-                  android:layout_height="53dp"
+                  android:layout_height="54dp"
                   android:orientation="horizontal"
                   android:gravity="center_vertical"
                   android:paddingStart="8dp"
@@ -428,10 +428,10 @@ jobs:
 
               </LinearLayout>
 
-              <!-- Number row (53dp) -->
+              <!-- Number row (54dp) -->
               <LinearLayout
                   android:layout_width="match_parent"
-                  android:layout_height="53dp"
+                  android:layout_height="54dp"
                   android:orientation="horizontal"
                   android:paddingStart="8dp"
                   android:paddingEnd="8dp"
@@ -449,10 +449,10 @@ jobs:
                   <TextView android:id="@+id/k0" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="0" android:textColor="#fff" android:textSize="32sp" android:background="@drawable/key_bg"/>
               </LinearLayout>
 
-              <!-- Symbol row 1 (53dp) -->
+              <!-- Symbol row 1 (54dp) -->
               <LinearLayout
                   android:layout_width="match_parent"
-                  android:layout_height="53dp"
+                  android:layout_height="54dp"
                   android:orientation="horizontal"
                   android:paddingStart="8dp"
                   android:paddingEnd="8dp"
@@ -470,10 +470,10 @@ jobs:
                   <TextView android:id="@+id/ks10" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="+" android:textColor="#fff" android:textSize="32sp" android:background="@drawable/key_bg"/>
               </LinearLayout>
 
-              <!-- Symbol row 2 (53dp) -->
+              <!-- Symbol row 2 (54dp) -->
               <LinearLayout
                   android:layout_width="match_parent"
-                  android:layout_height="53dp"
+                  android:layout_height="54dp"
                   android:orientation="horizontal"
                   android:paddingStart="8dp"
                   android:paddingEnd="8dp"
@@ -491,10 +491,10 @@ jobs:
                   <TextView android:id="@+id/ks20" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="_" android:textColor="#fff" android:textSize="32sp" android:background="@drawable/key_bg"/>
               </LinearLayout>
 
-              <!-- Symbol row 3 (53dp) -->
+              <!-- Symbol row 3 (54dp) -->
               <LinearLayout
                   android:layout_width="match_parent"
-                  android:layout_height="53dp"
+                  android:layout_height="54dp"
                   android:orientation="horizontal"
                   android:paddingStart="8dp"
                   android:paddingEnd="8dp"
@@ -512,10 +512,10 @@ jobs:
                   <TextView android:id="@+id/btn_backspace" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1.4" android:gravity="center" android:text="⌫" android:textColor="#fff" android:textSize="35sp" android:background="@drawable/key_bg_dark"/>
               </LinearLayout>
 
-              <!-- Action row (53dp) -->
+              <!-- Action row (54dp) -->
               <LinearLayout
                   android:layout_width="match_parent"
-                  android:layout_height="53dp"
+                  android:layout_height="54dp"
                   android:orientation="horizontal"
                   android:paddingStart="8dp"
                   android:paddingEnd="8dp"
@@ -544,14 +544,14 @@ jobs:
           <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
               android:id="@+id/emoji_root"
               android:layout_width="match_parent"
-              android:layout_height="318dp"
+              android:layout_height="324dp"
               android:orientation="vertical"
               android:background="#1e1e1e">
 
-              <!-- Top bar (53dp) -->
+              <!-- Top bar (54dp) -->
               <LinearLayout
                   android:layout_width="match_parent"
-                  android:layout_height="53dp"
+                  android:layout_height="54dp"
                   android:orientation="horizontal"
                   android:gravity="center_vertical"
                   android:paddingStart="8dp"
@@ -678,10 +678,10 @@ jobs:
 
               </androidx.core.widget.NestedScrollView>
 
-              <!-- ABC bar (53dp) -->
+              <!-- ABC bar (54dp) -->
               <LinearLayout
                   android:layout_width="match_parent"
-                  android:layout_height="53dp"
+                  android:layout_height="54dp"
                   android:orientation="horizontal"
                   android:paddingStart="8dp"
                   android:paddingEnd="8dp"
