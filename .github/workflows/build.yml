@@ -43,6 +43,7 @@ jobs:
           mkdir -p app/src/main/res/values
           mkdir -p gradle/wrapper
 
+      # ---------- Manifest ----------
       - name: Generate AndroidManifest.xml
         run: |
           cat > app/src/main/AndroidManifest.xml << 'ENDOFFILE'
@@ -79,6 +80,7 @@ jobs:
           </manifest>
           ENDOFFILE
 
+      # ---------- Keyboard service resources ----------
       - name: Generate method.xml
         run: |
           cat > app/src/main/res/xml/method.xml << 'ENDOFFILE'
@@ -91,8 +93,9 @@ jobs:
           </input-method>
           ENDOFFILE
 
-      - name: Generate drawables
+      - name: Generate drawables (3dp horizontal inset, 5dp vertical inset)
         run: |
+          # key_bg.xml (normal keys)
           cat > app/src/main/res/drawable/key_bg.xml << 'ENDOFFILE'
           <?xml version="1.0" encoding="utf-8"?>
           <layer-list xmlns:android="http://schemas.android.com/apk/res/android">
@@ -114,6 +117,7 @@ jobs:
           </layer-list>
           ENDOFFILE
 
+          # key_bg_dark.xml (shift, backspace, suggestion bar, space bar)
           cat > app/src/main/res/drawable/key_bg_dark.xml << 'ENDOFFILE'
           <?xml version="1.0" encoding="utf-8"?>
           <layer-list xmlns:android="http://schemas.android.com/apk/res/android">
@@ -135,6 +139,7 @@ jobs:
           </layer-list>
           ENDOFFILE
 
+          # key_bg_action.xml (enter key)
           cat > app/src/main/res/drawable/key_bg_action.xml << 'ENDOFFILE'
           <?xml version="1.0" encoding="utf-8"?>
           <layer-list xmlns:android="http://schemas.android.com/apk/res/android">
@@ -156,6 +161,7 @@ jobs:
           </layer-list>
           ENDOFFILE
 
+          # key_bg_accent.xml (clipboard active)
           cat > app/src/main/res/drawable/key_bg_accent.xml << 'ENDOFFILE'
           <?xml version="1.0" encoding="utf-8"?>
           <layer-list xmlns:android="http://schemas.android.com/apk/res/android">
@@ -200,6 +206,7 @@ jobs:
           </resources>
           ENDOFFILE
 
+      # ---------- Keyboard layout (ASDF row uses <View> spacers) ----------
       - name: Generate qwerty.xml
         run: |
           cat > app/src/main/res/layout/qwerty.xml << 'ENDOFFILE'
@@ -401,6 +408,7 @@ jobs:
           </LinearLayout>
           ENDOFFILE
 
+      # ---------- MainActivity (launcher) ----------
       - name: Generate MainActivity.kt
         run: |
           cat > app/src/main/java/com/greyb/keyboard/MainActivity.kt << 'ENDOFFILE'
@@ -445,6 +453,7 @@ jobs:
           }
           ENDOFFILE
 
+      # ---------- Keyboard.kt (spacers visually darken A/L when tapped) ----------
       - name: Generate Keyboard.kt
         run: |
           cat > app/src/main/java/com/greyb/keyboard/Keyboard.kt << 'ENDOFFILE'
@@ -477,6 +486,7 @@ jobs:
               private val bsHandler = Handler(Looper.getMainLooper())
               private var bsRunnable: Runnable? = null
 
+              // Touch handling: remembers the view that was initially pressed
               private var pressedView: View? = null
               private val viewActions = HashMap<View, () -> Unit>()
 
@@ -498,6 +508,7 @@ jobs:
                   return rootFrame
               }
 
+              // ── Bottom sheet helper ────────────────────────────────────────
               private fun showBottomSheet(contentView: View) {
                   if (isBottomSheetVisible) dismissBottomSheet()
 
@@ -545,6 +556,7 @@ jobs:
                   isBottomSheetVisible = false
               }
 
+              // ── Bottom sheet content builders ──────────────────────────────
               private fun createSymbolsContent(): View {
                   val symbols = listOf(
                       "!","@","#","$","%","&","*","(",")","+",
@@ -639,6 +651,7 @@ jobs:
                   return rv
               }
 
+              // ── Key setup (touch‑forgiving) ────────────────────────────────
               private fun setupKey(view: View, action: () -> Unit) {
                   viewActions[view] = action
                   view.setOnTouchListener { v, event ->
@@ -661,9 +674,11 @@ jobs:
                   }
               }
 
+              // ── Build QWERTY ───────────────────────────────────────────────
               private fun buildQwerty(): View {
                   val v = layoutInflater.inflate(R.layout.qwerty, null)
 
+                  // Letter keys
                   val letters = "qwertyuiopasdfghjklzxcvbnm"
                   val ids = listOf(
                       R.id.kq,R.id.kw,R.id.ke,R.id.kr,R.id.kt,R.id.ky,R.id.ku,R.id.ki,R.id.ko,R.id.kp,
@@ -674,14 +689,17 @@ jobs:
                       setupKey(v.findViewById<TextView>(id)) { typeChar(letters[i]) }
                   }
 
+                  // Number keys
                   val numIds = listOf(R.id.k1,R.id.k2,R.id.k3,R.id.k4,R.id.k5,
                                       R.id.k6,R.id.k7,R.id.k8,R.id.k9,R.id.k0)
                   "1234567890".forEachIndexed { i, c ->
                       setupKey(v.findViewById<TextView>(numIds[i])) { typeText(c.toString()) }
                   }
 
+                  // Shift
                   setupKey(v.findViewById<TextView>(R.id.btn_shift)) { handleShift(v) }
 
+                  // Backspace – integrated tap + long‑press
                   val backspace = v.findViewById<TextView>(R.id.btn_backspace)
                   val backspaceAction = { doBackspace() }
                   viewActions[backspace] = backspaceAction
@@ -709,11 +727,13 @@ jobs:
                       }
                   }
 
+                  // Space, comma, period, enter
                   setupKey(v.findViewById<TextView>(R.id.btn_space))  { typeText(" ") }
                   setupKey(v.findViewById<TextView>(R.id.btn_comma))  { typeText(",") }
                   setupKey(v.findViewById<TextView>(R.id.btn_period)) { typeText(".") }
                   setupKey(v.findViewById<TextView>(R.id.btn_enter))  { doEnter() }
 
+                  // Symbols, emoji, clipboard → bottom sheets
                   setupKey(v.findViewById<TextView>(R.id.btn_symbols)) {
                       showBottomSheet(createSymbolsContent())
                   }
@@ -727,21 +747,44 @@ jobs:
                       showBottomSheet(createClipboardContent())
                   }
 
+                  // Tools popup
                   val toolsBtn = v.findViewById<TextView>(R.id.btn_tools)
                   setupKey(toolsBtn) { showToolsPopup(toolsBtn) }
 
-                  // View spacers — reliably receive touch, map to 'a' and 'l'
+                  // ── Spacer → A / L visual linkage ─────────────────────────
+                  val keyA = v.findViewById<TextView>(R.id.ka)
+                  val keyL = v.findViewById<TextView>(R.id.kl)
+
                   val spacerLeft = v.findViewById<View>(R.id.asdf_spacer_left)
-                  spacerLeft?.let {
-                      it.isClickable = true
-                      it.isFocusable = false
-                      setupKey(it) { typeChar('a') }
+                  spacerLeft?.setOnTouchListener { _, event ->
+                      when (event.action) {
+                          MotionEvent.ACTION_DOWN -> {
+                              keyA?.alpha = 0.6f    // darken the A key
+                              true
+                          }
+                          MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
+                              keyA?.alpha = 1.0f
+                              typeChar('a')
+                              true
+                          }
+                          else -> true
+                      }
                   }
+
                   val spacerRight = v.findViewById<View>(R.id.asdf_spacer_right)
-                  spacerRight?.let {
-                      it.isClickable = true
-                      it.isFocusable = false
-                      setupKey(it) { typeChar('l') }
+                  spacerRight?.setOnTouchListener { _, event ->
+                      when (event.action) {
+                          MotionEvent.ACTION_DOWN -> {
+                              keyL?.alpha = 0.6f    // darken the L key
+                              true
+                          }
+                          MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
+                              keyL?.alpha = 1.0f
+                              typeChar('l')
+                              true
+                          }
+                          else -> true
+                      }
                   }
 
                   return v
@@ -794,6 +837,7 @@ jobs:
                   }
               }
 
+              // ── Input helpers ──────────────────────────────────────────────
               private fun typeChar(c: Char) {
                   val out = if (shiftState != ShiftState.OFF) c.uppercaseChar() else c.lowercaseChar()
                   typeText(out.toString())
@@ -823,6 +867,7 @@ jobs:
                   }
               }
 
+              // ── Shift state ────────────────────────────────────────────────
               private var shiftState = ShiftState.OFF
               private var lastShiftTap = 0L
               private enum class ShiftState { OFF, ONCE, LOCKED }
@@ -860,6 +905,7 @@ jobs:
                   }
               }
 
+              // ── Clipboard adapter ──────────────────────────────────────────
               class ClipboardAdapter(
                   private val items: MutableList<String>,
                   private val onPaste: (String) -> Unit,
@@ -906,6 +952,7 @@ jobs:
                   override fun getItemCount() = items.size
               }
 
+              // ── Clipboard persistence ──────────────────────────────────────
               private fun addToClipboard(text: String) {
                   clipboardItems.remove(text)
                   clipboardItems.add(0, text)
@@ -951,6 +998,7 @@ jobs:
           }
           ENDOFFILE
 
+      # ---------- Gradle files ----------
       - name: Generate Gradle Scripts
         env:
           BUILD_NUMBER: ${{ github.run_number }}
@@ -1031,6 +1079,7 @@ jobs:
           android.suppressUnsupportedCompileSdk=36
           ENDOFFILE
 
+      # ---------- Keystore, icons, build, artifact ----------
       - name: Generate fixed keystore
         run: |
           keytool -genkey -v \
