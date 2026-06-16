@@ -95,38 +95,94 @@ jobs:
           </input-method>
           ENDOFFILE
 
-      - name: Generate drawables
+      - name: Generate drawables (with insets for touchable gaps)
         run: |
+          # key_bg.xml (normal keys) – visual inset 6dp
           cat > app/src/main/res/drawable/key_bg.xml << 'ENDOFFILE'
           <?xml version="1.0" encoding="utf-8"?>
-          <shape xmlns:android="http://schemas.android.com/apk/res/android">
-              <solid android:color="#333333"/>
-              <corners android:radius="8dp"/>
-          </shape>
+          <layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+              <item>
+                  <shape>
+                      <solid android:color="@android:color/transparent" />
+                  </shape>
+              </item>
+              <item
+                  android:left="6dp"
+                  android:right="6dp"
+                  android:top="6dp"
+                  android:bottom="6dp">
+                  <shape>
+                      <solid android:color="#333333"/>
+                      <corners android:radius="8dp"/>
+                  </shape>
+              </item>
+          </layer-list>
           ENDOFFILE
 
+          # key_bg_dark.xml (shift, backspace, suggestion bar, etc.) – visual inset 6dp
           cat > app/src/main/res/drawable/key_bg_dark.xml << 'ENDOFFILE'
           <?xml version="1.0" encoding="utf-8"?>
-          <shape xmlns:android="http://schemas.android.com/apk/res/android">
-              <solid android:color="#2c2c2c"/>
-              <corners android:radius="8dp"/>
-          </shape>
+          <layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+              <item>
+                  <shape>
+                      <solid android:color="@android:color/transparent" />
+                  </shape>
+              </item>
+              <item
+                  android:left="6dp"
+                  android:right="6dp"
+                  android:top="6dp"
+                  android:bottom="6dp">
+                  <shape>
+                      <solid android:color="#2c2c2c"/>
+                      <corners android:radius="8dp"/>
+                  </shape>
+              </item>
+          </layer-list>
           ENDOFFILE
 
+          # key_bg_action.xml (enter key) – visual inset 6dp
           cat > app/src/main/res/drawable/key_bg_action.xml << 'ENDOFFILE'
           <?xml version="1.0" encoding="utf-8"?>
-          <shape xmlns:android="http://schemas.android.com/apk/res/android">
-              <solid android:color="#1565C0"/>
-              <corners android:radius="8dp"/>
-          </shape>
+          <layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+              <item>
+                  <shape>
+                      <solid android:color="@android:color/transparent" />
+                  </shape>
+              </item>
+              <item
+                  android:left="6dp"
+                  android:right="6dp"
+                  android:top="6dp"
+                  android:bottom="6dp">
+                  <shape>
+                      <solid android:color="#1565C0"/>
+                      <corners android:radius="8dp"/>
+                  </shape>
+              </item>
+          </layer-list>
           ENDOFFILE
 
+          # key_bg_accent.xml (clipboard active) – visual inset 6dp
           cat > app/src/main/res/drawable/key_bg_accent.xml << 'ENDOFFILE'
           <?xml version="1.0" encoding="utf-8"?>
-          <shape xmlns:android="http://schemas.android.com/apk/res/android">
-              <solid android:color="#1565C0"/>
-              <corners android:radius="8dp"/>
-          </shape>
+          <layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+              <item>
+                  <shape>
+                      <solid android:color="@android:color/transparent" />
+                  </shape>
+              </item>
+              <item
+                  android:left="6dp"
+                  android:right="6dp"
+                  android:top="6dp"
+                  android:bottom="6dp">
+                  <shape>
+                      <solid android:color="#1565C0"/>
+                      <corners android:radius="8dp"/>
+                  </shape>
+              </item>
+          </layer-list>
           ENDOFFILE
 
       - name: Generate values
@@ -152,7 +208,7 @@ jobs:
           </resources>
           ENDOFFILE
 
-      # ---------- Keyboard layout (qwerty only, with touchable gaps) ----------
+      # ---------- Keyboard layout (qwerty with touchable gaps) ----------
       - name: Generate qwerty.xml
         run: |
           cat > app/src/main/res/layout/qwerty.xml << 'ENDOFFILE'
@@ -399,7 +455,7 @@ jobs:
           }
           ENDOFFILE
 
-      # ---------- Keyboard.kt (final: bottom sheet for clipboard, touchable gaps, no space text) ----------
+      # ---------- Keyboard.kt (unchanged except removed symbols/emoji XML references – they are now generated in code) ----------
       - name: Generate Keyboard.kt
         run: |
           cat > app/src/main/java/com/greyb/keyboard/Keyboard.kt << 'ENDOFFILE'
