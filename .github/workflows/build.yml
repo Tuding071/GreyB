@@ -208,7 +208,7 @@ jobs:
           </resources>
           ENDOFFILE
 
-      # ---------- Keyboard layout (ASDF row restored with Spaces, A/L touch expansion in code) ----------
+      # ---------- Keyboard layout (ASDF row restored with Spaces) ----------
       - name: Generate qwerty.xml
         run: |
           cat > app/src/main/res/layout/qwerty.xml << 'ENDOFFILE'
@@ -337,7 +337,7 @@ jobs:
                   <TextView android:id="@+id/kp" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="p" android:textColor="#fff" android:textSize="32sp" android:background="@drawable/key_bg" android:paddingStart="3dp" android:paddingEnd="3dp"/>
               </LinearLayout>
 
-              <!-- ASDF row (Spaces restored) -->
+              <!-- ASDF row -->
               <LinearLayout
                   android:layout_width="match_parent"
                   android:layout_height="55dp"
@@ -451,7 +451,7 @@ jobs:
           }
           ENDOFFILE
 
-      # ---------- Keyboard.kt (A/L touch expansion via spacers) ----------
+      # ---------- Keyboard.kt (A/L touch expansion via spacers, now clickable) ----------
       - name: Generate Keyboard.kt
         run: |
           cat > app/src/main/java/com/greyb/keyboard/Keyboard.kt << 'ENDOFFILE'
@@ -749,13 +749,15 @@ jobs:
                   val toolsBtn = v.findViewById<TextView>(R.id.btn_tools)
                   setupKey(toolsBtn) { showToolsPopup(toolsBtn) }
 
-                  // Expand A and L touch areas by including the Space views
+                  // Expand A and L touch areas by making spacers clickable + attaching listeners
                   val spacerLeft = v.findViewById<Space>(R.id.asdf_spacer_left)
-                  val spacerRight = v.findViewById<Space>(R.id.asdf_spacer_right)
                   if (spacerLeft != null) {
+                      spacerLeft.isClickable = true
                       setupKey(spacerLeft) { typeChar('a') }
                   }
+                  val spacerRight = v.findViewById<Space>(R.id.asdf_spacer_right)
                   if (spacerRight != null) {
+                      spacerRight.isClickable = true
                       setupKey(spacerRight) { typeChar('l') }
                   }
 
