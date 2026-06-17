@@ -379,6 +379,7 @@ jobs:
           import android.content.*
           import android.graphics.Color
           import android.graphics.drawable.ColorDrawable
+          import android.graphics.drawable.Drawable
           import android.os.*
           import android.view.*
           import android.view.inputmethod.*
@@ -402,10 +403,6 @@ jobs:
 
               private val bsHandler = Handler(Looper.getMainLooper())
               private var bsRunnable: Runnable? = null
-
-              private val pressedBackground: Drawable by lazy {
-                  resources.getDrawable(R.drawable.key_bg_pressed, null)
-              }
 
               override fun onCreate() {
                   super.onCreate()
