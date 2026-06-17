@@ -133,6 +133,16 @@ jobs:
           </layer-list>
           ENDOFFILE
 
+          cat > app/src/main/res/drawable/key_bg_pressed.xml << 'ENDOFFILE'
+          <?xml version="1.0" encoding="utf-8"?>
+          <layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+              <item><shape><solid android:color="@android:color/transparent"/></shape></item>
+              <item android:left="3dp" android:right="3dp" android:top="5dp" android:bottom="5dp">
+                  <shape><solid android:color="#FFFFFF"/><corners android:radius="8dp"/></shape>
+              </item>
+          </layer-list>
+          ENDOFFILE
+
       - name: Generate values
         run: |
           cat > app/src/main/res/values/colors.xml << 'ENDOFFILE'
@@ -393,6 +403,10 @@ jobs:
               private val bsHandler = Handler(Looper.getMainLooper())
               private var bsRunnable: Runnable? = null
 
+              private val pressedBackground: Drawable by lazy {
+                  resources.getDrawable(R.drawable.key_bg_pressed, null)
+              }
+
               override fun onCreate() {
                   super.onCreate()
                   loadClipboard()
@@ -551,17 +565,23 @@ jobs:
                   }
               }
 
-              // ── Key setup: fires on ACTION_DOWN ────────────────────────────
+              // ── Key setup: white bg + black text on press ────────────────
               private fun setupKey(view: View, action: () -> Unit) {
                   view.setOnTouchListener { v, event ->
                       when (event.actionMasked) {
                           MotionEvent.ACTION_DOWN -> {
-                              if (v is TextView) v.alpha = 0.6f
+                              if (v is TextView) {
+                                  v.setBackgroundResource(R.drawable.key_bg_pressed)
+                                  v.setTextColor(0xFF000000.toInt())
+                              }
                               action()
                               true
                           }
                           MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
-                              if (v is TextView) v.alpha = 1.0f
+                              if (v is TextView) {
+                                  v.background = null  // will restore from XML attribute
+                                  v.setTextColor(0xFFFFFFFF.toInt())
+                              }
                               true
                           }
                           else -> true
@@ -573,7 +593,7 @@ jobs:
               private fun buildQwerty(): View {
                   val v = layoutInflater.inflate(R.layout.qwerty, null)
 
-                  // Letter keys — sendKey with KEYCODE_A..Z + shift meta
+                  // Letter keys
                   val letters = "qwertyuiopasdfghjklzxcvbnm"
                   val ids = listOf(
                       R.id.kq,R.id.kw,R.id.ke,R.id.kr,R.id.kt,R.id.ky,R.id.ku,R.id.ki,R.id.ko,R.id.kp,
@@ -584,7 +604,7 @@ jobs:
                       setupKey(v.findViewById<TextView>(id)) { typeChar(letters[i]) }
                   }
 
-                  // Number keys — sendKey with KEYCODE_0..9
+                  // Number keys
                   val numIds = listOf(R.id.k1,R.id.k2,R.id.k3,R.id.k4,R.id.k5,
                                       R.id.k6,R.id.k7,R.id.k8,R.id.k9,R.id.k0)
                   "1234567890".forEachIndexed { i, c ->
@@ -595,12 +615,13 @@ jobs:
                   // Shift
                   setupKey(v.findViewById<TextView>(R.id.btn_shift)) { handleShift(v) }
 
-                  // Backspace: immediate DELETE on DOWN, then rapid repeat
+                  // Backspace
                   val backspace = v.findViewById<TextView>(R.id.btn_backspace)
                   backspace.setOnTouchListener { _, event ->
                       when (event.actionMasked) {
                           MotionEvent.ACTION_DOWN -> {
-                              backspace.alpha = 0.6f
+                              backspace.setBackgroundResource(R.drawable.key_bg_pressed)
+                              backspace.setTextColor(0xFF000000.toInt())
                               sendKey(KeyEvent.KEYCODE_DEL)
                               bsRunnable = object : Runnable {
                                   override fun run() {
@@ -612,7 +633,8 @@ jobs:
                               true
                           }
                           MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
-                              backspace.alpha = 1.0f
+                              backspace.background = null
+                              backspace.setTextColor(0xFFFFFFFF.toInt())
                               stopBackspaceRepeat()
                               true
                           }
@@ -620,15 +642,15 @@ jobs:
                       }
                   }
 
-                  // Space, comma, period — physical keycodes
+                  // Space, comma, period
                   setupKey(v.findViewById<TextView>(R.id.btn_space))  { sendKey(KeyEvent.KEYCODE_SPACE) }
                   setupKey(v.findViewById<TextView>(R.id.btn_comma))  { sendKey(KeyEvent.KEYCODE_COMMA) }
                   setupKey(v.findViewById<TextView>(R.id.btn_period)) { sendKey(KeyEvent.KEYCODE_PERIOD) }
 
-                  // Enter — always KEYCODE_ENTER, no imeOptions dance needed
+                  // Enter
                   setupKey(v.findViewById<TextView>(R.id.btn_enter))  { sendKey(KeyEvent.KEYCODE_ENTER) }
 
-                  // Symbols sheet
+                  // Sheets
                   setupKey(v.findViewById<TextView>(R.id.btn_symbols)) {
                       showBottomSheet(createSymbolsContent())
                   }
@@ -642,25 +664,43 @@ jobs:
                       showBottomSheet(createClipboardContent())
                   }
 
-                  // Edit popup — IME actions (Select All, Copy, Paste)
+                  // Edit popup
                   val toolsBtn = v.findViewById<TextView>(R.id.btn_tools)
                   setupKey(toolsBtn) { showToolsPopup(toolsBtn) }
 
-                  // ASDF spacers → A / L with shift awareness
+                  // ASDF spacers → A / L with press effect on the key
                   val keyA = v.findViewById<TextView>(R.id.ka)
                   val keyL = v.findViewById<TextView>(R.id.kl)
 
                   v.findViewById<View>(R.id.asdf_spacer_left)?.setOnTouchListener { _, event ->
                       when (event.actionMasked) {
-                          MotionEvent.ACTION_DOWN -> { keyA?.alpha = 0.6f ; typeChar('a') ; true }
-                          MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> { keyA?.alpha = 1.0f ; true }
+                          MotionEvent.ACTION_DOWN -> {
+                              keyA?.setBackgroundResource(R.drawable.key_bg_pressed)
+                              keyA?.setTextColor(0xFF000000.toInt())
+                              typeChar('a')
+                              true
+                          }
+                          MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
+                              keyA?.background = null
+                              keyA?.setTextColor(0xFFFFFFFF.toInt())
+                              true
+                          }
                           else -> true
                       }
                   }
                   v.findViewById<View>(R.id.asdf_spacer_right)?.setOnTouchListener { _, event ->
                       when (event.actionMasked) {
-                          MotionEvent.ACTION_DOWN -> { keyL?.alpha = 0.6f ; typeChar('l') ; true }
-                          MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> { keyL?.alpha = 1.0f ; true }
+                          MotionEvent.ACTION_DOWN -> {
+                              keyL?.setBackgroundResource(R.drawable.key_bg_pressed)
+                              keyL?.setTextColor(0xFF000000.toInt())
+                              typeChar('l')
+                              true
+                          }
+                          MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
+                              keyL?.background = null
+                              keyL?.setTextColor(0xFFFFFFFF.toInt())
+                              true
+                          }
                           else -> true
                       }
                   }
@@ -668,7 +708,7 @@ jobs:
                   return v
               }
 
-              // ── Edit popup — IME actions ───────────────────────────────────
+              // ── Edit popup ─────────────────────────────────────────────────
               private fun showToolsPopup(anchor: View) {
                   toolsPopup?.dismiss()
                   val popup = LinearLayout(this).apply {
