@@ -404,6 +404,9 @@ jobs:
               private val bsHandler = Handler(Looper.getMainLooper())
               private var bsRunnable: Runnable? = null
 
+              // Map to store original backgrounds for visual feedback restoration
+              private val originalBackgrounds = HashMap<View, Drawable>()
+
               override fun onCreate() {
                   super.onCreate()
                   loadClipboard()
@@ -428,6 +431,22 @@ jobs:
                   val t = SystemClock.uptimeMillis()
                   ic.sendKeyEvent(KeyEvent(t, t, KeyEvent.ACTION_DOWN, keyCode, 0, meta))
                   ic.sendKeyEvent(KeyEvent(t, SystemClock.uptimeMillis(), KeyEvent.ACTION_UP, keyCode, 0, meta))
+              }
+
+              // ── Visual feedback helpers ────────────────────────────────────
+              private fun pressKey(view: TextView) {
+                  // Save original background if not already saved
+                  if (!originalBackgrounds.containsKey(view)) {
+                      originalBackgrounds[view] = view.background
+                  }
+                  view.setBackgroundResource(R.drawable.key_bg_pressed)
+                  view.setTextColor(0xFF000000.toInt())
+              }
+
+              private fun releaseKey(view: TextView) {
+                  val original = originalBackgrounds[view]
+                  view.background = original
+                  view.setTextColor(0xFFFFFFFF.toInt())
               }
 
               // ── Bottom sheet ───────────────────────────────────────────────
@@ -562,23 +581,17 @@ jobs:
                   }
               }
 
-              // ── Key setup: white bg + black text on press ────────────────
+              // ── Key setup: white bg + black text on press, restored on release
               private fun setupKey(view: View, action: () -> Unit) {
                   view.setOnTouchListener { v, event ->
                       when (event.actionMasked) {
                           MotionEvent.ACTION_DOWN -> {
-                              if (v is TextView) {
-                                  v.setBackgroundResource(R.drawable.key_bg_pressed)
-                                  v.setTextColor(0xFF000000.toInt())
-                              }
+                              if (v is TextView) pressKey(v)
                               action()
                               true
                           }
                           MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
-                              if (v is TextView) {
-                                  v.background = null  // will restore from XML attribute
-                                  v.setTextColor(0xFFFFFFFF.toInt())
-                              }
+                              if (v is TextView) releaseKey(v)
                               true
                           }
                           else -> true
@@ -617,8 +630,7 @@ jobs:
                   backspace.setOnTouchListener { _, event ->
                       when (event.actionMasked) {
                           MotionEvent.ACTION_DOWN -> {
-                              backspace.setBackgroundResource(R.drawable.key_bg_pressed)
-                              backspace.setTextColor(0xFF000000.toInt())
+                              pressKey(backspace)
                               sendKey(KeyEvent.KEYCODE_DEL)
                               bsRunnable = object : Runnable {
                                   override fun run() {
@@ -630,8 +642,7 @@ jobs:
                               true
                           }
                           MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
-                              backspace.background = null
-                              backspace.setTextColor(0xFFFFFFFF.toInt())
+                              releaseKey(backspace)
                               stopBackspaceRepeat()
                               true
                           }
@@ -672,14 +683,12 @@ jobs:
                   v.findViewById<View>(R.id.asdf_spacer_left)?.setOnTouchListener { _, event ->
                       when (event.actionMasked) {
                           MotionEvent.ACTION_DOWN -> {
-                              keyA?.setBackgroundResource(R.drawable.key_bg_pressed)
-                              keyA?.setTextColor(0xFF000000.toInt())
+                              keyA?.let { pressKey(it) }
                               typeChar('a')
                               true
                           }
                           MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
-                              keyA?.background = null
-                              keyA?.setTextColor(0xFFFFFFFF.toInt())
+                              keyA?.let { releaseKey(it) }
                               true
                           }
                           else -> true
@@ -688,14 +697,12 @@ jobs:
                   v.findViewById<View>(R.id.asdf_spacer_right)?.setOnTouchListener { _, event ->
                       when (event.actionMasked) {
                           MotionEvent.ACTION_DOWN -> {
-                              keyL?.setBackgroundResource(R.drawable.key_bg_pressed)
-                              keyL?.setTextColor(0xFF000000.toInt())
+                              keyL?.let { pressKey(it) }
                               typeChar('l')
                               true
                           }
                           MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
-                              keyL?.background = null
-                              keyL?.setTextColor(0xFFFFFFFF.toInt())
+                              keyL?.let { releaseKey(it) }
                               true
                           }
                           else -> true
