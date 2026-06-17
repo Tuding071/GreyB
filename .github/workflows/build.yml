@@ -166,7 +166,6 @@ jobs:
           </resources>
           ENDOFFILE
 
-          # New ID for storing background resource tag
           cat > app/src/main/res/values/ids.xml << 'ENDOFFILE'
           <?xml version="1.0" encoding="utf-8"?>
           <resources>
@@ -411,6 +410,11 @@ jobs:
               private val bsHandler = Handler(Looper.getMainLooper())
               private var bsRunnable: Runnable? = null
 
+              // ── Shift state ────────────────────────────────────────────────
+              private var shiftState = ShiftState.OFF
+              private var lastShiftTap = 0L
+              private enum class ShiftState { OFF, ONCE, LOCKED }
+
               override fun onCreate() {
                   super.onCreate()
                   loadClipboard()
@@ -439,8 +443,6 @@ jobs:
 
               // ── Visual feedback helpers ────────────────────────────────────
               private fun pressKey(view: TextView) {
-                  // store original background resource from tag, then set pressed
-                  val originalRes = view.getTag(R.id.original_bg_tag) as? Int ?: return
                   view.setBackgroundResource(R.drawable.key_bg_pressed)
                   view.setTextColor(0xFF000000.toInt())
               }
@@ -583,7 +585,7 @@ jobs:
                   }
               }
 
-              // ── Key setup: stores original background resource tag, white bg + black text on press
+              // ── Key setup: white bg + black text on press, restored on release
               private fun setupKey(view: View, bgRes: Int, action: () -> Unit) {
                   if (view is TextView) {
                       view.setTag(R.id.original_bg_tag, bgRes)
@@ -627,8 +629,24 @@ jobs:
                       setupKey(v.findViewById<TextView>(numIds[i]), R.drawable.key_bg) { sendKey(kc) }
                   }
 
-                  // Shift
-                  setupKey(v.findViewById<TextView>(R.id.btn_shift), R.drawable.key_bg_dark) { handleShift(v) }
+                  // Shift – handled separately for correct text color restore
+                  val shiftKey = v.findViewById<TextView>(R.id.btn_shift)
+                  shiftKey.setTag(R.id.original_bg_tag, R.drawable.key_bg_dark)
+                  shiftKey.setOnTouchListener { _, event ->
+                      when (event.actionMasked) {
+                          MotionEvent.ACTION_DOWN -> {
+                              pressKey(shiftKey)
+                              toggleShiftState()
+                              true
+                          }
+                          MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
+                              releaseKey(shiftKey)
+                              updateShiftKeyAppearance(shiftKey)
+                              true
+                          }
+                          else -> true
+                      }
+                  }
 
                   // Backspace
                   val backspace = v.findViewById<TextView>(R.id.btn_backspace)
@@ -774,7 +792,7 @@ jobs:
                   sendKey(kc, meta)
                   if (shiftState == ShiftState.ONCE) {
                       shiftState = ShiftState.OFF
-                      updateShiftKey(qwertyView)
+                      updateShiftKeyAppearance(qwertyView.findViewById(R.id.btn_shift))
                       updateLetterKeys(qwertyView)
                   }
               }
@@ -786,12 +804,8 @@ jobs:
                   bsRunnable = null
               }
 
-              // ── Shift ──────────────────────────────────────────────────────
-              private var shiftState = ShiftState.OFF
-              private var lastShiftTap = 0L
-              private enum class ShiftState { OFF, ONCE, LOCKED }
-
-              private fun handleShift(v: View) {
+              // ── Shift logic ─────────────────────────────────────────────────
+              private fun toggleShiftState() {
                   val now = System.currentTimeMillis()
                   shiftState = when {
                       shiftState == ShiftState.LOCKED -> ShiftState.OFF
@@ -800,22 +814,19 @@ jobs:
                       else                            -> ShiftState.OFF
                   }
                   lastShiftTap = now
-                  updateShiftKey(v)
-                  updateLetterKeys(v)
+                  updateLetterKeys(qwertyView)
               }
 
-              private fun updateShiftKey(v: View) {
-                  v.findViewById<TextView>(R.id.btn_shift)?.apply {
-                      text = when (shiftState) {
-                          ShiftState.LOCKED -> "CAPS"
-                          ShiftState.ONCE   -> "SHFT"
-                          ShiftState.OFF    -> "Shft"
-                      }
-                      setTextColor(
-                          if (shiftState == ShiftState.OFF) 0xFFFFFFFF.toInt()
-                          else 0xFF4FC3F7.toInt()
-                      )
+              private fun updateShiftKeyAppearance(shiftView: TextView) {
+                  shiftView.text = when (shiftState) {
+                      ShiftState.LOCKED -> "CAPS"
+                      ShiftState.ONCE   -> "SHFT"
+                      ShiftState.OFF    -> "Shft"
                   }
+                  shiftView.setTextColor(
+                      if (shiftState == ShiftState.OFF) 0xFFFFFFFF.toInt()
+                      else 0xFF4FC3F7.toInt()
+                  )
               }
 
               private fun updateLetterKeys(v: View) {
