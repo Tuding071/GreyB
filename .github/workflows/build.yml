@@ -166,6 +166,14 @@ jobs:
           </resources>
           ENDOFFILE
 
+          # New ID for storing background resource tag
+          cat > app/src/main/res/values/ids.xml << 'ENDOFFILE'
+          <?xml version="1.0" encoding="utf-8"?>
+          <resources>
+              <item name="original_bg_tag" type="id"/>
+          </resources>
+          ENDOFFILE
+
       - name: Generate qwerty.xml
         run: |
           cat > app/src/main/res/layout/qwerty.xml << 'ENDOFFILE'
@@ -379,7 +387,6 @@ jobs:
           import android.content.*
           import android.graphics.Color
           import android.graphics.drawable.ColorDrawable
-          import android.graphics.drawable.Drawable
           import android.os.*
           import android.view.*
           import android.view.inputmethod.*
@@ -403,9 +410,6 @@ jobs:
 
               private val bsHandler = Handler(Looper.getMainLooper())
               private var bsRunnable: Runnable? = null
-
-              // Map to store original backgrounds for visual feedback restoration
-              private val originalBackgrounds = HashMap<View, Drawable>()
 
               override fun onCreate() {
                   super.onCreate()
@@ -435,17 +439,15 @@ jobs:
 
               // ── Visual feedback helpers ────────────────────────────────────
               private fun pressKey(view: TextView) {
-                  // Save original background if not already saved
-                  if (!originalBackgrounds.containsKey(view)) {
-                      originalBackgrounds[view] = view.background
-                  }
+                  // store original background resource from tag, then set pressed
+                  val originalRes = view.getTag(R.id.original_bg_tag) as? Int ?: return
                   view.setBackgroundResource(R.drawable.key_bg_pressed)
                   view.setTextColor(0xFF000000.toInt())
               }
 
               private fun releaseKey(view: TextView) {
-                  val original = originalBackgrounds[view]
-                  view.background = original
+                  val originalRes = view.getTag(R.id.original_bg_tag) as? Int ?: return
+                  view.setBackgroundResource(originalRes)
                   view.setTextColor(0xFFFFFFFF.toInt())
               }
 
@@ -518,7 +520,7 @@ jobs:
                               height = cellSize
                           }
                       }
-                      setupKey(tv) { commitText(sym) ; dismissBottomSheet() }
+                      setupKey(tv, R.drawable.key_bg) { commitText(sym) ; dismissBottomSheet() }
                       grid.addView(tv)
                   }
                   return grid
@@ -545,7 +547,7 @@ jobs:
                               height = cellSize
                           }
                       }
-                      setupKey(tv) { commitText(emoji) ; dismissBottomSheet() }
+                      setupKey(tv, R.drawable.key_bg) { commitText(emoji) ; dismissBottomSheet() }
                       grid.addView(tv)
                   }
                   return grid
@@ -581,8 +583,11 @@ jobs:
                   }
               }
 
-              // ── Key setup: white bg + black text on press, restored on release
-              private fun setupKey(view: View, action: () -> Unit) {
+              // ── Key setup: stores original background resource tag, white bg + black text on press
+              private fun setupKey(view: View, bgRes: Int, action: () -> Unit) {
+                  if (view is TextView) {
+                      view.setTag(R.id.original_bg_tag, bgRes)
+                  }
                   view.setOnTouchListener { v, event ->
                       when (event.actionMasked) {
                           MotionEvent.ACTION_DOWN -> {
@@ -611,7 +616,7 @@ jobs:
                       R.id.kz,R.id.kx,R.id.kc,R.id.kv,R.id.kb,R.id.kn,R.id.km
                   )
                   ids.forEachIndexed { i, id ->
-                      setupKey(v.findViewById<TextView>(id)) { typeChar(letters[i]) }
+                      setupKey(v.findViewById<TextView>(id), R.drawable.key_bg) { typeChar(letters[i]) }
                   }
 
                   // Number keys
@@ -619,14 +624,15 @@ jobs:
                                       R.id.k6,R.id.k7,R.id.k8,R.id.k9,R.id.k0)
                   "1234567890".forEachIndexed { i, c ->
                       val kc = KeyEvent.KEYCODE_0 + (c - '0')
-                      setupKey(v.findViewById<TextView>(numIds[i])) { sendKey(kc) }
+                      setupKey(v.findViewById<TextView>(numIds[i]), R.drawable.key_bg) { sendKey(kc) }
                   }
 
                   // Shift
-                  setupKey(v.findViewById<TextView>(R.id.btn_shift)) { handleShift(v) }
+                  setupKey(v.findViewById<TextView>(R.id.btn_shift), R.drawable.key_bg_dark) { handleShift(v) }
 
                   // Backspace
                   val backspace = v.findViewById<TextView>(R.id.btn_backspace)
+                  backspace.setTag(R.id.original_bg_tag, R.drawable.key_bg_dark)
                   backspace.setOnTouchListener { _, event ->
                       when (event.actionMasked) {
                           MotionEvent.ACTION_DOWN -> {
@@ -651,21 +657,21 @@ jobs:
                   }
 
                   // Space, comma, period
-                  setupKey(v.findViewById<TextView>(R.id.btn_space))  { sendKey(KeyEvent.KEYCODE_SPACE) }
-                  setupKey(v.findViewById<TextView>(R.id.btn_comma))  { sendKey(KeyEvent.KEYCODE_COMMA) }
-                  setupKey(v.findViewById<TextView>(R.id.btn_period)) { sendKey(KeyEvent.KEYCODE_PERIOD) }
+                  setupKey(v.findViewById<TextView>(R.id.btn_space),  R.drawable.key_bg_dark) { sendKey(KeyEvent.KEYCODE_SPACE) }
+                  setupKey(v.findViewById<TextView>(R.id.btn_comma),  R.drawable.key_bg) { sendKey(KeyEvent.KEYCODE_COMMA) }
+                  setupKey(v.findViewById<TextView>(R.id.btn_period), R.drawable.key_bg) { sendKey(KeyEvent.KEYCODE_PERIOD) }
 
                   // Enter
-                  setupKey(v.findViewById<TextView>(R.id.btn_enter))  { sendKey(KeyEvent.KEYCODE_ENTER) }
+                  setupKey(v.findViewById<TextView>(R.id.btn_enter),  R.drawable.key_bg_action) { sendKey(KeyEvent.KEYCODE_ENTER) }
 
                   // Sheets
-                  setupKey(v.findViewById<TextView>(R.id.btn_symbols)) {
+                  setupKey(v.findViewById<TextView>(R.id.btn_symbols), R.drawable.key_bg_dark) {
                       showBottomSheet(createSymbolsContent())
                   }
-                  setupKey(v.findViewById<TextView>(R.id.btn_emoji)) {
+                  setupKey(v.findViewById<TextView>(R.id.btn_emoji), R.drawable.key_bg_dark) {
                       showBottomSheet(createEmojiContent())
                   }
-                  setupKey(v.findViewById<TextView>(R.id.btn_clipboard)) {
+                  setupKey(v.findViewById<TextView>(R.id.btn_clipboard), R.drawable.key_bg_dark) {
                       val clip = (getSystemService(Context.CLIPBOARD_SERVICE) as? ClipboardManager)
                           ?.primaryClip?.getItemAt(0)?.text?.toString()
                       if (!clip.isNullOrEmpty()) addToClipboard(clip)
@@ -674,7 +680,7 @@ jobs:
 
                   // Edit popup
                   val toolsBtn = v.findViewById<TextView>(R.id.btn_tools)
-                  setupKey(toolsBtn) { showToolsPopup(toolsBtn) }
+                  setupKey(toolsBtn, R.drawable.key_bg_dark) { showToolsPopup(toolsBtn) }
 
                   // ASDF spacers → A / L with press effect on the key
                   val keyA = v.findViewById<TextView>(R.id.ka)
