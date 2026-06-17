@@ -628,7 +628,7 @@ jobs:
                   // Enter — always KEYCODE_ENTER, no imeOptions dance needed
                   setupKey(v.findViewById<TextView>(R.id.btn_enter))  { sendKey(KeyEvent.KEYCODE_ENTER) }
 
-                  // Symbols sheet (commitText — no reliable keycodes for specials)
+                  // Symbols sheet
                   setupKey(v.findViewById<TextView>(R.id.btn_symbols)) {
                       showBottomSheet(createSymbolsContent())
                   }
@@ -642,7 +642,7 @@ jobs:
                       showBottomSheet(createClipboardContent())
                   }
 
-                  // Edit popup — Ctrl shortcuts via physical key events
+                  // Edit popup — IME actions (Select All, Copy, Paste)
                   val toolsBtn = v.findViewById<TextView>(R.id.btn_tools)
                   setupKey(toolsBtn) { showToolsPopup(toolsBtn) }
 
@@ -668,7 +668,7 @@ jobs:
                   return v
               }
 
-              // ── Edit popup — Ctrl+key shortcuts ───────────────────────────
+              // ── Edit popup — IME actions ───────────────────────────────────
               private fun showToolsPopup(anchor: View) {
                   toolsPopup?.dismiss()
                   val popup = LinearLayout(this).apply {
@@ -676,14 +676,8 @@ jobs:
                       setBackgroundColor(0xFF2C2C2C.toInt())
                       setPadding(8.dp, 8.dp, 8.dp, 8.dp)
                   }
-                  // label → keyCode sent with Ctrl meta
-                  listOf(
-                      "Select All" to KeyEvent.KEYCODE_A,
-                      "Copy"       to KeyEvent.KEYCODE_C,
-                      "Cut"        to KeyEvent.KEYCODE_X,
-                      "Paste"      to KeyEvent.KEYCODE_V,
-                      "Undo"       to KeyEvent.KEYCODE_Z
-                  ).forEach { (label, kc) ->
+
+                  listOf("Select All", "Copy", "Paste").forEach { label ->
                       popup.addView(TextView(this).apply {
                           text = label
                           textSize = 22f
@@ -691,7 +685,22 @@ jobs:
                           setPadding(16.dp, 10.dp, 16.dp, 10.dp)
                           setOnClickListener {
                               toolsPopup?.dismiss()
-                              sendKey(kc, KeyEvent.META_CTRL_ON)
+                              when (label) {
+                                  "Select All" -> currentInputConnection
+                                      ?.performContextMenuAction(android.R.id.selectAll)
+                                  "Copy"       -> currentInputConnection
+                                      ?.performContextMenuAction(android.R.id.copy)
+                                  "Paste"      -> {
+                                      val clip = (getSystemService(Context.CLIPBOARD_SERVICE)
+                                              as ClipboardManager)
+                                          .primaryClip?.getItemAt(0)
+                                          ?.coerceToText(this@Keyboard)?.toString()
+                                      if (!clip.isNullOrEmpty()) {
+                                          commitText(clip)
+                                          addToClipboard(clip)
+                                      }
+                                  }
+                              }
                           }
                       })
                   }
@@ -704,13 +713,11 @@ jobs:
                       setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
                       isOutsideTouchable = true
                       elevation = 8f
-                      showAsDropDown(anchor, 0, -(anchor.height * 6))
+                      showAsDropDown(anchor, 0, -(anchor.height * 4))
                   }
               }
 
               // ── Input helpers ──────────────────────────────────────────────
-              // Letters: sendKey with proper KEYCODE + META_SHIFT_ON when needed.
-              // KEYCODE_A=29..KEYCODE_Z=54 are sequential so offset math works.
               private fun typeChar(c: Char) {
                   val kc = KeyEvent.KEYCODE_A + (c.lowercaseChar() - 'a')
                   val meta = if (shiftState != ShiftState.OFF) KeyEvent.META_SHIFT_ON else 0
@@ -722,7 +729,6 @@ jobs:
                   }
               }
 
-              // commitText fallback used only for symbols and emoji
               private fun commitText(s: String) { currentInputConnection?.commitText(s, 1) }
 
               private fun stopBackspaceRepeat() {
