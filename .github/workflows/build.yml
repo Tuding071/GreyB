@@ -41,7 +41,18 @@ jobs:
           mkdir -p app/src/main/res/layout
           mkdir -p app/src/main/res/drawable
           mkdir -p app/src/main/res/values
+          mkdir -p app/src/main/assets
           mkdir -p gradle/wrapper
+
+      - name: Copy words.txt to assets
+        run: |
+          if [ -f words.txt ]; then
+            cp words.txt app/src/main/assets/words.txt
+            echo "✅ words.txt copied ($(wc -l < words.txt) words)"
+          else
+            echo "⚠️ words.txt not found in repo root — suggestions disabled"
+            touch app/src/main/assets/words.txt
+          fi
 
       - name: Generate AndroidManifest.xml
         run: |
@@ -378,7 +389,7 @@ jobs:
           }
           ENDOFFILE
 
-      - name: Generate Keyboard.kt with suggestions
+      - name: Generate Keyboard.kt
         run: |
           cat > app/src/main/java/com/greyb/keyboard/Keyboard.kt << 'ENDOFFILE'
           package com.greyb.keyboard
@@ -410,67 +421,23 @@ jobs:
               private val bsHandler = Handler(Looper.getMainLooper())
               private var bsRunnable: Runnable? = null
 
-              // ── Shift state ────────────────────────────────────────────────
               private var shiftState = ShiftState.OFF
               private var lastShiftTap = 0L
               private enum class ShiftState { OFF, ONCE, LOCKED }
 
-              // ── Suggestion views ──────────────────────────────────────────
               private var sugView1: TextView? = null
               private var sugView2: TextView? = null
               private var sugView3: TextView? = null
 
-              // ── Word list for suggestions ─────────────────────────────────
-              private val WORDS = listOf(
-                  "the","be","to","of","and","have","it","for","not","on",
-                  "with","he","as","you","do","at","this","but","his","by",
-                  "from","they","we","say","her","she","or","an","will","my",
-                  "one","all","would","there","their","what","so","up","out","if",
-                  "about","who","get","which","go","me","when","make","can","like",
-                  "time","no","just","him","know","take","people","into","year","your",
-                  "good","some","could","them","see","other","than","then","now","look",
-                  "only","come","its","over","think","also","back","after","use","two",
-                  "how","our","work","first","well","way","even","new","want","because",
-                  "any","these","give","day","most","us","great","need","large","often",
-                  "hand","high","place","hold","turn","help","call","every","never","next",
-                  "last","many","home","point","city","play","small","number","off","always",
-                  "move","live","where","much","name","long","book","room","friend","idea",
-                  "body","real","life","few","open","seem","below","together","enough","still",
-                  "power","side","town","without","boy","once","animal","fact","stop",
-                  "been","being","become","before","between","both","during","each",
-                  "same","through","under","until","very","while","able","age","ago","air",
-                  "already","another","area","ask","away","bad","big","black","white",
-                  "change","close","country","deep","different","done","down","early","end",
-                  "feel","found","front","full","game","girl","gone","got","half",
-                  "hear","heart","himself","house","important","inside","keep","kind",
-                  "knew","later","left","less","let","level","light","likely","little","local",
-                  "love","low","made","main","man","matter","mean","might","mind","money",
-                  "more","morning","must","near","nothing","notice","order","outside","own",
-                  "part","past","plan","possible","put","question","quite","rather","ready",
-                  "reason","recent","result","right","run","second","set","short","should",
-                  "show","since","sit","situation","soon","start","state","stay","student",
-                  "sure","talk","tell","thing","thought","three","today","tonight","toward",
-                  "tried","true","try","type","used","usually","voice","walk","water","whole",
-                  "wide","within","world","yes","yet","young","zero","zone","above","across",
-                  "act","add","again","apply","bring","build","buy","care","check","cover",
-                  "create","cut","decide","describe","develop","draw","drive","enjoy",
-                  "explain","face","fall","fill","find","follow","forget","free","hope",
-                  "imagine","include","increase","join","lose","measure","meet","miss","offer",
-                  "pass","pay","pick","produce","protect","pull","push","raise","reach","read",
-                  "realize","receive","remain","remember","remove","replace","represent",
-                  "require","return","reveal","rise","save","send","serve","share","sleep",
-                  "solve","speak","spend","stand","study","support","teach","test","thank",
-                  "travel","understand","wait","watch","write","almost","around","behind",
-                  "clearly","directly","especially","finally","instead","maybe","nearly",
-                  "quickly","really","simply","slowly","sometimes","suddenly","actually",
-                  "certainly","definitely","generally","literally","naturally","obviously",
-                  "personally","probably","recently","seriously","thankfully","therefore",
-                  "whatever","whenever","wherever","whether","whoever","wonderful","yesterday"
-              )
+              private var WORDS: List<String> = emptyList()
 
               override fun onCreate() {
                   super.onCreate()
                   loadClipboard()
+                  WORDS = try {
+                      assets.open("words.txt").bufferedReader().readLines()
+                          .map { it.trim().lowercase() }.filter { it.isNotEmpty() }
+                  } catch (e: Exception) { emptyList() }
               }
 
               override fun onCreateInputView(): View {
@@ -571,7 +538,7 @@ jobs:
                               height = cellSize
                           }
                       }
-                      setupKey(tv, R.drawable.key_bg) { commitText(sym); dismissBottomSheet() }
+                      setupKey(tv, R.drawable.key_bg) { commitText(sym) ; dismissBottomSheet() }
                       grid.addView(tv)
                   }
                   return grid
@@ -598,7 +565,7 @@ jobs:
                               height = cellSize
                           }
                       }
-                      setupKey(tv, R.drawable.key_bg) { commitText(emoji); dismissBottomSheet() }
+                      setupKey(tv, R.drawable.key_bg) { commitText(emoji) ; dismissBottomSheet() }
                       grid.addView(tv)
                   }
                   return grid
@@ -616,7 +583,7 @@ jobs:
                   }
                   clipAdapter = ClipboardAdapter(
                       clipboardItems,
-                      onPaste  = { item -> commitText(item); dismissBottomSheet() },
+                      onPaste  = { item -> commitText(item) ; dismissBottomSheet() },
                       onDelete = { pos ->
                           clipboardItems.removeAt(pos)
                           clipAdapter?.notifyItemRemoved(pos)
@@ -884,8 +851,6 @@ jobs:
                   }
               }
 
-              // ── Suggestion logic ───────────────────────────────────────────
-
               private fun extractCurrentWord(before: String): String {
                   val s = before.trimEnd(' ')
                   val idx = s.indexOfLast { !it.isLetter() }
@@ -932,7 +897,6 @@ jobs:
                   }
               }
 
-              // ── Clipboard adapter ──────────────────────────────────────────
               class ClipboardAdapter(
                   private val items: MutableList<String>,
                   private val onPaste: (String) -> Unit,
@@ -1182,6 +1146,7 @@ jobs:
           cp app/src/main/java/com/greyb/keyboard/MainActivity.kt GreyB-release/
           cp app/src/main/res/layout/qwerty.xml GreyB-release/
           cp .github/workflows/build.yml GreyB-release/
+          cp words.txt GreyB-release/ 2>/dev/null || true
 
           APK_SIZE=$(ls -lh app/build/outputs/apk/release/app-release.apk | awk '{print $5}')
 
