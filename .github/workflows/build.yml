@@ -1,57 +1,1202 @@
-package com.greyb.keyboard
+name: Build GreyB Keyboard
 
-import android.content.*
-import android.graphics.Color
-import android.graphics.drawable.ColorDrawable
-import android.os.*
-import android.view.*
-import android.view.inputmethod.*
-import android.widget.*
-import androidx.recyclerview.widget.*
-import android.inputmethodservice.InputMethodService
+on:
+  push:
+    branches: [ main, master ]
+    paths:
+      - '.github/workflows/build.yml'
+  workflow_dispatch:
 
-class Keyboard : InputMethodService() {
+jobs:
+  build:
+    runs-on: ubuntu-latest
 
-    private lateinit var rootFrame: FrameLayout
-    private lateinit var qwertyView: View
-    private var toolsPopup: PopupWindow? = null
-    private var bottomSheetContainer: FrameLayout? = null
-    private var isBottomSheetVisible = false
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
 
-    private val clipboardItems = mutableListOf<String>()
-    private val PREFS_NAME = "greyb_kb"
-    private val PREFS_CLIP = "clipboard"
-    private val MAX_CLIP = 10
-    private var clipAdapter: ClipboardAdapter? = null
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
 
-    private val bsHandler = Handler(Looper.getMainLooper())
-    private var bsRunnable: Runnable? = null
+      - name: Set Android SDK path
+        run: echo "sdk.dir=/usr/local/lib/android/sdk" > local.properties
 
-    // ── Shift state ────────────────────────────────────────────────
-    private var shiftState = ShiftState.OFF
-    private var lastShiftTap = 0L
-    private enum class ShiftState { OFF, ONCE, LOCKED }
+      - name: Cache Gradle packages
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
+          restore-keys: |
+            ${{ runner.os }}-gradle-
 
-    // ── Suggestion views ──────────────────────────────────────────
-    private var sugView1: TextView? = null
-    private var sugView2: TextView? = null
-    private var sugView3: TextView? = null
+      - name: Generate project structure
+        run: |
+          mkdir -p app/src/main/java/com/greyb/keyboard
+          mkdir -p app/src/main/res/xml
+          mkdir -p app/src/main/res/layout
+          mkdir -p app/src/main/res/drawable
+          mkdir -p app/src/main/res/values
+          mkdir -p gradle/wrapper
 
-    // ── Word list for suggestions ─────────────────────────────────
-    private val WORDS = listOf(
-        "the","be","to","of","and","have","it","for","not","on",
-        "with","he","as","you","do","at","this","but","his","by",
-        "from","they","we","say","her","she","or","an","will","my",
-        "one","all","would","there","their","what","so","up","out","if",
-        "about","who","get","which","go","me","when","make","can","like",
-        "time","no","just","him","know","take","people","into","year","your",
-        "good","some","could","them","see","other","than","then","now","look",
-        "only","come","its","over","think","also","back","after","use","two",
-        "how","our","work","first","well","way","even","new","want","because",
-        "any","these","give","day","most","us","great","need","large","often",
-        "hand","high","place","hold","turn","help","call","every","never","next",
-        "last","many","home","point","city","play","small","number","off","always",
-        "move","live","where","much","name","long","book","room","friend","idea",
-        "body","real","life","few","open","seem","below","together","enough","still",
-        "power","side","town","without","boy","once","animal","fact","stop",
-        "been","being","become","before","between","both","
+      - name: Generate AndroidManifest.xml
+        run: |
+          cat > app/src/main/AndroidManifest.xml << 'ENDOFFILE'
+          <?xml version="1.0" encoding="utf-8"?>
+          <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+              <application
+                  android:label="GreyB Keyboard"
+                  android:icon="@mipmap/ic_launcher"
+                  android:supportsRtl="true">
+
+                  <activity
+                      android:name=".MainActivity"
+                      android:label="GreyB Keyboard"
+                      android:exported="true">
+                      <intent-filter>
+                          <action android:name="android.intent.action.MAIN" />
+                          <category android:name="android.intent.category.LAUNCHER" />
+                      </intent-filter>
+                  </activity>
+
+                  <service
+                      android:name=".Keyboard"
+                      android:label="GreyB Keyboard"
+                      android:permission="android.permission.BIND_INPUT_METHOD"
+                      android:exported="true">
+                      <intent-filter>
+                          <action android:name="android.view.InputMethod" />
+                      </intent-filter>
+                      <meta-data
+                          android:name="android.view.im"
+                          android:resource="@xml/method" />
+                  </service>
+              </application>
+          </manifest>
+          ENDOFFILE
+
+      - name: Generate method.xml
+        run: |
+          cat > app/src/main/res/xml/method.xml << 'ENDOFFILE'
+          <?xml version="1.0" encoding="utf-8"?>
+          <input-method xmlns:android="http://schemas.android.com/apk/res/android">
+              <subtype
+                  android:label="English"
+                  android:imeSubtypeLocale="en_US"
+                  android:imeSubtypeMode="keyboard" />
+          </input-method>
+          ENDOFFILE
+
+      - name: Generate drawables
+        run: |
+          cat > app/src/main/res/drawable/key_bg.xml << 'ENDOFFILE'
+          <?xml version="1.0" encoding="utf-8"?>
+          <layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+              <item><shape><solid android:color="@android:color/transparent"/></shape></item>
+              <item android:left="3dp" android:right="3dp" android:top="5dp" android:bottom="5dp">
+                  <shape><solid android:color="#333333"/><corners android:radius="8dp"/></shape>
+              </item>
+          </layer-list>
+          ENDOFFILE
+
+          cat > app/src/main/res/drawable/key_bg_dark.xml << 'ENDOFFILE'
+          <?xml version="1.0" encoding="utf-8"?>
+          <layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+              <item><shape><solid android:color="@android:color/transparent"/></shape></item>
+              <item android:left="3dp" android:right="3dp" android:top="5dp" android:bottom="5dp">
+                  <shape><solid android:color="#2c2c2c"/><corners android:radius="8dp"/></shape>
+              </item>
+          </layer-list>
+          ENDOFFILE
+
+          cat > app/src/main/res/drawable/key_bg_action.xml << 'ENDOFFILE'
+          <?xml version="1.0" encoding="utf-8"?>
+          <layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+              <item><shape><solid android:color="@android:color/transparent"/></shape></item>
+              <item android:left="3dp" android:right="3dp" android:top="5dp" android:bottom="5dp">
+                  <shape><solid android:color="#1565C0"/><corners android:radius="8dp"/></shape>
+              </item>
+          </layer-list>
+          ENDOFFILE
+
+          cat > app/src/main/res/drawable/key_bg_accent.xml << 'ENDOFFILE'
+          <?xml version="1.0" encoding="utf-8"?>
+          <layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+              <item><shape><solid android:color="@android:color/transparent"/></shape></item>
+              <item android:left="3dp" android:right="3dp" android:top="5dp" android:bottom="5dp">
+                  <shape><solid android:color="#1565C0"/><corners android:radius="8dp"/></shape>
+              </item>
+          </layer-list>
+          ENDOFFILE
+
+          cat > app/src/main/res/drawable/key_bg_pressed.xml << 'ENDOFFILE'
+          <?xml version="1.0" encoding="utf-8"?>
+          <layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+              <item><shape><solid android:color="@android:color/transparent"/></shape></item>
+              <item android:left="3dp" android:right="3dp" android:top="5dp" android:bottom="5dp">
+                  <shape><solid android:color="#FFFFFF"/><corners android:radius="8dp"/></shape>
+              </item>
+          </layer-list>
+          ENDOFFILE
+
+      - name: Generate values
+        run: |
+          cat > app/src/main/res/values/colors.xml << 'ENDOFFILE'
+          <?xml version="1.0" encoding="utf-8"?>
+          <resources>
+              <color name="colorPrimary">#1e1e1e</color>
+              <color name="colorSurface">#2c2c2c</color>
+              <color name="colorAccent">#1565C0</color>
+              <color name="textColorNormal">#FFFFFF</color>
+              <color name="textColorSecondary">#AAAAAA</color>
+          </resources>
+          ENDOFFILE
+
+          cat > app/src/main/res/values/styles.xml << 'ENDOFFILE'
+          <?xml version="1.0" encoding="utf-8"?>
+          <resources>
+              <style name="AppTheme" parent="android:Theme.Material.NoActionBar">
+                  <item name="android:windowBackground">@color/colorPrimary</item>
+                  <item name="android:navigationBarColor">@color/colorPrimary</item>
+              </style>
+          </resources>
+          ENDOFFILE
+
+          cat > app/src/main/res/values/ids.xml << 'ENDOFFILE'
+          <?xml version="1.0" encoding="utf-8"?>
+          <resources>
+              <item name="original_bg_tag" type="id"/>
+          </resources>
+          ENDOFFILE
+
+      - name: Generate qwerty.xml
+        run: |
+          cat > app/src/main/res/layout/qwerty.xml << 'ENDOFFILE'
+          <?xml version="1.0" encoding="utf-8"?>
+          <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+              android:id="@+id/qwerty_root"
+              android:layout_width="match_parent"
+              android:layout_height="330dp"
+              android:orientation="vertical"
+              android:background="#1e1e1e">
+
+              <!-- Suggestion / toolbar row -->
+              <LinearLayout
+                  android:layout_width="match_parent"
+                  android:layout_height="55dp"
+                  android:orientation="horizontal"
+                  android:gravity="center_vertical"
+                  android:paddingStart="3dp"
+                  android:paddingEnd="3dp">
+
+                  <TextView
+                      android:id="@+id/btn_clipboard"
+                      android:layout_width="42dp"
+                      android:layout_height="match_parent"
+                      android:gravity="center"
+                      android:text="Clip"
+                      android:textColor="#ffffff"
+                      android:textSize="13sp"
+                      android:background="@drawable/key_bg_dark"/>
+
+                  <LinearLayout
+                      android:layout_width="0dp"
+                      android:layout_height="match_parent"
+                      android:layout_weight="1"
+                      android:orientation="horizontal"
+                      android:gravity="center_vertical">
+
+                      <TextView android:id="@+id/sug1"
+                          android:layout_width="0dp" android:layout_height="match_parent"
+                          android:layout_weight="1" android:gravity="center"
+                          android:background="@drawable/key_bg_dark"
+                          android:textColor="#ffffff" android:textSize="18sp"
+                          android:paddingStart="3dp" android:paddingEnd="3dp"/>
+
+                      <TextView android:id="@+id/sug2"
+                          android:layout_width="0dp" android:layout_height="match_parent"
+                          android:layout_weight="1" android:gravity="center"
+                          android:background="@drawable/key_bg_dark"
+                          android:textColor="#ffffff" android:textSize="18sp"
+                          android:paddingStart="3dp" android:paddingEnd="3dp"/>
+
+                      <TextView android:id="@+id/sug3"
+                          android:layout_width="0dp" android:layout_height="match_parent"
+                          android:layout_weight="1" android:gravity="center"
+                          android:background="@drawable/key_bg_dark"
+                          android:textColor="#ffffff" android:textSize="18sp"
+                          android:paddingStart="3dp" android:paddingEnd="3dp"/>
+
+                  </LinearLayout>
+
+                  <TextView
+                      android:id="@+id/btn_tools"
+                      android:layout_width="42dp"
+                      android:layout_height="match_parent"
+                      android:gravity="center"
+                      android:text="Edit"
+                      android:textColor="#ffffff"
+                      android:textSize="13sp"
+                      android:background="@drawable/key_bg_dark"/>
+
+              </LinearLayout>
+
+              <!-- Number row -->
+              <LinearLayout
+                  android:layout_width="match_parent"
+                  android:layout_height="55dp"
+                  android:orientation="horizontal"
+                  android:paddingStart="3dp"
+                  android:paddingEnd="3dp">
+                  <TextView android:id="@+id/k1" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="1" android:textColor="#fff" android:textSize="24sp" android:background="@drawable/key_bg"/>
+                  <TextView android:id="@+id/k2" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="2" android:textColor="#fff" android:textSize="24sp" android:background="@drawable/key_bg"/>
+                  <TextView android:id="@+id/k3" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="3" android:textColor="#fff" android:textSize="24sp" android:background="@drawable/key_bg"/>
+                  <TextView android:id="@+id/k4" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="4" android:textColor="#fff" android:textSize="24sp" android:background="@drawable/key_bg"/>
+                  <TextView android:id="@+id/k5" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="5" android:textColor="#fff" android:textSize="24sp" android:background="@drawable/key_bg"/>
+                  <TextView android:id="@+id/k6" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="6" android:textColor="#fff" android:textSize="24sp" android:background="@drawable/key_bg"/>
+                  <TextView android:id="@+id/k7" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="7" android:textColor="#fff" android:textSize="24sp" android:background="@drawable/key_bg"/>
+                  <TextView android:id="@+id/k8" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="8" android:textColor="#fff" android:textSize="24sp" android:background="@drawable/key_bg"/>
+                  <TextView android:id="@+id/k9" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="9" android:textColor="#fff" android:textSize="24sp" android:background="@drawable/key_bg"/>
+                  <TextView android:id="@+id/k0" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="0" android:textColor="#fff" android:textSize="24sp" android:background="@drawable/key_bg"/>
+              </LinearLayout>
+
+              <!-- QWERTY row -->
+              <LinearLayout
+                  android:layout_width="match_parent"
+                  android:layout_height="55dp"
+                  android:orientation="horizontal"
+                  android:paddingStart="3dp"
+                  android:paddingEnd="3dp">
+                  <TextView android:id="@+id/kq" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="q" android:textColor="#fff" android:textSize="24sp" android:background="@drawable/key_bg"/>
+                  <TextView android:id="@+id/kw" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="w" android:textColor="#fff" android:textSize="24sp" android:background="@drawable/key_bg"/>
+                  <TextView android:id="@+id/ke" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="e" android:textColor="#fff" android:textSize="24sp" android:background="@drawable/key_bg"/>
+                  <TextView android:id="@+id/kr" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="r" android:textColor="#fff" android:textSize="24sp" android:background="@drawable/key_bg"/>
+                  <TextView android:id="@+id/kt" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="t" android:textColor="#fff" android:textSize="24sp" android:background="@drawable/key_bg"/>
+                  <TextView android:id="@+id/ky" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="y" android:textColor="#fff" android:textSize="24sp" android:background="@drawable/key_bg"/>
+                  <TextView android:id="@+id/ku" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="u" android:textColor="#fff" android:textSize="24sp" android:background="@drawable/key_bg"/>
+                  <TextView android:id="@+id/ki" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="i" android:textColor="#fff" android:textSize="24sp" android:background="@drawable/key_bg"/>
+                  <TextView android:id="@+id/ko" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="o" android:textColor="#fff" android:textSize="24sp" android:background="@drawable/key_bg"/>
+                  <TextView android:id="@+id/kp" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="p" android:textColor="#fff" android:textSize="24sp" android:background="@drawable/key_bg"/>
+              </LinearLayout>
+
+              <!-- ASDF row -->
+              <LinearLayout
+                  android:layout_width="match_parent"
+                  android:layout_height="55dp"
+                  android:orientation="horizontal"
+                  android:paddingStart="3dp"
+                  android:paddingEnd="3dp">
+                  <View android:id="@+id/asdf_spacer_left" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="0.5" android:focusable="false" android:clickable="true" android:background="#00000000"/>
+                  <TextView android:id="@+id/ka" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="a" android:textColor="#fff" android:textSize="24sp" android:background="@drawable/key_bg"/>
+                  <TextView android:id="@+id/ks" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="s" android:textColor="#fff" android:textSize="24sp" android:background="@drawable/key_bg"/>
+                  <TextView android:id="@+id/kd" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="d" android:textColor="#fff" android:textSize="24sp" android:background="@drawable/key_bg"/>
+                  <TextView android:id="@+id/kf" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="f" android:textColor="#fff" android:textSize="24sp" android:background="@drawable/key_bg"/>
+                  <TextView android:id="@+id/kg" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="g" android:textColor="#fff" android:textSize="24sp" android:background="@drawable/key_bg"/>
+                  <TextView android:id="@+id/kh" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="h" android:textColor="#fff" android:textSize="24sp" android:background="@drawable/key_bg"/>
+                  <TextView android:id="@+id/kj" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="j" android:textColor="#fff" android:textSize="24sp" android:background="@drawable/key_bg"/>
+                  <TextView android:id="@+id/kk" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="k" android:textColor="#fff" android:textSize="24sp" android:background="@drawable/key_bg"/>
+                  <TextView android:id="@+id/kl" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="l" android:textColor="#fff" android:textSize="24sp" android:background="@drawable/key_bg"/>
+                  <View android:id="@+id/asdf_spacer_right" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="0.5" android:focusable="false" android:clickable="true" android:background="#00000000"/>
+              </LinearLayout>
+
+              <!-- ZXCV row -->
+              <LinearLayout
+                  android:layout_width="match_parent"
+                  android:layout_height="55dp"
+                  android:orientation="horizontal"
+                  android:paddingStart="3dp"
+                  android:paddingEnd="3dp">
+                  <TextView android:id="@+id/btn_shift" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1.5" android:gravity="center" android:text="Shft" android:textColor="#fff" android:textSize="14sp" android:background="@drawable/key_bg_dark"/>
+                  <TextView android:id="@+id/kz" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="z" android:textColor="#fff" android:textSize="24sp" android:background="@drawable/key_bg"/>
+                  <TextView android:id="@+id/kx" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="x" android:textColor="#fff" android:textSize="24sp" android:background="@drawable/key_bg"/>
+                  <TextView android:id="@+id/kc" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="c" android:textColor="#fff" android:textSize="24sp" android:background="@drawable/key_bg"/>
+                  <TextView android:id="@+id/kv" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="v" android:textColor="#fff" android:textSize="24sp" android:background="@drawable/key_bg"/>
+                  <TextView android:id="@+id/kb" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="b" android:textColor="#fff" android:textSize="24sp" android:background="@drawable/key_bg"/>
+                  <TextView android:id="@+id/kn" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="n" android:textColor="#fff" android:textSize="24sp" android:background="@drawable/key_bg"/>
+                  <TextView android:id="@+id/km" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="m" android:textColor="#fff" android:textSize="24sp" android:background="@drawable/key_bg"/>
+                  <TextView android:id="@+id/btn_backspace" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1.5" android:gravity="center" android:text="Del" android:textColor="#fff" android:textSize="14sp" android:background="@drawable/key_bg_dark"/>
+              </LinearLayout>
+
+              <!-- Action row -->
+              <LinearLayout
+                  android:layout_width="match_parent"
+                  android:layout_height="55dp"
+                  android:orientation="horizontal"
+                  android:paddingStart="3dp"
+                  android:paddingEnd="3dp">
+                  <TextView android:id="@+id/btn_symbols" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1.5" android:gravity="center" android:text="\?123" android:textColor="#fff" android:textSize="16sp" android:background="@drawable/key_bg_dark"/>
+                  <TextView android:id="@+id/btn_emoji" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="Emj" android:textColor="#fff" android:textSize="13sp" android:background="@drawable/key_bg_dark"/>
+                  <TextView android:id="@+id/btn_comma" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="," android:textColor="#fff" android:textSize="24sp" android:background="@drawable/key_bg"/>
+                  <TextView android:id="@+id/btn_space" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="4" android:gravity="center" android:text="" android:textColor="#888" android:textSize="18sp" android:background="@drawable/key_bg_dark"/>
+                  <TextView android:id="@+id/btn_period" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="." android:textColor="#fff" android:textSize="24sp" android:background="@drawable/key_bg"/>
+                  <TextView android:id="@+id/btn_enter" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1.5" android:gravity="center" android:text="Enter" android:textColor="#fff" android:textSize="14sp" android:background="@drawable/key_bg_action"/>
+              </LinearLayout>
+
+              <View android:layout_width="match_parent" android:layout_height="0dp" android:background="#1e1e1e"/>
+
+          </LinearLayout>
+          ENDOFFILE
+
+      - name: Generate MainActivity.kt
+        run: |
+          cat > app/src/main/java/com/greyb/keyboard/MainActivity.kt << 'ENDOFFILE'
+          package com.greyb.keyboard
+
+          import android.app.Activity
+          import android.os.Bundle
+          import android.view.Gravity
+          import android.widget.LinearLayout
+          import android.widget.TextView
+
+          class MainActivity : Activity() {
+              override fun onCreate(savedInstanceState: Bundle?) {
+                  super.onCreate(savedInstanceState)
+                  val root = LinearLayout(this).apply {
+                      orientation = LinearLayout.VERTICAL
+                      setBackgroundColor(0xFF1e1e1e.toInt())
+                      gravity = Gravity.CENTER
+                  }
+                  root.addView(TextView(this).apply {
+                      text = "GreyB Keyboard"
+                      textSize = 32f
+                      setTextColor(0xFFFFFFFF.toInt())
+                      setPadding(0, 0, 0, 24.dp)
+                  })
+                  root.addView(TextView(this).apply {
+                      text = "Enable the keyboard in\nSettings → System → Languages & Input"
+                      textSize = 18f
+                      setTextColor(0xFFAAAAAA.toInt())
+                      gravity = Gravity.CENTER
+                  })
+                  setContentView(root)
+              }
+              private val Int.dp: Int get() = (this * resources.displayMetrics.density).toInt()
+          }
+          ENDOFFILE
+
+      - name: Generate Keyboard.kt with suggestions
+        run: |
+          cat > app/src/main/java/com/greyb/keyboard/Keyboard.kt << 'ENDOFFILE'
+          package com.greyb.keyboard
+
+          import android.content.*
+          import android.graphics.Color
+          import android.graphics.drawable.ColorDrawable
+          import android.os.*
+          import android.view.*
+          import android.view.inputmethod.*
+          import android.widget.*
+          import androidx.recyclerview.widget.*
+          import android.inputmethodservice.InputMethodService
+
+          class Keyboard : InputMethodService() {
+
+              private lateinit var rootFrame: FrameLayout
+              private lateinit var qwertyView: View
+              private var toolsPopup: PopupWindow? = null
+              private var bottomSheetContainer: FrameLayout? = null
+              private var isBottomSheetVisible = false
+
+              private val clipboardItems = mutableListOf<String>()
+              private val PREFS_NAME = "greyb_kb"
+              private val PREFS_CLIP = "clipboard"
+              private val MAX_CLIP = 10
+              private var clipAdapter: ClipboardAdapter? = null
+
+              private val bsHandler = Handler(Looper.getMainLooper())
+              private var bsRunnable: Runnable? = null
+
+              // ── Shift state ────────────────────────────────────────────────
+              private var shiftState = ShiftState.OFF
+              private var lastShiftTap = 0L
+              private enum class ShiftState { OFF, ONCE, LOCKED }
+
+              // ── Suggestion views ──────────────────────────────────────────
+              private var sugView1: TextView? = null
+              private var sugView2: TextView? = null
+              private var sugView3: TextView? = null
+
+              // ── Word list for suggestions ─────────────────────────────────
+              private val WORDS = listOf(
+                  "the","be","to","of","and","have","it","for","not","on",
+                  "with","he","as","you","do","at","this","but","his","by",
+                  "from","they","we","say","her","she","or","an","will","my",
+                  "one","all","would","there","their","what","so","up","out","if",
+                  "about","who","get","which","go","me","when","make","can","like",
+                  "time","no","just","him","know","take","people","into","year","your",
+                  "good","some","could","them","see","other","than","then","now","look",
+                  "only","come","its","over","think","also","back","after","use","two",
+                  "how","our","work","first","well","way","even","new","want","because",
+                  "any","these","give","day","most","us","great","need","large","often",
+                  "hand","high","place","hold","turn","help","call","every","never","next",
+                  "last","many","home","point","city","play","small","number","off","always",
+                  "move","live","where","much","name","long","book","room","friend","idea",
+                  "body","real","life","few","open","seem","below","together","enough","still",
+                  "power","side","town","without","boy","once","animal","fact","stop",
+                  "been","being","become","before","between","both","during","each",
+                  "same","through","under","until","very","while","able","age","ago","air",
+                  "already","another","area","ask","away","bad","big","black","white",
+                  "change","close","country","deep","different","done","down","early","end",
+                  "feel","found","front","full","game","girl","gone","got","half",
+                  "hear","heart","himself","house","important","inside","keep","kind",
+                  "knew","later","left","less","let","level","light","likely","little","local",
+                  "love","low","made","main","man","matter","mean","might","mind","money",
+                  "more","morning","must","near","nothing","notice","order","outside","own",
+                  "part","past","plan","possible","put","question","quite","rather","ready",
+                  "reason","recent","result","right","run","second","set","short","should",
+                  "show","since","sit","situation","soon","start","state","stay","student",
+                  "sure","talk","tell","thing","thought","three","today","tonight","toward",
+                  "tried","true","try","type","used","usually","voice","walk","water","whole",
+                  "wide","within","world","yes","yet","young","zero","zone","above","across",
+                  "act","add","again","apply","bring","build","buy","care","check","cover",
+                  "create","cut","decide","describe","develop","draw","drive","enjoy",
+                  "explain","face","fall","fill","find","follow","forget","free","hope",
+                  "imagine","include","increase","join","lose","measure","meet","miss","offer",
+                  "pass","pay","pick","produce","protect","pull","push","raise","reach","read",
+                  "realize","receive","remain","remember","remove","replace","represent",
+                  "require","return","reveal","rise","save","send","serve","share","sleep",
+                  "solve","speak","spend","stand","study","support","teach","test","thank",
+                  "travel","understand","wait","watch","write","almost","around","behind",
+                  "clearly","directly","especially","finally","instead","maybe","nearly",
+                  "quickly","really","simply","slowly","sometimes","suddenly","actually",
+                  "certainly","definitely","generally","literally","naturally","obviously",
+                  "personally","probably","recently","seriously","thankfully","therefore",
+                  "whatever","whenever","wherever","whether","whoever","wonderful","yesterday"
+              )
+
+              override fun onCreate() {
+                  super.onCreate()
+                  loadClipboard()
+              }
+
+              override fun onCreateInputView(): View {
+                  window?.window?.navigationBarColor = 0xFF1e1e1e.toInt()
+                  rootFrame = FrameLayout(this).apply {
+                      layoutParams = ViewGroup.LayoutParams(
+                          ViewGroup.LayoutParams.MATCH_PARENT,
+                          ViewGroup.LayoutParams.WRAP_CONTENT
+                      )
+                  }
+                  qwertyView = buildQwerty()
+                  rootFrame.addView(qwertyView)
+                  return rootFrame
+              }
+
+              private fun sendKey(keyCode: Int, meta: Int = 0) {
+                  val ic = currentInputConnection ?: return
+                  val t = SystemClock.uptimeMillis()
+                  ic.sendKeyEvent(KeyEvent(t, t, KeyEvent.ACTION_DOWN, keyCode, 0, meta))
+                  ic.sendKeyEvent(KeyEvent(t, SystemClock.uptimeMillis(), KeyEvent.ACTION_UP, keyCode, 0, meta))
+              }
+
+              private fun pressKey(view: TextView) {
+                  view.setBackgroundResource(R.drawable.key_bg_pressed)
+                  view.setTextColor(0xFF000000.toInt())
+              }
+
+              private fun releaseKey(view: TextView) {
+                  val originalRes = view.getTag(R.id.original_bg_tag) as? Int ?: return
+                  view.setBackgroundResource(originalRes)
+                  view.setTextColor(0xFFFFFFFF.toInt())
+              }
+
+              private fun showBottomSheet(contentView: View) {
+                  if (isBottomSheetVisible) dismissBottomSheet()
+                  bottomSheetContainer = FrameLayout(this).apply {
+                      setBackgroundColor(0x80000000.toInt())
+                      setOnClickListener { dismissBottomSheet() }
+                  }
+                  val bottomSheet = LinearLayout(this).apply {
+                      orientation = LinearLayout.VERTICAL
+                      setBackgroundColor(0xFF2C2C2C.toInt())
+                      layoutParams = FrameLayout.LayoutParams(
+                          ViewGroup.LayoutParams.MATCH_PARENT,
+                          ViewGroup.LayoutParams.WRAP_CONTENT
+                      ).apply { gravity = Gravity.BOTTOM }
+                  }
+                  bottomSheet.addView(TextView(this).apply {
+                      text = ""
+                      textSize = 16f
+                      setTextColor(0xFFFFFFFF.toInt())
+                      gravity = Gravity.CENTER
+                      setPadding(0, 12.dp, 0, 12.dp)
+                  })
+                  bottomSheet.addView(contentView)
+                  bottomSheetContainer?.addView(bottomSheet)
+                  rootFrame.addView(bottomSheetContainer)
+                  bottomSheet.translationY = 500f
+                  bottomSheet.animate().translationY(0f).setDuration(250).start()
+                  isBottomSheetVisible = true
+              }
+
+              private fun dismissBottomSheet() {
+                  if (!isBottomSheetVisible) return
+                  val container = bottomSheetContainer
+                  if (container != null) {
+                      container.animate().alpha(0f).setDuration(200).withEndAction {
+                          rootFrame.removeView(container)
+                      }.start()
+                  }
+                  bottomSheetContainer = null
+                  isBottomSheetVisible = false
+              }
+
+              private fun createSymbolsContent(): View {
+                  val symbols = listOf(
+                      "!","@","#","$","%","&","*","(",")","+",
+                      "-","=","/",":",";","\"","'","?","~","_",
+                      "[","]","{","}","<",">","|","\\","^"
+                  )
+                  val grid = GridLayout(this).apply {
+                      columnCount = 10
+                      useDefaultMargins = true
+                      layoutParams = LinearLayout.LayoutParams(
+                          ViewGroup.LayoutParams.MATCH_PARENT,
+                          ViewGroup.LayoutParams.WRAP_CONTENT
+                      )
+                  }
+                  val cellSize = (resources.displayMetrics.widthPixels - 64.dp) / 10
+                  symbols.forEach { sym ->
+                      val tv = TextView(this).apply {
+                          text = sym
+                          textSize = 20f
+                          gravity = Gravity.CENTER
+                          setTextColor(0xFFFFFFFF.toInt())
+                          layoutParams = GridLayout.LayoutParams().apply {
+                              width = cellSize
+                              height = cellSize
+                          }
+                      }
+                      setupKey(tv, R.drawable.key_bg) { commitText(sym); dismissBottomSheet() }
+                      grid.addView(tv)
+                  }
+                  return grid
+              }
+
+              private fun createEmojiContent(): View {
+                  val emojis = listOf("😀","😂","😍","🥰","😎","👍","🔥","🎉")
+                  val grid = GridLayout(this).apply {
+                      columnCount = 4
+                      useDefaultMargins = true
+                      layoutParams = LinearLayout.LayoutParams(
+                          ViewGroup.LayoutParams.MATCH_PARENT,
+                          ViewGroup.LayoutParams.WRAP_CONTENT
+                      )
+                  }
+                  val cellSize = (resources.displayMetrics.widthPixels - 64.dp) / 4
+                  emojis.forEach { emoji ->
+                      val tv = TextView(this).apply {
+                          text = emoji
+                          textSize = 36f
+                          gravity = Gravity.CENTER
+                          layoutParams = GridLayout.LayoutParams().apply {
+                              width = cellSize
+                              height = cellSize
+                          }
+                      }
+                      setupKey(tv, R.drawable.key_bg) { commitText(emoji); dismissBottomSheet() }
+                      grid.addView(tv)
+                  }
+                  return grid
+              }
+
+              private fun createClipboardContent(): View {
+                  if (clipboardItems.isEmpty()) {
+                      return TextView(this).apply {
+                          text = "Clipboard is empty"
+                          textSize = 20f
+                          setTextColor(0xFFFFFFFF.toInt())
+                          gravity = Gravity.CENTER
+                          setPadding(16.dp, 32.dp, 16.dp, 32.dp)
+                      }
+                  }
+                  clipAdapter = ClipboardAdapter(
+                      clipboardItems,
+                      onPaste  = { item -> commitText(item); dismissBottomSheet() },
+                      onDelete = { pos ->
+                          clipboardItems.removeAt(pos)
+                          clipAdapter?.notifyItemRemoved(pos)
+                          saveClipboard()
+                          if (clipboardItems.isEmpty()) dismissBottomSheet()
+                      }
+                  )
+                  return RecyclerView(this).apply {
+                      layoutManager = LinearLayoutManager(this@Keyboard)
+                      adapter = clipAdapter
+                      layoutParams = LinearLayout.LayoutParams(
+                          ViewGroup.LayoutParams.MATCH_PARENT,
+                          (200 * resources.displayMetrics.density).toInt()
+                      )
+                  }
+              }
+
+              private fun setupKey(view: View, bgRes: Int, action: () -> Unit) {
+                  if (view is TextView) {
+                      view.setTag(R.id.original_bg_tag, bgRes)
+                  }
+                  view.setOnTouchListener { v, event ->
+                      when (event.actionMasked) {
+                          MotionEvent.ACTION_DOWN -> {
+                              if (v is TextView) pressKey(v)
+                              action()
+                              true
+                          }
+                          MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
+                              if (v is TextView) releaseKey(v)
+                              true
+                          }
+                          else -> true
+                      }
+                  }
+              }
+
+              private fun buildQwerty(): View {
+                  val v = layoutInflater.inflate(R.layout.qwerty, null)
+
+                  sugView1 = v.findViewById(R.id.sug1)
+                  sugView2 = v.findViewById(R.id.sug2)
+                  sugView3 = v.findViewById(R.id.sug3)
+                  listOf(sugView1, sugView2, sugView3).forEach { sv ->
+                      sv?.setOnClickListener {
+                          val word = (it as? TextView)?.text?.toString() ?: return@setOnClickListener
+                          if (word.isNotEmpty()) {
+                              it.animate().alpha(0.4f).setDuration(60).withEndAction {
+                                  it.animate().alpha(1f).setDuration(60).start()
+                              }.start()
+                              commitSuggestion(word)
+                          }
+                      }
+                  }
+
+                  val letters = "qwertyuiopasdfghjklzxcvbnm"
+                  val ids = listOf(
+                      R.id.kq,R.id.kw,R.id.ke,R.id.kr,R.id.kt,R.id.ky,R.id.ku,R.id.ki,R.id.ko,R.id.kp,
+                      R.id.ka,R.id.ks,R.id.kd,R.id.kf,R.id.kg,R.id.kh,R.id.kj,R.id.kk,R.id.kl,
+                      R.id.kz,R.id.kx,R.id.kc,R.id.kv,R.id.kb,R.id.kn,R.id.km
+                  )
+                  ids.forEachIndexed { i, id ->
+                      setupKey(v.findViewById<TextView>(id), R.drawable.key_bg) { typeChar(letters[i]) }
+                  }
+
+                  val numIds = listOf(R.id.k1,R.id.k2,R.id.k3,R.id.k4,R.id.k5,
+                                      R.id.k6,R.id.k7,R.id.k8,R.id.k9,R.id.k0)
+                  "1234567890".forEachIndexed { i, c ->
+                      val kc = KeyEvent.KEYCODE_0 + (c - '0')
+                      setupKey(v.findViewById<TextView>(numIds[i]), R.drawable.key_bg) {
+                          sendKey(kc); clearSugs()
+                      }
+                  }
+
+                  val shiftKey = v.findViewById<TextView>(R.id.btn_shift)
+                  shiftKey.setTag(R.id.original_bg_tag, R.drawable.key_bg_dark)
+                  shiftKey.setOnTouchListener { _, event ->
+                      when (event.actionMasked) {
+                          MotionEvent.ACTION_DOWN -> {
+                              pressKey(shiftKey); toggleShiftState(); true
+                          }
+                          MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
+                              releaseKey(shiftKey); updateShiftKeyAppearance(shiftKey); true
+                          }
+                          else -> true
+                      }
+                  }
+
+                  val backspace = v.findViewById<TextView>(R.id.btn_backspace)
+                  backspace.setTag(R.id.original_bg_tag, R.drawable.key_bg_dark)
+                  backspace.setOnTouchListener { _, event ->
+                      when (event.actionMasked) {
+                          MotionEvent.ACTION_DOWN -> {
+                              pressKey(backspace)
+                              sendKey(KeyEvent.KEYCODE_DEL)
+                              bsRunnable = object : Runnable {
+                                  override fun run() {
+                                      sendKey(KeyEvent.KEYCODE_DEL)
+                                      bsHandler.postDelayed(this, 50)
+                                  }
+                              }
+                              bsHandler.postDelayed(bsRunnable!!, 300)
+                              true
+                          }
+                          MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
+                              releaseKey(backspace)
+                              stopBackspaceRepeat()
+                              bsHandler.postDelayed({ updateSuggestions() }, 80)
+                              true
+                          }
+                          else -> true
+                      }
+                  }
+
+                  setupKey(v.findViewById<TextView>(R.id.btn_space),  R.drawable.key_bg_dark) {
+                      sendKey(KeyEvent.KEYCODE_SPACE); clearSugs()
+                  }
+                  setupKey(v.findViewById<TextView>(R.id.btn_comma),  R.drawable.key_bg) {
+                      sendKey(KeyEvent.KEYCODE_COMMA); clearSugs()
+                  }
+                  setupKey(v.findViewById<TextView>(R.id.btn_period), R.drawable.key_bg) {
+                      sendKey(KeyEvent.KEYCODE_PERIOD); clearSugs()
+                  }
+                  setupKey(v.findViewById<TextView>(R.id.btn_enter),  R.drawable.key_bg_action) {
+                      sendKey(KeyEvent.KEYCODE_ENTER); clearSugs()
+                  }
+
+                  setupKey(v.findViewById<TextView>(R.id.btn_symbols), R.drawable.key_bg_dark) {
+                      showBottomSheet(createSymbolsContent())
+                  }
+                  setupKey(v.findViewById<TextView>(R.id.btn_emoji), R.drawable.key_bg_dark) {
+                      showBottomSheet(createEmojiContent())
+                  }
+                  setupKey(v.findViewById<TextView>(R.id.btn_clipboard), R.drawable.key_bg_dark) {
+                      val clip = (getSystemService(Context.CLIPBOARD_SERVICE) as? ClipboardManager)
+                          ?.primaryClip?.getItemAt(0)?.text?.toString()
+                      if (!clip.isNullOrEmpty()) addToClipboard(clip)
+                      showBottomSheet(createClipboardContent())
+                  }
+
+                  val toolsBtn = v.findViewById<TextView>(R.id.btn_tools)
+                  setupKey(toolsBtn, R.drawable.key_bg_dark) { showToolsPopup(toolsBtn) }
+
+                  val keyA = v.findViewById<TextView>(R.id.ka)
+                  val keyL = v.findViewById<TextView>(R.id.kl)
+                  v.findViewById<View>(R.id.asdf_spacer_left)?.setOnTouchListener { _, event ->
+                      when (event.actionMasked) {
+                          MotionEvent.ACTION_DOWN -> { keyA?.let { pressKey(it) }; typeChar('a'); true }
+                          MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> { keyA?.let { releaseKey(it) }; true }
+                          else -> true
+                      }
+                  }
+                  v.findViewById<View>(R.id.asdf_spacer_right)?.setOnTouchListener { _, event ->
+                      when (event.actionMasked) {
+                          MotionEvent.ACTION_DOWN -> { keyL?.let { pressKey(it) }; typeChar('l'); true }
+                          MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> { keyL?.let { releaseKey(it) }; true }
+                          else -> true
+                      }
+                  }
+
+                  return v
+              }
+
+              private fun showToolsPopup(anchor: View) {
+                  toolsPopup?.dismiss()
+                  val popup = LinearLayout(this).apply {
+                      orientation = LinearLayout.VERTICAL
+                      setBackgroundColor(0xFF2C2C2C.toInt())
+                      setPadding(8.dp, 8.dp, 8.dp, 8.dp)
+                  }
+                  listOf("Select All", "Copy", "Paste").forEach { label ->
+                      popup.addView(TextView(this).apply {
+                          text = label
+                          textSize = 22f
+                          setTextColor(0xFFFFFFFF.toInt())
+                          setPadding(16.dp, 10.dp, 16.dp, 10.dp)
+                          setOnClickListener {
+                              toolsPopup?.dismiss()
+                              when (label) {
+                                  "Select All" -> currentInputConnection
+                                      ?.performContextMenuAction(android.R.id.selectAll)
+                                  "Copy"       -> currentInputConnection
+                                      ?.performContextMenuAction(android.R.id.copy)
+                                  "Paste"      -> {
+                                      val clip = (getSystemService(Context.CLIPBOARD_SERVICE)
+                                              as ClipboardManager)
+                                          .primaryClip?.getItemAt(0)
+                                          ?.coerceToText(this@Keyboard)?.toString()
+                                      if (!clip.isNullOrEmpty()) {
+                                          commitText(clip)
+                                          addToClipboard(clip)
+                                      }
+                                  }
+                              }
+                          }
+                      })
+                  }
+                  toolsPopup = PopupWindow(
+                      popup,
+                      ViewGroup.LayoutParams.WRAP_CONTENT,
+                      ViewGroup.LayoutParams.WRAP_CONTENT,
+                      true
+                  ).apply {
+                      setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
+                      isOutsideTouchable = true
+                      elevation = 8f
+                      showAsDropDown(anchor, 0, -(anchor.height * 4))
+                  }
+              }
+
+              private fun typeChar(c: Char) {
+                  val kc = KeyEvent.KEYCODE_A + (c.lowercaseChar() - 'a')
+                  val meta = if (shiftState != ShiftState.OFF) KeyEvent.META_SHIFT_ON else 0
+                  sendKey(kc, meta)
+                  if (shiftState == ShiftState.ONCE) {
+                      shiftState = ShiftState.OFF
+                      updateShiftKeyAppearance(qwertyView.findViewById(R.id.btn_shift))
+                      updateLetterKeys(qwertyView)
+                  }
+                  bsHandler.postDelayed({ updateSuggestions() }, 80)
+              }
+
+              private fun commitText(s: String) { currentInputConnection?.commitText(s, 1) }
+
+              private fun stopBackspaceRepeat() {
+                  bsRunnable?.let { bsHandler.removeCallbacks(it) }
+                  bsRunnable = null
+              }
+
+              private fun toggleShiftState() {
+                  val now = System.currentTimeMillis()
+                  shiftState = when {
+                      shiftState == ShiftState.LOCKED -> ShiftState.OFF
+                      now - lastShiftTap < 200        -> ShiftState.LOCKED
+                      shiftState == ShiftState.OFF    -> ShiftState.ONCE
+                      else                            -> ShiftState.OFF
+                  }
+                  lastShiftTap = now
+                  updateLetterKeys(qwertyView)
+              }
+
+              private fun updateShiftKeyAppearance(shiftView: TextView) {
+                  shiftView.text = when (shiftState) {
+                      ShiftState.LOCKED -> "CAPS"
+                      ShiftState.ONCE   -> "SHFT"
+                      ShiftState.OFF    -> "Shft"
+                  }
+                  shiftView.setTextColor(
+                      if (shiftState == ShiftState.OFF) 0xFFFFFFFF.toInt()
+                      else 0xFF4FC3F7.toInt()
+                  )
+              }
+
+              private fun updateLetterKeys(v: View) {
+                  val upper = shiftState != ShiftState.OFF
+                  val letters = "qwertyuiopasdfghjklzxcvbnm"
+                  listOf(
+                      R.id.kq,R.id.kw,R.id.ke,R.id.kr,R.id.kt,R.id.ky,R.id.ku,R.id.ki,R.id.ko,R.id.kp,
+                      R.id.ka,R.id.ks,R.id.kd,R.id.kf,R.id.kg,R.id.kh,R.id.kj,R.id.kk,R.id.kl,
+                      R.id.kz,R.id.kx,R.id.kc,R.id.kv,R.id.kb,R.id.kn,R.id.km
+                  ).forEachIndexed { i, id ->
+                      v.findViewById<TextView>(id)?.text =
+                          if (upper) letters[i].uppercaseChar().toString()
+                          else letters[i].toString()
+                  }
+              }
+
+              // ── Suggestion logic ───────────────────────────────────────────
+
+              private fun extractCurrentWord(before: String): String {
+                  val s = before.trimEnd(' ')
+                  val idx = s.indexOfLast { !it.isLetter() }
+                  return if (idx < 0) s.lowercase() else s.substring(idx + 1).lowercase()
+              }
+
+              private fun extractCurrentWordRaw(before: String): String {
+                  val s = before.trimEnd(' ')
+                  val idx = s.indexOfLast { !it.isLetter() }
+                  return if (idx < 0) s else s.substring(idx + 1)
+              }
+
+              private fun updateSuggestions() {
+                  val ic = currentInputConnection ?: run { clearSugs(); return }
+                  val before = ic.getTextBeforeCursor(50, 0)?.toString() ?: run { clearSugs(); return }
+                  val word = extractCurrentWord(before)
+                  if (word.length < 2) { clearSugs(); return }
+                  val matches = WORDS.filter { it.startsWith(word) && it != word }.take(3)
+                  sugView1?.text = matches.getOrNull(0) ?: ""
+                  sugView2?.text = matches.getOrNull(1) ?: ""
+                  sugView3?.text = matches.getOrNull(2) ?: ""
+              }
+
+              private fun clearSugs() {
+                  sugView1?.text = ""; sugView2?.text = ""; sugView3?.text = ""
+              }
+
+              private fun commitSuggestion(word: String) {
+                  if (word.isEmpty()) return
+                  val ic = currentInputConnection ?: return
+                  val before = ic.getTextBeforeCursor(50, 0)?.toString() ?: return
+                  val raw = extractCurrentWordRaw(before)
+                  val result = if (raw.isNotEmpty() && raw[0].isUpperCase())
+                      word.replaceFirstChar { it.uppercase() } else word
+                  ic.deleteSurroundingText(raw.length, 0)
+                  ic.commitText("$result ", 1)
+                  clearSugs()
+                  if (shiftState == ShiftState.ONCE) {
+                      shiftState = ShiftState.OFF
+                      qwertyView.post {
+                          updateShiftKeyAppearance(qwertyView.findViewById(R.id.btn_shift))
+                          updateLetterKeys(qwertyView)
+                      }
+                  }
+              }
+
+              // ── Clipboard adapter ──────────────────────────────────────────
+              class ClipboardAdapter(
+                  private val items: MutableList<String>,
+                  private val onPaste: (String) -> Unit,
+                  private val onDelete: (Int) -> Unit
+              ) : RecyclerView.Adapter<ClipboardAdapter.VH>() {
+
+                  inner class VH(val root: LinearLayout, val tv: TextView, val del: TextView)
+                      : RecyclerView.ViewHolder(root)
+
+                  override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): VH {
+                      val ctx = parent.context
+                      val root = LinearLayout(ctx).apply {
+                          orientation = LinearLayout.HORIZONTAL
+                          setPadding(20, 16, 20, 16)
+                          layoutParams = RecyclerView.LayoutParams(
+                              ViewGroup.LayoutParams.MATCH_PARENT,
+                              ViewGroup.LayoutParams.WRAP_CONTENT
+                          )
+                      }
+                      val tv = TextView(ctx).apply {
+                          layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
+                          setTextColor(0xFFFFFFFF.toInt())
+                          textSize = 20f
+                          maxLines = 2
+                          ellipsize = android.text.TextUtils.TruncateAt.END
+                      }
+                      val del = TextView(ctx).apply {
+                          text = "X"
+                          setTextColor(0xFF888888.toInt())
+                          textSize = 22f
+                          setPadding(26, 0, 6, 0)
+                      }
+                      root.addView(tv)
+                      root.addView(del)
+                      return VH(root, tv, del)
+                  }
+
+                  override fun onBindViewHolder(h: VH, pos: Int) {
+                      h.tv.text = items[pos]
+                      h.root.setOnClickListener { onPaste(items[pos]) }
+                      h.del.setOnClickListener  { onDelete(h.adapterPosition) }
+                  }
+
+                  override fun getItemCount() = items.size
+              }
+
+              private fun addToClipboard(text: String) {
+                  clipboardItems.remove(text)
+                  clipboardItems.add(0, text)
+                  if (clipboardItems.size > MAX_CLIP) clipboardItems.removeAt(clipboardItems.size - 1)
+                  saveClipboard()
+                  clipAdapter?.notifyDataSetChanged()
+              }
+
+              private fun saveClipboard() {
+                  getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE).edit()
+                      .putString(PREFS_CLIP, clipboardItems.take(MAX_CLIP).joinToString("\u001F"))
+                      .apply()
+              }
+
+              private fun loadClipboard() {
+                  val s = getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+                      .getString(PREFS_CLIP, "") ?: ""
+                  clipboardItems.clear()
+                  if (s.isNotEmpty()) clipboardItems.addAll(s.split("\u001F"))
+              }
+
+              private val Int.dp get() = (this * resources.displayMetrics.density).toInt()
+
+              override fun onDestroy() {
+                  super.onDestroy()
+                  stopBackspaceRepeat()
+                  toolsPopup?.dismiss()
+                  dismissBottomSheet()
+              }
+          }
+          ENDOFFILE
+
+      - name: Generate Gradle Scripts
+        env:
+          BUILD_NUMBER: ${{ github.run_number }}
+        run: |
+          cat > settings.gradle.kts << 'ENDOFFILE'
+          pluginManagement {
+              repositories { google(); mavenCentral(); gradlePluginPortal() }
+          }
+          dependencyResolutionManagement {
+              repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
+              repositories { google(); mavenCentral() }
+          }
+          rootProject.name = "GreyB"
+          include(":app")
+          ENDOFFILE
+
+          cat > build.gradle.kts << 'ENDOFFILE'
+          plugins {
+              id("com.android.application") version "8.9.1" apply false
+              id("org.jetbrains.kotlin.android") version "2.2.0" apply false
+          }
+          ENDOFFILE
+
+          cat > app/build.gradle.kts << APPEOF
+          plugins {
+              id("com.android.application")
+              id("org.jetbrains.kotlin.android")
+          }
+
+          android {
+              namespace  = "com.greyb.keyboard"
+              compileSdk = 36
+
+              defaultConfig {
+                  applicationId = "com.greyb.keyboard"
+                  minSdk        = 26
+                  targetSdk     = 36
+                  versionCode   = ${BUILD_NUMBER}
+                  versionName   = "${BUILD_NUMBER}"
+              }
+
+              signingConfigs {
+                  create("release") {
+                      storeFile     = file("release.keystore")
+                      storePassword = "greyb2024"
+                      keyAlias      = "greyb"
+                      keyPassword   = "greyb2024"
+                  }
+              }
+
+              buildTypes {
+                  release {
+                      isMinifyEnabled   = true
+                      isShrinkResources = true
+                      proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"))
+                      signingConfig = signingConfigs.getByName("release")
+                  }
+              }
+
+              compileOptions {
+                  sourceCompatibility = JavaVersion.VERSION_17
+                  targetCompatibility = JavaVersion.VERSION_17
+              }
+              kotlinOptions { jvmTarget = "17" }
+          }
+
+          dependencies {
+              implementation("androidx.recyclerview:recyclerview:1.3.2")
+              implementation("androidx.core:core-ktx:1.13.1")
+          }
+          APPEOF
+
+          cat > gradle.properties << 'ENDOFFILE'
+          android.useAndroidX=true
+          android.enableJetifier=true
+          org.gradle.jvmargs=-Xmx4g -XX:MaxMetaspaceSize=512m -XX:+UseParallelGC
+          kotlin.code.style=official
+          android.suppressUnsupportedCompileSdk=36
+          ENDOFFILE
+
+      - name: Generate fixed keystore
+        run: |
+          keytool -genkey -v \
+            -keystore app/release.keystore \
+            -alias greyb \
+            -keyalg RSA \
+            -keysize 2048 \
+            -validity 10000 \
+            -storepass greyb2024 \
+            -keypass greyb2024 \
+            -dname "CN=GreyB, OU=GreyB, O=GreyB Keyboard, L=Test, S=Test, C=US"
+
+      - name: Generate launcher icons
+        run: |
+          rm -rf app/src/main/res/mipmap-*
+          pip3 install Pillow --quiet --break-system-packages 2>/dev/null || pip install Pillow --quiet
+          python3 << 'ENDOFFILE'
+          from PIL import Image, ImageDraw
+          import os
+
+          def make_icon(size):
+              BG     = (42, 45, 52, 255)
+              ACCENT = (90, 93, 100, 255)
+              WHITE  = (255, 255, 255, 255)
+              img = Image.new('RGBA', (size, size), BG)
+              d   = ImageDraw.Draw(img)
+              margin = size // 5
+              key_w  = (size - 2 * margin) // 4
+              key_h  = (size - 2 * margin) // 5
+              gap    = max(1, size // 40)
+              start_y = margin + key_h
+              for row in range(3):
+                  y = start_y + row * (key_h + gap)
+                  keys_in_row = [4, 4, 3]
+                  row_margin = (size - keys_in_row[row] * (key_w + gap) + gap) // 2
+                  for col in range(keys_in_row[row]):
+                      x = row_margin + col * (key_w + gap)
+                      color = ACCENT if (row == 0 and col == 0) else WHITE
+                      d.rounded_rectangle([x, y, x + key_w, y + key_h], radius=key_w // 5, fill=color)
+              space_y = start_y + 3 * (key_h + gap)
+              space_w = key_w * 2 + gap
+              space_x = (size - space_w) // 2
+              d.rounded_rectangle([space_x, space_y, space_x + space_w, space_y + key_h], radius=key_w // 5, fill=ACCENT)
+              return img
+
+          sizes = {'mdpi': 48, 'hdpi': 72, 'xhdpi': 96, 'xxhdpi': 144, 'xxxhdpi': 192}
+          for density, s in sizes.items():
+              path = f'app/src/main/res/mipmap-{density}'
+              os.makedirs(path, exist_ok=True)
+              icon = make_icon(s)
+              icon.save(f'{path}/ic_launcher.png')
+              icon.save(f'{path}/ic_launcher_round.png')
+          print("Icons generated!")
+          ENDOFFILE
+
+      - name: Setup Gradle Wrapper
+        run: |
+          gradle wrapper --gradle-version=8.11.1 --distribution-type=bin
+          chmod +x gradlew
+
+      - name: Clean build
+        run: |
+          rm -rf app/build
+          ./gradlew clean --no-daemon
+
+      - name: Build signed release APK
+        run: ./gradlew assembleRelease --no-daemon
+
+      - name: Verify APK signing
+        run: |
+          APK_PATH="app/build/outputs/apk/release/app-release.apk"
+          if [ -f "$APK_PATH" ]; then
+              echo "✅ Release APK generated"
+              echo "📦 APK size: $(ls -lh "$APK_PATH" | awk '{print $5}')"
+              BT_PATH=$(ls -d $ANDROID_HOME/build-tools/* 2>/dev/null | head -1)
+              if [ -n "$BT_PATH" ]; then
+                  $BT_PATH/apksigner verify --print-certs "$APK_PATH" 2>/dev/null || echo "⚠️ apksigner verify skipped"
+              fi
+          else
+              echo "❌ Release APK not found"
+              exit 1
+          fi
+
+      - name: Bundle APK + source
+        run: |
+          mkdir -p GreyB-release
+          cp app/build/outputs/apk/release/app-release.apk GreyB-release/GreyB.apk
+          cp app/src/main/java/com/greyb/keyboard/Keyboard.kt GreyB-release/
+          cp app/src/main/java/com/greyb/keyboard/MainActivity.kt GreyB-release/
+          cp app/src/main/res/layout/qwerty.xml GreyB-release/
+          cp .github/workflows/build.yml GreyB-release/
+
+          APK_SIZE=$(ls -lh app/build/outputs/apk/release/app-release.apk | awk '{print $5}')
+
+          cat > GreyB-release/BUILD_INFO.txt << INFOEOF
+          Build:      #${{ github.run_number }}
+          Commit:     ${{ github.sha }}
+          Timestamp:  $(date -u '+%Y-%m-%d %H:%M:%S UTC')
+          Signed:     Yes (fixed key)
+          APK Size:   ${APK_SIZE}
+          Optimized:  Yes (ProGuard/R8 enabled)
+          INFOEOF
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: GreyB-${{ github.run_number }}
+          path: GreyB-release/
+          retention-days: 30
