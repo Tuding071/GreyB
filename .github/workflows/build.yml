@@ -154,12 +154,20 @@ jobs:
           </layer-list>
           ENDOFFILE
 
-          # Popup border drawable
           cat > app/src/main/res/drawable/popup_border.xml << 'ENDOFFILE'
           <?xml version="1.0" encoding="utf-8"?>
           <shape xmlns:android="http://schemas.android.com/apk/res/android">
               <solid android:color="#2C2C2C"/>
               <stroke android:width="1dp" android:color="#FFFFFF"/>
+              <corners android:radius="8dp"/>
+          </shape>
+          ENDOFFILE
+
+          # NEW: White key background for suggestion strip and edit button
+          cat > app/src/main/res/drawable/key_bg_white.xml << 'ENDOFFILE'
+          <?xml version="1.0" encoding="utf-8"?>
+          <shape xmlns:android="http://schemas.android.com/apk/res/android">
+              <solid android:color="#FFFFFF"/>
               <corners android:radius="8dp"/>
           </shape>
           ENDOFFILE
@@ -205,6 +213,7 @@ jobs:
               android:orientation="vertical"
               android:background="#1e1e1e">
 
+              <!-- SUGGESTION ROW (white background, centred suggestion1) -->
               <LinearLayout
                   android:layout_width="match_parent"
                   android:layout_height="55dp"
@@ -219,9 +228,9 @@ jobs:
                       android:layout_height="match_parent"
                       android:gravity="center"
                       android:text="Clip"
-                      android:textColor="#ffffff"
+                      android:textColor="#000000"
                       android:textSize="13sp"
-                      android:background="@drawable/key_bg_dark"/>
+                      android:background="@drawable/key_bg_white"/>
 
                   <LinearLayout
                       android:layout_width="0dp"
@@ -230,25 +239,25 @@ jobs:
                       android:orientation="horizontal"
                       android:gravity="center_vertical">
 
-                      <TextView android:id="@+id/sug1"
-                          android:layout_width="0dp" android:layout_height="match_parent"
-                          android:layout_weight="1" android:gravity="center"
-                          android:background="@drawable/key_bg_dark"
-                          android:textColor="#ffffff" android:textSize="18sp"
-                          android:paddingStart="3dp" android:paddingEnd="3dp"/>
-
                       <TextView android:id="@+id/sug2"
                           android:layout_width="0dp" android:layout_height="match_parent"
                           android:layout_weight="1" android:gravity="center"
-                          android:background="@drawable/key_bg_dark"
-                          android:textColor="#ffffff" android:textSize="18sp"
+                          android:background="@drawable/key_bg_white"
+                          android:textColor="#000000" android:textSize="18sp"
+                          android:paddingStart="3dp" android:paddingEnd="3dp"/>
+
+                      <TextView android:id="@+id/sug1"
+                          android:layout_width="0dp" android:layout_height="match_parent"
+                          android:layout_weight="1" android:gravity="center"
+                          android:background="@drawable/key_bg_white"
+                          android:textColor="#000000" android:textSize="18sp"
                           android:paddingStart="3dp" android:paddingEnd="3dp"/>
 
                       <TextView android:id="@+id/sug3"
                           android:layout_width="0dp" android:layout_height="match_parent"
                           android:layout_weight="1" android:gravity="center"
-                          android:background="@drawable/key_bg_dark"
-                          android:textColor="#ffffff" android:textSize="18sp"
+                          android:background="@drawable/key_bg_white"
+                          android:textColor="#000000" android:textSize="18sp"
                           android:paddingStart="3dp" android:paddingEnd="3dp"/>
 
                   </LinearLayout>
@@ -259,12 +268,13 @@ jobs:
                       android:layout_height="match_parent"
                       android:gravity="center"
                       android:text="Edit"
-                      android:textColor="#ffffff"
+                      android:textColor="#000000"
                       android:textSize="13sp"
-                      android:background="@drawable/key_bg_dark"/>
+                      android:background="@drawable/key_bg_white"/>
 
               </LinearLayout>
 
+              <!-- NUMBER ROW -->
               <LinearLayout
                   android:layout_width="match_parent"
                   android:layout_height="55dp"
@@ -283,6 +293,7 @@ jobs:
                   <TextView android:id="@+id/k0" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="0" android:textColor="#fff" android:textSize="24sp" android:background="@drawable/key_bg"/>
               </LinearLayout>
 
+              <!-- TOP LETTER ROW -->
               <LinearLayout
                   android:layout_width="match_parent"
                   android:layout_height="55dp"
@@ -301,6 +312,7 @@ jobs:
                   <TextView android:id="@+id/kp" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="p" android:textColor="#fff" android:textSize="24sp" android:background="@drawable/key_bg"/>
               </LinearLayout>
 
+              <!-- MIDDLE LETTER ROW -->
               <LinearLayout
                   android:layout_width="match_parent"
                   android:layout_height="55dp"
@@ -320,6 +332,7 @@ jobs:
                   <View android:id="@+id/asdf_spacer_right" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="0.5" android:focusable="false" android:clickable="true" android:background="#00000000"/>
               </LinearLayout>
 
+              <!-- BOTTOM LETTER ROW -->
               <LinearLayout
                   android:layout_width="match_parent"
                   android:layout_height="55dp"
@@ -337,6 +350,7 @@ jobs:
                   <TextView android:id="@+id/btn_backspace" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1.5" android:gravity="center" android:text="Del" android:textColor="#fff" android:textSize="14sp" android:background="@drawable/key_bg_dark"/>
               </LinearLayout>
 
+              <!-- SPACE / ACTION ROW -->
               <LinearLayout
                   android:layout_width="match_parent"
                   android:layout_height="55dp"
@@ -702,7 +716,7 @@ jobs:
                   setupKey(v.findViewById<TextView>(R.id.btn_emoji), R.drawable.key_bg_dark) {
                       showBottomSheet(createEmojiContent())
                   }
-                  setupKey(v.findViewById<TextView>(R.id.btn_clipboard), R.drawable.key_bg_dark) {
+                  setupKey(v.findViewById<TextView>(R.id.btn_clipboard), R.drawable.key_bg_white) {
                       val clip = (getSystemService(Context.CLIPBOARD_SERVICE) as? ClipboardManager)
                           ?.primaryClip?.getItemAt(0)?.text?.toString()
                       if (!clip.isNullOrEmpty()) addToClipboard(clip)
@@ -710,7 +724,7 @@ jobs:
                   }
 
                   val toolsBtn = v.findViewById<TextView>(R.id.btn_tools)
-                  setupKey(toolsBtn, R.drawable.key_bg_dark) { showToolsPopup(toolsBtn) }
+                  setupKey(toolsBtn, R.drawable.key_bg_white) { showToolsPopup(toolsBtn) }
 
                   val keyA = v.findViewById<TextView>(R.id.ka)
                   val keyL = v.findViewById<TextView>(R.id.kl)
@@ -732,19 +746,21 @@ jobs:
                   return v
               }
 
-              // ── Edit popup: smaller text, thin white border, dismiss only on outside tap ──
+              // ── Edit popup: white background, black text, flush with anchor ──
               private fun showToolsPopup(anchor: View) {
                   toolsPopup?.dismiss()
+
                   val popup = LinearLayout(this).apply {
                       orientation = LinearLayout.VERTICAL
-                      setBackgroundResource(R.drawable.popup_border)
+                      setBackgroundColor(0xFFFFFFFF.toInt())   // white background
                       setPadding(0, 0, 0, 0)
                   }
+
                   listOf("Select All", "Copy", "Paste").forEach { label ->
                       popup.addView(TextView(this).apply {
                           text = label
                           textSize = 20f
-                          setTextColor(0xFFFFFFFF.toInt())
+                          setTextColor(0xFF000000.toInt())      // black text
                           setPadding(16.dp, 10.dp, 16.dp, 10.dp)
                           setOnClickListener {
                               when (label) {
@@ -766,6 +782,14 @@ jobs:
                           }
                       })
                   }
+
+                  // Measure so we know the height
+                  popup.measure(
+                      View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED),
+                      View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED)
+                  )
+                  val popupHeight = popup.measuredHeight
+
                   toolsPopup = PopupWindow(
                       popup,
                       ViewGroup.LayoutParams.WRAP_CONTENT,
@@ -775,7 +799,8 @@ jobs:
                       setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
                       isOutsideTouchable = true
                       elevation = 8f
-                      showAsDropDown(anchor, 0, -(anchor.height * 4))
+                      // Show directly above the edit button, no extra space
+                      showAsDropDown(anchor, 0, -popupHeight)
                   }
               }
 
@@ -870,7 +895,7 @@ jobs:
                   if (matches.isEmpty()) {
                       val span = SpannableString(rawWord)
                       span.setSpan(
-                          ForegroundColorSpan(0xFFFF5252.toInt()),
+                          ForegroundColorSpan(0xFFFF0000.toInt()),  // red on white
                           0, rawWord.length,
                           Spanned.SPAN_EXCLUSIVE_EXCLUSIVE
                       )
@@ -887,13 +912,13 @@ jobs:
 
                   val span = SpannableString(display)
                   span.setSpan(
-                      ForegroundColorSpan(0xFF4FC3F7.toInt()),
+                      ForegroundColorSpan(0xFF0066CC.toInt()),  // dark blue prefix on white
                       0, prefixLen,
                       Spanned.SPAN_EXCLUSIVE_EXCLUSIVE
                   )
                   if (prefixLen < display.length) {
                       span.setSpan(
-                          ForegroundColorSpan(0xFFFFFFFF.toInt()),
+                          ForegroundColorSpan(0xFF000000.toInt()),  // black rest of text
                           prefixLen, display.length,
                           Spanned.SPAN_EXCLUSIVE_EXCLUSIVE
                       )
@@ -902,8 +927,9 @@ jobs:
 
                   sugView2?.text = matches.getOrNull(1) ?: ""
                   sugView3?.text = matches.getOrNull(2) ?: ""
-                  sugView2?.setTextColor(0xFFFFFFFF.toInt())
-                  sugView3?.setTextColor(0xFFFFFFFF.toInt())
+                  // Ensure black text on white background
+                  sugView2?.setTextColor(0xFF000000.toInt())
+                  sugView3?.setTextColor(0xFF000000.toInt())
               }
 
               private fun clearSugs() {
