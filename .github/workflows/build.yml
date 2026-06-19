@@ -163,7 +163,7 @@ jobs:
           </shape>
           ENDOFFILE
 
-          # NEW: White key background for suggestion strip and edit button
+          # NEW: white background for press feedback (used temporarily by suggestion/popup)
           cat > app/src/main/res/drawable/key_bg_white.xml << 'ENDOFFILE'
           <?xml version="1.0" encoding="utf-8"?>
           <shape xmlns:android="http://schemas.android.com/apk/res/android">
@@ -213,7 +213,7 @@ jobs:
               android:orientation="vertical"
               android:background="#1e1e1e">
 
-              <!-- SUGGESTION ROW (white background, centred suggestion1) -->
+              <!-- SUGGESTION ROW (dark default, press feedback added in Kotlin) -->
               <LinearLayout
                   android:layout_width="match_parent"
                   android:layout_height="55dp"
@@ -228,9 +228,9 @@ jobs:
                       android:layout_height="match_parent"
                       android:gravity="center"
                       android:text="Clip"
-                      android:textColor="#000000"
+                      android:textColor="#ffffff"
                       android:textSize="13sp"
-                      android:background="@drawable/key_bg_white"/>
+                      android:background="@drawable/key_bg_dark"/>
 
                   <LinearLayout
                       android:layout_width="0dp"
@@ -242,22 +242,22 @@ jobs:
                       <TextView android:id="@+id/sug2"
                           android:layout_width="0dp" android:layout_height="match_parent"
                           android:layout_weight="1" android:gravity="center"
-                          android:background="@drawable/key_bg_white"
-                          android:textColor="#000000" android:textSize="18sp"
+                          android:background="@drawable/key_bg_dark"
+                          android:textColor="#ffffff" android:textSize="18sp"
                           android:paddingStart="3dp" android:paddingEnd="3dp"/>
 
                       <TextView android:id="@+id/sug1"
                           android:layout_width="0dp" android:layout_height="match_parent"
                           android:layout_weight="1" android:gravity="center"
-                          android:background="@drawable/key_bg_white"
-                          android:textColor="#000000" android:textSize="18sp"
+                          android:background="@drawable/key_bg_dark"
+                          android:textColor="#ffffff" android:textSize="18sp"
                           android:paddingStart="3dp" android:paddingEnd="3dp"/>
 
                       <TextView android:id="@+id/sug3"
                           android:layout_width="0dp" android:layout_height="match_parent"
                           android:layout_weight="1" android:gravity="center"
-                          android:background="@drawable/key_bg_white"
-                          android:textColor="#000000" android:textSize="18sp"
+                          android:background="@drawable/key_bg_dark"
+                          android:textColor="#ffffff" android:textSize="18sp"
                           android:paddingStart="3dp" android:paddingEnd="3dp"/>
 
                   </LinearLayout>
@@ -268,9 +268,9 @@ jobs:
                       android:layout_height="match_parent"
                       android:gravity="center"
                       android:text="Edit"
-                      android:textColor="#000000"
+                      android:textColor="#ffffff"
                       android:textSize="13sp"
-                      android:background="@drawable/key_bg_white"/>
+                      android:background="@drawable/key_bg_dark"/>
 
               </LinearLayout>
 
@@ -633,10 +633,43 @@ jobs:
                   sugView1 = v.findViewById(R.id.sug1)
                   sugView2 = v.findViewById(R.id.sug2)
                   sugView3 = v.findViewById(R.id.sug3)
+
+                  // Add press feedback to suggestion views (white bg / black text on touch)
                   listOf(sugView1, sugView2, sugView3).forEach { sv ->
-                      sv?.setOnClickListener {
-                          val word = (it as? TextView)?.text?.toString()?.trim() ?: return@setOnClickListener
-                          if (word.isNotEmpty()) commitSuggestion(word)
+                      if (sv == null) return@forEach
+                      sv.setTag(R.id.original_bg_tag, R.drawable.key_bg_dark)  // default dark bg
+                      sv.setOnTouchListener { view, event ->
+                          when (event.actionMasked) {
+                              MotionEvent.ACTION_DOWN -> {
+                                  (view as? TextView)?.apply {
+                                      setBackgroundResource(R.drawable.key_bg_white)
+                                      setTextColor(0xFF000000.toInt())
+                                  }
+                                  true
+                              }
+                              MotionEvent.ACTION_UP -> {
+                                  (view as? TextView)?.let { tv ->
+                                      val word = tv.text?.toString()?.trim() ?: ""
+                                      if (word.isNotEmpty()) commitSuggestion(word)
+                                      // Restore original state
+                                      val originalBg = tv.getTag(R.id.original_bg_tag) as? Int
+                                          ?: R.drawable.key_bg_dark
+                                      tv.setBackgroundResource(originalBg)
+                                      tv.setTextColor(0xFFFFFFFF.toInt())
+                                  }
+                                  true
+                              }
+                              MotionEvent.ACTION_CANCEL -> {
+                                  (view as? TextView)?.let { tv ->
+                                      val originalBg = tv.getTag(R.id.original_bg_tag) as? Int
+                                          ?: R.drawable.key_bg_dark
+                                      tv.setBackgroundResource(originalBg)
+                                      tv.setTextColor(0xFFFFFFFF.toInt())
+                                  }
+                                  true
+                              }
+                              else -> true
+                          }
                       }
                   }
 
@@ -716,7 +749,7 @@ jobs:
                   setupKey(v.findViewById<TextView>(R.id.btn_emoji), R.drawable.key_bg_dark) {
                       showBottomSheet(createEmojiContent())
                   }
-                  setupKey(v.findViewById<TextView>(R.id.btn_clipboard), R.drawable.key_bg_white) {
+                  setupKey(v.findViewById<TextView>(R.id.btn_clipboard), R.drawable.key_bg_dark) {
                       val clip = (getSystemService(Context.CLIPBOARD_SERVICE) as? ClipboardManager)
                           ?.primaryClip?.getItemAt(0)?.text?.toString()
                       if (!clip.isNullOrEmpty()) addToClipboard(clip)
@@ -724,7 +757,7 @@ jobs:
                   }
 
                   val toolsBtn = v.findViewById<TextView>(R.id.btn_tools)
-                  setupKey(toolsBtn, R.drawable.key_bg_white) { showToolsPopup(toolsBtn) }
+                  setupKey(toolsBtn, R.drawable.key_bg_dark) { showToolsPopup(toolsBtn) }
 
                   val keyA = v.findViewById<TextView>(R.id.ka)
                   val keyL = v.findViewById<TextView>(R.id.kl)
@@ -746,44 +779,74 @@ jobs:
                   return v
               }
 
-              // ── Edit popup: white background, black text, flush with anchor ──
+              // ── Edit popup: white popup with press‑feedback on each item ──
               private fun showToolsPopup(anchor: View) {
                   toolsPopup?.dismiss()
 
                   val popup = LinearLayout(this).apply {
                       orientation = LinearLayout.VERTICAL
-                      setBackgroundColor(0xFFFFFFFF.toInt())   // white background
+                      setBackgroundColor(0xFFFFFFFF.toInt())   // white popup
                       setPadding(0, 0, 0, 0)
                   }
 
                   listOf("Select All", "Copy", "Paste").forEach { label ->
-                      popup.addView(TextView(this).apply {
+                      val tv = TextView(this).apply {
                           text = label
                           textSize = 20f
                           setTextColor(0xFF000000.toInt())      // black text
                           setPadding(16.dp, 10.dp, 16.dp, 10.dp)
-                          setOnClickListener {
-                              when (label) {
-                                  "Select All" -> currentInputConnection
-                                      ?.performContextMenuAction(android.R.id.selectAll)
-                                  "Copy"       -> currentInputConnection
-                                      ?.performContextMenuAction(android.R.id.copy)
-                                  "Paste"      -> {
-                                      val clip = (getSystemService(Context.CLIPBOARD_SERVICE)
-                                              as ClipboardManager)
-                                          .primaryClip?.getItemAt(0)
-                                          ?.coerceToText(this@Keyboard)?.toString()
-                                      if (!clip.isNullOrEmpty()) {
-                                          commitText(clip)
-                                          addToClipboard(clip)
+                          // Press feedback: invert colors
+                          setOnTouchListener { v, event ->
+                              when (event.actionMasked) {
+                                  MotionEvent.ACTION_DOWN -> {
+                                      (v as? TextView)?.apply {
+                                          setBackgroundColor(0xFF000000.toInt())   // black bg
+                                          setTextColor(0xFFFFFFFF.toInt())         // white text
                                       }
+                                      true
                                   }
+                                  MotionEvent.ACTION_UP -> {
+                                      val action = {
+                                          when (label) {
+                                              "Select All" -> currentInputConnection
+                                                  ?.performContextMenuAction(android.R.id.selectAll)
+                                              "Copy"       -> currentInputConnection
+                                                  ?.performContextMenuAction(android.R.id.copy)
+                                              "Paste"      -> {
+                                                  val clip = (getSystemService(Context.CLIPBOARD_SERVICE)
+                                                          as ClipboardManager)
+                                                      .primaryClip?.getItemAt(0)
+                                                      ?.coerceToText(this@Keyboard)?.toString()
+                                                  if (!clip.isNullOrEmpty()) {
+                                                      commitText(clip)
+                                                      addToClipboard(clip)
+                                                  }
+                                              }
+                                          }
+                                      }
+                                      action()
+                                      // Restore original white bg/black text
+                                      (v as? TextView)?.apply {
+                                          setBackgroundColor(0xFFFFFFFF.toInt())
+                                          setTextColor(0xFF000000.toInt())
+                                      }
+                                      true
+                                  }
+                                  MotionEvent.ACTION_CANCEL -> {
+                                      (v as? TextView)?.apply {
+                                          setBackgroundColor(0xFFFFFFFF.toInt())
+                                          setTextColor(0xFF000000.toInt())
+                                      }
+                                      true
+                                  }
+                                  else -> false
                               }
                           }
-                      })
+                      }
+                      popup.addView(tv)
                   }
 
-                  // Measure so we know the height
+                  // Measure popup height to position directly above the anchor
                   popup.measure(
                       View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED),
                       View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED)
@@ -799,7 +862,6 @@ jobs:
                       setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
                       isOutsideTouchable = true
                       elevation = 8f
-                      // Show directly above the edit button, no extra space
                       showAsDropDown(anchor, 0, -popupHeight)
                   }
               }
@@ -895,7 +957,7 @@ jobs:
                   if (matches.isEmpty()) {
                       val span = SpannableString(rawWord)
                       span.setSpan(
-                          ForegroundColorSpan(0xFFFF0000.toInt()),  // red on white
+                          ForegroundColorSpan(0xFFFF0000.toInt()),  // red
                           0, rawWord.length,
                           Spanned.SPAN_EXCLUSIVE_EXCLUSIVE
                       )
@@ -912,13 +974,13 @@ jobs:
 
                   val span = SpannableString(display)
                   span.setSpan(
-                      ForegroundColorSpan(0xFF0066CC.toInt()),  // dark blue prefix on white
+                      ForegroundColorSpan(0xFF4FC3F7.toInt()),  // blue prefix
                       0, prefixLen,
                       Spanned.SPAN_EXCLUSIVE_EXCLUSIVE
                   )
                   if (prefixLen < display.length) {
                       span.setSpan(
-                          ForegroundColorSpan(0xFF000000.toInt()),  // black rest of text
+                          ForegroundColorSpan(0xFFFFFFFF.toInt()),  // white rest
                           prefixLen, display.length,
                           Spanned.SPAN_EXCLUSIVE_EXCLUSIVE
                       )
@@ -927,9 +989,9 @@ jobs:
 
                   sugView2?.text = matches.getOrNull(1) ?: ""
                   sugView3?.text = matches.getOrNull(2) ?: ""
-                  // Ensure black text on white background
-                  sugView2?.setTextColor(0xFF000000.toInt())
-                  sugView3?.setTextColor(0xFF000000.toInt())
+                  // Keep default white text (no permanent black)
+                  sugView2?.setTextColor(0xFFFFFFFF.toInt())
+                  sugView3?.setTextColor(0xFFFFFFFF.toInt())
               }
 
               private fun clearSugs() {
