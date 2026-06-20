@@ -447,7 +447,7 @@ jobs:
               private val PREFS_CLIP = "clipboard"
               private val PREFS_RECENT_EMOJI = "recent_emoji"
               private val MAX_CLIP = 10
-              private val MAX_RECENT_EMOJI = 10
+              private val MAX_RECENT_EMOJI = 12
               private var clipAdapter: ClipboardAdapter? = null
 
               private val recentEmojis = mutableListOf<String>()
@@ -517,14 +517,18 @@ jobs:
                       // Arrows
                       "→","←","↑","↓","↔","⇒","⇐"
                   )
-                  val grid = GridLayout(this).apply { columnCount = 6; useDefaultMargins = true }
                   val popupWidth = (resources.displayMetrics.widthPixels * 0.8).toInt()
-                  val cellSize = popupWidth / 6
+                  val margin = 2.dp
+                  val cellSize = (popupWidth - margin * 2 * 6) / 6
+                  val grid = GridLayout(this).apply { columnCount = 6; useDefaultMargins = false }
                   symbols.forEach { sym ->
                       val tv = TextView(this).apply {
                           text = sym; textSize = 18f; gravity = Gravity.CENTER
                           setTextColor(0xFFFFFFFF.toInt())
-                          layoutParams = GridLayout.LayoutParams().apply { width = cellSize; height = cellSize }
+                          layoutParams = GridLayout.LayoutParams().apply {
+                              width = cellSize; height = cellSize
+                              setMargins(margin, margin, margin, margin)
+                          }
                           background = resources.getDrawable(R.drawable.key_bg_selector, null)  // press effect
                           setOnClickListener { commitText(sym) }   // stays open
                       }
@@ -609,7 +613,8 @@ jobs:
                   ))
 
                   val popupWidth = (resources.displayMetrics.widthPixels * 0.8).toInt()
-                  val cellSize = popupWidth / 6
+                  val margin = 2.dp
+                  val cellSize = (popupWidth - margin * 2 * 6) / 6
 
                   val container = LinearLayout(this).apply {
                       orientation = LinearLayout.VERTICAL
@@ -623,13 +628,16 @@ jobs:
                           gravity = Gravity.START
                           setPadding(4.dp, 10.dp, 0, 4.dp)
                       })
-                      val grid = GridLayout(this).apply { columnCount = 6; useDefaultMargins = true }
+                      val grid = GridLayout(this).apply { columnCount = 6; useDefaultMargins = false }
                       emojis.forEach { emoji ->
                           val tv = TextView(this).apply {
                               text = emoji
                               textSize = 26f
                               gravity = Gravity.CENTER
-                              layoutParams = GridLayout.LayoutParams().apply { width = cellSize; height = cellSize }
+                              layoutParams = GridLayout.LayoutParams().apply {
+                                  width = cellSize; height = cellSize
+                                  setMargins(margin, margin, margin, margin)
+                              }
                               background = resources.getDrawable(R.drawable.key_bg_selector, null)
                               setOnClickListener { commitEmoji(emoji) }   // stays open
                           }
