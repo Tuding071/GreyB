@@ -422,6 +422,8 @@ jobs:
               private lateinit var qwertyView: View
               private var toolsPopup: PopupWindow? = null
               private var symbolsPopup: PopupWindow? = null
+              private var emojiPopup: PopupWindow? = null
+              private var clipboardPopup: PopupWindow? = null
               private var bottomSheetContainer: FrameLayout? = null
               private var isBottomSheetVisible = false
 
@@ -478,161 +480,119 @@ jobs:
                   view.setTextColor(0xFFFFFFFF.toInt())
               }
 
-              private fun showBottomSheet(contentView: View) {
-                  if (isBottomSheetVisible) dismissBottomSheet()
-                  bottomSheetContainer = FrameLayout(this).apply {
-                      setBackgroundColor(0x80000000.toInt())
-                      setOnClickListener { dismissBottomSheet() }
-                  }
-                  val bottomSheet = LinearLayout(this).apply {
-                      orientation = LinearLayout.VERTICAL
-                      setBackgroundColor(0xFF2C2C2C.toInt())
-                      layoutParams = FrameLayout.LayoutParams(
-                          ViewGroup.LayoutParams.MATCH_PARENT,
-                          ViewGroup.LayoutParams.WRAP_CONTENT
-                      ).apply { gravity = Gravity.BOTTOM }
-                  }
-                  bottomSheet.addView(TextView(this).apply {
-                      text = ""
-                      textSize = 16f
-                      setTextColor(0xFFFFFFFF.toInt())
-                      gravity = Gravity.CENTER
-                      setPadding(0, 12.dp, 0, 12.dp)
-                  })
-                  bottomSheet.addView(contentView)
-                  bottomSheetContainer?.addView(bottomSheet)
-                  rootFrame.addView(bottomSheetContainer)
-                  bottomSheet.translationY = 500f
-                  bottomSheet.animate().translationY(0f).setDuration(250).start()
-                  isBottomSheetVisible = true
-              }
-
-              private fun dismissBottomSheet() {
-                  if (!isBottomSheetVisible) return
-                  val container = bottomSheetContainer
-                  if (container != null) {
-                      container.animate().alpha(0f).setDuration(200).withEndAction {
-                          rootFrame.removeView(container)
-                      }.start()
-                  }
-                  bottomSheetContainer = null
-                  isBottomSheetVisible = false
-              }
-
-              // ── Symbols popup: 8 per row, dark background, above the button ──
+              // ── Symbols popup ──
               private fun showSymbolsPopup(anchor: View) {
                   symbolsPopup?.dismiss()
-
                   val symbols = listOf(
                       "!","@","#","$","%","&","*","(",")","+",
                       "-","=","/",":",";","\"","'","?","~","_",
                       "[","]","{","}","<",">","|","\\","^"
                   )
-                  val grid = GridLayout(this).apply {
-                      columnCount = 8
-                      useDefaultMargins = true
-                  }
+                  val grid = GridLayout(this).apply { columnCount = 8; useDefaultMargins = true }
                   val cellSize = (resources.displayMetrics.widthPixels - 64.dp) / 8
                   symbols.forEach { sym ->
                       val tv = TextView(this).apply {
-                          text = sym
-                          textSize = 18f
-                          gravity = Gravity.CENTER
+                          text = sym; textSize = 18f; gravity = Gravity.CENTER
                           setTextColor(0xFFFFFFFF.toInt())
-                          layoutParams = GridLayout.LayoutParams().apply {
-                              width = cellSize
-                              height = cellSize
-                          }
+                          layoutParams = GridLayout.LayoutParams().apply { width = cellSize; height = cellSize }
                       }
-                      setupKey(tv, R.drawable.key_bg) {
-                          commitText(sym)
-                          symbolsPopup?.dismiss()
-                      }
+                      setupKey(tv, R.drawable.key_bg) { commitText(sym); symbolsPopup?.dismiss() }
                       grid.addView(tv)
                   }
-
-                  // Wrap the grid in a rounded container
                   val wrapper = LinearLayout(this).apply {
                       orientation = LinearLayout.VERTICAL
                       setBackgroundResource(R.drawable.popup_border)
                       setPadding(4.dp, 4.dp, 4.dp, 4.dp)
                   }
                   wrapper.addView(grid)
-
-                  // Measure to position exactly above the anchor
                   wrapper.measure(
                       View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED),
                       View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED)
                   )
-                  val popupHeight = wrapper.measuredHeight
-
-                  symbolsPopup = PopupWindow(
-                      wrapper,
-                      ViewGroup.LayoutParams.WRAP_CONTENT,
-                      ViewGroup.LayoutParams.WRAP_CONTENT,
-                      true
-                  ).apply {
+                  symbolsPopup = PopupWindow(wrapper, ViewGroup.LayoutParams.WRAP_CONTENT,
+                      ViewGroup.LayoutParams.WRAP_CONTENT, true).apply {
                       setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
-                      isOutsideTouchable = true
-                      elevation = 8f
-                      showAsDropDown(anchor, 0, -popupHeight)
+                      isOutsideTouchable = true; elevation = 8f
+                      showAsDropDown(anchor, 0, -wrapper.measuredHeight)
                   }
               }
 
-              private fun createEmojiContent(): View {
+              // ── Emoji popup ──
+              private fun showEmojiPopup(anchor: View) {
+                  emojiPopup?.dismiss()
                   val emojis = listOf("😀","😂","😍","🥰","😎","👍","🔥","🎉")
-                  val grid = GridLayout(this).apply {
-                      columnCount = 4
-                      useDefaultMargins = true
-                      layoutParams = LinearLayout.LayoutParams(
-                          ViewGroup.LayoutParams.MATCH_PARENT,
-                          ViewGroup.LayoutParams.WRAP_CONTENT
-                      )
-                  }
+                  val grid = GridLayout(this).apply { columnCount = 4; useDefaultMargins = true }
                   val cellSize = (resources.displayMetrics.widthPixels - 64.dp) / 4
                   emojis.forEach { emoji ->
                       val tv = TextView(this).apply {
-                          text = emoji
-                          textSize = 36f
-                          gravity = Gravity.CENTER
-                          layoutParams = GridLayout.LayoutParams().apply {
-                              width = cellSize
-                              height = cellSize
-                          }
+                          text = emoji; textSize = 36f; gravity = Gravity.CENTER
+                          layoutParams = GridLayout.LayoutParams().apply { width = cellSize; height = cellSize }
                       }
-                      setupKey(tv, R.drawable.key_bg) { commitText(emoji) ; dismissBottomSheet() }
+                      setupKey(tv, R.drawable.key_bg) { commitText(emoji); emojiPopup?.dismiss() }
                       grid.addView(tv)
                   }
-                  return grid
+                  val wrapper = LinearLayout(this).apply {
+                      orientation = LinearLayout.VERTICAL
+                      setBackgroundResource(R.drawable.popup_border)
+                      setPadding(4.dp, 4.dp, 4.dp, 4.dp)
+                  }
+                  wrapper.addView(grid)
+                  wrapper.measure(
+                      View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED),
+                      View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED)
+                  )
+                  emojiPopup = PopupWindow(wrapper, ViewGroup.LayoutParams.WRAP_CONTENT,
+                      ViewGroup.LayoutParams.WRAP_CONTENT, true).apply {
+                      setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
+                      isOutsideTouchable = true; elevation = 8f
+                      showAsDropDown(anchor, 0, -wrapper.measuredHeight)
+                  }
               }
 
-              private fun createClipboardContent(): View {
-                  if (clipboardItems.isEmpty()) {
-                      return TextView(this).apply {
+              // ── Clipboard popup ──
+              private fun showClipboardPopup(anchor: View) {
+                  clipboardPopup?.dismiss()
+                  val contentView = if (clipboardItems.isEmpty()) {
+                      TextView(this).apply {
                           text = "Clipboard is empty"
-                          textSize = 20f
-                          setTextColor(0xFFFFFFFF.toInt())
-                          gravity = Gravity.CENTER
-                          setPadding(16.dp, 32.dp, 16.dp, 32.dp)
+                          textSize = 20f; setTextColor(0xFFFFFFFF.toInt())
+                          gravity = Gravity.CENTER; setPadding(16.dp, 32.dp, 16.dp, 32.dp)
+                      }
+                  } else {
+                      clipAdapter = ClipboardAdapter(
+                          clipboardItems,
+                          onPaste  = { item -> commitText(item); clipboardPopup?.dismiss() },
+                          onDelete = { pos ->
+                              clipboardItems.removeAt(pos)
+                              clipAdapter?.notifyItemRemoved(pos)
+                              saveClipboard()
+                              if (clipboardItems.isEmpty()) clipboardPopup?.dismiss()
+                          }
+                      )
+                      RecyclerView(this).apply {
+                          layoutManager = LinearLayoutManager(this@Keyboard)
+                          adapter = clipAdapter
+                          layoutParams = ViewGroup.LayoutParams(
+                              ViewGroup.LayoutParams.MATCH_PARENT,
+                              (200 * resources.displayMetrics.density).toInt()
+                          )
                       }
                   }
-                  clipAdapter = ClipboardAdapter(
-                      clipboardItems,
-                      onPaste  = { item -> commitText(item) ; dismissBottomSheet() },
-                      onDelete = { pos ->
-                          clipboardItems.removeAt(pos)
-                          clipAdapter?.notifyItemRemoved(pos)
-                          saveClipboard()
-                          if (clipboardItems.isEmpty()) dismissBottomSheet()
-                      }
+                  val wrapper = LinearLayout(this).apply {
+                      orientation = LinearLayout.VERTICAL
+                      setBackgroundResource(R.drawable.popup_border)
+                      setPadding(4.dp, 4.dp, 4.dp, 4.dp)
+                  }
+                  wrapper.addView(contentView)
+                  wrapper.measure(
+                      View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED),
+                      View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED)
                   )
-                  return RecyclerView(this).apply {
-                      layoutManager = LinearLayoutManager(this@Keyboard)
-                      adapter = clipAdapter
-                      layoutParams = LinearLayout.LayoutParams(
-                          ViewGroup.LayoutParams.MATCH_PARENT,
-                          (200 * resources.displayMetrics.density).toInt()
-                      )
+                  clipboardPopup = PopupWindow(wrapper, ViewGroup.LayoutParams.WRAP_CONTENT,
+                      ViewGroup.LayoutParams.WRAP_CONTENT, true).apply {
+                      setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
+                      isOutsideTouchable = true; elevation = 8f
+                      showAsDropDown(anchor, 0, -wrapper.measuredHeight)
                   }
               }
 
@@ -640,8 +600,8 @@ jobs:
                   if (view is TextView) view.setTag(R.id.original_bg_tag, bgRes)
                   view.setOnTouchListener { v, event ->
                       when (event.actionMasked) {
-                          MotionEvent.ACTION_DOWN -> { if (v is TextView) pressKey(v) ; action() ; true }
-                          MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> { if (v is TextView) releaseKey(v) ; true }
+                          MotionEvent.ACTION_DOWN -> { if (v is TextView) pressKey(v); action(); true }
+                          MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> { if (v is TextView) releaseKey(v); true }
                           else -> true
                       }
                   }
@@ -654,7 +614,7 @@ jobs:
                   sugView2 = v.findViewById(R.id.sug2)
                   sugView3 = v.findViewById(R.id.sug3)
 
-                  // Press feedback for suggestions (white bg / black text on touch)
+                  // Press feedback for suggestions
                   listOf(sugView1, sugView2, sugView3).forEach { sv ->
                       if (sv == null) return@forEach
                       sv.setTag(R.id.original_bg_tag, R.drawable.key_bg_dark)
@@ -707,7 +667,7 @@ jobs:
                   "1234567890".forEachIndexed { i, c ->
                       val kc = KeyEvent.KEYCODE_0 + (c - '0')
                       setupKey(v.findViewById<TextView>(numIds[i]), R.drawable.key_bg) {
-                          sendKey(kc) ; clearSugs()
+                          sendKey(kc); clearSugs()
                       }
                   }
 
@@ -715,9 +675,9 @@ jobs:
                   shiftKey.setTag(R.id.original_bg_tag, R.drawable.key_bg_dark)
                   shiftKey.setOnTouchListener { _, event ->
                       when (event.actionMasked) {
-                          MotionEvent.ACTION_DOWN -> { pressKey(shiftKey) ; toggleShiftState() ; true }
+                          MotionEvent.ACTION_DOWN -> { pressKey(shiftKey); toggleShiftState(); true }
                           MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
-                              releaseKey(shiftKey) ; updateShiftKeyAppearance(shiftKey) ; true
+                              releaseKey(shiftKey); updateShiftKeyAppearance(shiftKey); true
                           }
                           else -> true
                       }
@@ -750,32 +710,31 @@ jobs:
                   }
 
                   setupKey(v.findViewById<TextView>(R.id.btn_space),  R.drawable.key_bg_dark) {
-                      sendKey(KeyEvent.KEYCODE_SPACE) ; clearSugs()
+                      sendKey(KeyEvent.KEYCODE_SPACE); clearSugs()
                   }
                   setupKey(v.findViewById<TextView>(R.id.btn_comma),  R.drawable.key_bg) {
-                      sendKey(KeyEvent.KEYCODE_COMMA) ; clearSugs()
+                      sendKey(KeyEvent.KEYCODE_COMMA); clearSugs()
                   }
                   setupKey(v.findViewById<TextView>(R.id.btn_period), R.drawable.key_bg) {
-                      sendKey(KeyEvent.KEYCODE_PERIOD) ; clearSugs()
+                      sendKey(KeyEvent.KEYCODE_PERIOD); clearSugs()
                   }
                   setupKey(v.findViewById<TextView>(R.id.btn_enter),  R.drawable.key_bg_action) {
-                      sendKey(KeyEvent.KEYCODE_ENTER) ; clearSugs()
+                      sendKey(KeyEvent.KEYCODE_ENTER); clearSugs()
                   }
 
-                  // Symbols button now opens a popup
+                  // Popup buttons
                   val symbolsBtn = v.findViewById<TextView>(R.id.btn_symbols)
-                  setupKey(symbolsBtn, R.drawable.key_bg_dark) {
-                      showSymbolsPopup(symbolsBtn)
-                  }
+                  setupKey(symbolsBtn, R.drawable.key_bg_dark) { showSymbolsPopup(symbolsBtn) }
 
-                  setupKey(v.findViewById<TextView>(R.id.btn_emoji), R.drawable.key_bg_dark) {
-                      showBottomSheet(createEmojiContent())
-                  }
-                  setupKey(v.findViewById<TextView>(R.id.btn_clipboard), R.drawable.key_bg_dark) {
+                  val emojiBtn = v.findViewById<TextView>(R.id.btn_emoji)
+                  setupKey(emojiBtn, R.drawable.key_bg_dark) { showEmojiPopup(emojiBtn) }
+
+                  val clipboardBtn = v.findViewById<TextView>(R.id.btn_clipboard)
+                  setupKey(clipboardBtn, R.drawable.key_bg_dark) {
                       val clip = (getSystemService(Context.CLIPBOARD_SERVICE) as? ClipboardManager)
                           ?.primaryClip?.getItemAt(0)?.text?.toString()
                       if (!clip.isNullOrEmpty()) addToClipboard(clip)
-                      showBottomSheet(createClipboardContent())
+                      showClipboardPopup(clipboardBtn)
                   }
 
                   val toolsBtn = v.findViewById<TextView>(R.id.btn_tools)
@@ -785,15 +744,15 @@ jobs:
                   val keyL = v.findViewById<TextView>(R.id.kl)
                   v.findViewById<View>(R.id.asdf_spacer_left)?.setOnTouchListener { _, event ->
                       when (event.actionMasked) {
-                          MotionEvent.ACTION_DOWN -> { keyA?.let { pressKey(it) } ; typeChar('a') ; true }
-                          MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> { keyA?.let { releaseKey(it) } ; true }
+                          MotionEvent.ACTION_DOWN -> { keyA?.let { pressKey(it) }; typeChar('a'); true }
+                          MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> { keyA?.let { releaseKey(it) }; true }
                           else -> true
                       }
                   }
                   v.findViewById<View>(R.id.asdf_spacer_right)?.setOnTouchListener { _, event ->
                       when (event.actionMasked) {
-                          MotionEvent.ACTION_DOWN -> { keyL?.let { pressKey(it) } ; typeChar('l') ; true }
-                          MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> { keyL?.let { releaseKey(it) } ; true }
+                          MotionEvent.ACTION_DOWN -> { keyL?.let { pressKey(it) }; typeChar('l'); true }
+                          MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> { keyL?.let { releaseKey(it) }; true }
                           else -> true
                       }
                   }
@@ -801,29 +760,24 @@ jobs:
                   return v
               }
 
-              // ── Edit popup: white popup with press‑feedback on each item ──
+              // ── Edit popup ──
               private fun showToolsPopup(anchor: View) {
                   toolsPopup?.dismiss()
-
                   val popup = LinearLayout(this).apply {
                       orientation = LinearLayout.VERTICAL
-                      setBackgroundColor(0xFFFFFFFF.toInt())   // white popup
+                      setBackgroundColor(0xFFFFFFFF.toInt())
                       setPadding(0, 0, 0, 0)
                   }
-
                   listOf("Select All", "Copy", "Paste").forEach { label ->
                       val tv = TextView(this).apply {
-                          text = label
-                          textSize = 20f
-                          setTextColor(0xFF000000.toInt())      // black text
-                          setPadding(16.dp, 10.dp, 16.dp, 10.dp)
-                          // Press feedback: invert colors
+                          text = label; textSize = 20f
+                          setTextColor(0xFF000000.toInt()); setPadding(16.dp, 10.dp, 16.dp, 10.dp)
                           setOnTouchListener { v, event ->
                               when (event.actionMasked) {
                                   MotionEvent.ACTION_DOWN -> {
                                       (v as? TextView)?.apply {
-                                          setBackgroundColor(0xFF000000.toInt())   // black bg
-                                          setTextColor(0xFFFFFFFF.toInt())         // white text
+                                          setBackgroundColor(0xFF000000.toInt())
+                                          setTextColor(0xFFFFFFFF.toInt())
                                       }
                                       true
                                   }
@@ -840,14 +794,12 @@ jobs:
                                                       .primaryClip?.getItemAt(0)
                                                       ?.coerceToText(this@Keyboard)?.toString()
                                                   if (!clip.isNullOrEmpty()) {
-                                                      commitText(clip)
-                                                      addToClipboard(clip)
+                                                      commitText(clip); addToClipboard(clip)
                                                   }
                                               }
                                           }
                                       }
                                       action()
-                                      // Restore original white bg/black text
                                       (v as? TextView)?.apply {
                                           setBackgroundColor(0xFFFFFFFF.toInt())
                                           setTextColor(0xFF000000.toInt())
@@ -867,24 +819,15 @@ jobs:
                       }
                       popup.addView(tv)
                   }
-
-                  // Measure popup height to position directly above the anchor
                   popup.measure(
                       View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED),
                       View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED)
                   )
-                  val popupHeight = popup.measuredHeight
-
-                  toolsPopup = PopupWindow(
-                      popup,
-                      ViewGroup.LayoutParams.WRAP_CONTENT,
-                      ViewGroup.LayoutParams.WRAP_CONTENT,
-                      true
-                  ).apply {
+                  toolsPopup = PopupWindow(popup, ViewGroup.LayoutParams.WRAP_CONTENT,
+                      ViewGroup.LayoutParams.WRAP_CONTENT, true).apply {
                       setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
-                      isOutsideTouchable = true
-                      elevation = 8f
-                      showAsDropDown(anchor, 0, -popupHeight)
+                      isOutsideTouchable = true; elevation = 8f
+                      showAsDropDown(anchor, 0, -popup.measuredHeight)
                   }
               }
 
@@ -903,8 +846,7 @@ jobs:
               private fun commitText(s: String) { currentInputConnection?.commitText(s, 1) }
 
               private fun stopBackspaceRepeat() {
-                  bsRunnable?.let { bsHandler.removeCallbacks(it) }
-                  bsRunnable = null
+                  bsRunnable?.let { bsHandler.removeCallbacks(it) }; bsRunnable = null
               }
 
               private fun toggleShiftState() {
@@ -921,13 +863,10 @@ jobs:
 
               private fun updateShiftKeyAppearance(shiftView: TextView) {
                   shiftView.text = when (shiftState) {
-                      ShiftState.LOCKED -> "CAPS"
-                      ShiftState.ONCE   -> "SHFT"
-                      ShiftState.OFF    -> "Shft"
+                      ShiftState.LOCKED -> "CAPS"; ShiftState.ONCE -> "SHFT"; ShiftState.OFF -> "Shft"
                   }
                   shiftView.setTextColor(
-                      if (shiftState == ShiftState.OFF) 0xFFFFFFFF.toInt()
-                      else 0xFF4FC3F7.toInt()
+                      if (shiftState == ShiftState.OFF) 0xFFFFFFFF.toInt() else 0xFF4FC3F7.toInt()
                   )
               }
 
@@ -940,13 +879,11 @@ jobs:
                       R.id.kz,R.id.kx,R.id.kc,R.id.kv,R.id.kb,R.id.kn,R.id.km
                   ).forEachIndexed { i, id ->
                       v.findViewById<TextView>(id)?.text =
-                          if (upper) letters[i].uppercaseChar().toString()
-                          else letters[i].toString()
+                          if (upper) letters[i].uppercaseChar().toString() else letters[i].toString()
                   }
               }
 
-              // ── Suggestion logic ───────────────────────────────────────────
-
+              // ── Suggestion logic ──
               private fun extractCurrentWordRaw(before: String): String {
                   val s = before.trimEnd(' ')
                   val idx = s.indexOfLast { !it.isLetter() }
@@ -954,23 +891,19 @@ jobs:
               }
 
               private fun updateSuggestions() {
-                  val ic = currentInputConnection ?: run { clearSugs() ; return }
-                  val before = ic.getTextBeforeCursor(50, 0)?.toString() ?: run { clearSugs() ; return }
+                  val ic = currentInputConnection ?: run { clearSugs(); return }
+                  val before = ic.getTextBeforeCursor(50, 0)?.toString() ?: run { clearSugs(); return }
                   val rawWord = extractCurrentWordRaw(before)
                   val word = rawWord.lowercase()
-
-                  if (word.isEmpty()) { clearSugs() ; return }
-
+                  if (word.isEmpty()) { clearSugs(); return }
                   Thread {
                       val matches = try {
                           assets.open("words.txt").bufferedReader().useLines { lines ->
                               lines.map { it.trim().lowercase() }
                                    .filter { it.isNotEmpty() && it.startsWith(word) }
-                                   .take(3)
-                                   .toList()
+                                   .take(3).toList()
                           }
                       } catch (e: Exception) { emptyList() }
-
                       bsHandler.post { applySuggestions(rawWord, matches) }
                   }.start()
               }
@@ -978,48 +911,30 @@ jobs:
               private fun applySuggestions(rawWord: String, matches: List<String>) {
                   if (matches.isEmpty()) {
                       val span = SpannableString(rawWord)
-                      span.setSpan(
-                          ForegroundColorSpan(0xFFFF0000.toInt()),  // red
-                          0, rawWord.length,
-                          Spanned.SPAN_EXCLUSIVE_EXCLUSIVE
-                      )
-                      sugView1?.text = span
-                      sugView2?.text = ""
-                      sugView3?.text = ""
+                      span.setSpan(ForegroundColorSpan(0xFFFF0000.toInt()), 0, rawWord.length,
+                          Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
+                      sugView1?.text = span; sugView2?.text = ""; sugView3?.text = ""
                       return
                   }
-
                   val best = matches[0]
                   val display = if (rawWord.isNotEmpty() && rawWord[0].isUpperCase())
                       best.replaceFirstChar { it.uppercase() } else best
                   val prefixLen = minOf(rawWord.length, display.length)
-
                   val span = SpannableString(display)
-                  span.setSpan(
-                      ForegroundColorSpan(0xFF4FC3F7.toInt()),  // blue prefix
-                      0, prefixLen,
-                      Spanned.SPAN_EXCLUSIVE_EXCLUSIVE
-                  )
+                  span.setSpan(ForegroundColorSpan(0xFF4FC3F7.toInt()), 0, prefixLen,
+                      Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
                   if (prefixLen < display.length) {
-                      span.setSpan(
-                          ForegroundColorSpan(0xFFFFFFFF.toInt()),  // white rest
-                          prefixLen, display.length,
-                          Spanned.SPAN_EXCLUSIVE_EXCLUSIVE
-                      )
+                      span.setSpan(ForegroundColorSpan(0xFFFFFFFF.toInt()), prefixLen, display.length,
+                          Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
                   }
                   sugView1?.text = span
-
                   sugView2?.text = matches.getOrNull(1) ?: ""
                   sugView3?.text = matches.getOrNull(2) ?: ""
                   sugView2?.setTextColor(0xFFFFFFFF.toInt())
                   sugView3?.setTextColor(0xFFFFFFFF.toInt())
               }
 
-              private fun clearSugs() {
-                  sugView1?.text = ""
-                  sugView2?.text = ""
-                  sugView3?.text = ""
-              }
+              private fun clearSugs() { sugView1?.text = ""; sugView2?.text = ""; sugView3?.text = "" }
 
               private fun commitSuggestion(word: String) {
                   if (word.isEmpty()) return
@@ -1045,58 +960,44 @@ jobs:
                   private val onPaste: (String) -> Unit,
                   private val onDelete: (Int) -> Unit
               ) : RecyclerView.Adapter<ClipboardAdapter.VH>() {
-
                   inner class VH(val root: LinearLayout, val tv: TextView, val del: TextView)
                       : RecyclerView.ViewHolder(root)
-
                   override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): VH {
                       val ctx = parent.context
                       val root = LinearLayout(ctx).apply {
-                          orientation = LinearLayout.HORIZONTAL
-                          setPadding(20, 16, 20, 16)
+                          orientation = LinearLayout.HORIZONTAL; setPadding(20, 16, 20, 16)
                           layoutParams = RecyclerView.LayoutParams(
-                              ViewGroup.LayoutParams.MATCH_PARENT,
-                              ViewGroup.LayoutParams.WRAP_CONTENT
-                          )
+                              ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT)
                       }
                       val tv = TextView(ctx).apply {
                           layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
-                          setTextColor(0xFFFFFFFF.toInt())
-                          textSize = 20f
-                          maxLines = 2
+                          setTextColor(0xFFFFFFFF.toInt()); textSize = 20f; maxLines = 2
                           ellipsize = android.text.TextUtils.TruncateAt.END
                       }
                       val del = TextView(ctx).apply {
-                          text = "X"
-                          setTextColor(0xFF888888.toInt())
-                          textSize = 22f
+                          text = "X"; setTextColor(0xFF888888.toInt()); textSize = 22f
                           setPadding(26, 0, 6, 0)
                       }
-                      root.addView(tv) ; root.addView(del)
+                      root.addView(tv); root.addView(del)
                       return VH(root, tv, del)
                   }
-
                   override fun onBindViewHolder(h: VH, pos: Int) {
                       h.tv.text = items[pos]
                       h.root.setOnClickListener { onPaste(items[pos]) }
-                      h.del.setOnClickListener  { onDelete(h.adapterPosition) }
+                      h.del.setOnClickListener { onDelete(h.adapterPosition) }
                   }
-
                   override fun getItemCount() = items.size
               }
 
               private fun addToClipboard(text: String) {
-                  clipboardItems.remove(text)
-                  clipboardItems.add(0, text)
+                  clipboardItems.remove(text); clipboardItems.add(0, text)
                   if (clipboardItems.size > MAX_CLIP) clipboardItems.removeAt(clipboardItems.size - 1)
-                  saveClipboard()
-                  clipAdapter?.notifyDataSetChanged()
+                  saveClipboard(); clipAdapter?.notifyDataSetChanged()
               }
 
               private fun saveClipboard() {
                   getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE).edit()
-                      .putString(PREFS_CLIP, clipboardItems.take(MAX_CLIP).joinToString("\u001F"))
-                      .apply()
+                      .putString(PREFS_CLIP, clipboardItems.take(MAX_CLIP).joinToString("\u001F")).apply()
               }
 
               private fun loadClipboard() {
@@ -1111,8 +1012,8 @@ jobs:
               override fun onDestroy() {
                   super.onDestroy()
                   stopBackspaceRepeat()
-                  toolsPopup?.dismiss()
-                  symbolsPopup?.dismiss()
+                  toolsPopup?.dismiss(); symbolsPopup?.dismiss()
+                  emojiPopup?.dismiss(); clipboardPopup?.dismiss()
                   dismissBottomSheet()
               }
           }
