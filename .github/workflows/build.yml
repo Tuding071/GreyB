@@ -34,6 +34,13 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-gradle-
 
+      # Cache the keystore so the signature never changes
+      - name: Cache release keystore
+        uses: actions/cache@v4
+        with:
+          path: app/release.keystore
+          key: greyb-keystore-v1
+
       - name: Generate project structure
         run: |
           mkdir -p app/src/main/java/com/greyb/keyboard
@@ -154,7 +161,6 @@ jobs:
           </layer-list>
           ENDOFFILE
 
-          # White border + dark fill for all popups
           cat > app/src/main/res/drawable/popup_border.xml << 'ENDOFFILE'
           <?xml version="1.0" encoding="utf-8"?>
           <shape xmlns:android="http://schemas.android.com/apk/res/android">
@@ -488,7 +494,7 @@ jobs:
                       "[","]","{","}","<",">","|","\\","^"
                   )
                   val grid = GridLayout(this).apply { columnCount = 8; useDefaultMargins = true }
-                  val popupWidth = (resources.displayMetrics.widthPixels * 0.8).toInt()   // same width for all
+                  val popupWidth = (resources.displayMetrics.widthPixels * 0.8).toInt()
                   val cellSize = popupWidth / 8
                   symbols.forEach { sym ->
                       val tv = TextView(this).apply {
@@ -501,7 +507,7 @@ jobs:
                   }
                   val wrapper = LinearLayout(this).apply {
                       orientation = LinearLayout.VERTICAL
-                      setBackgroundResource(R.drawable.popup_border)   // white border
+                      setBackgroundResource(R.drawable.popup_border)
                       setPadding(8.dp, 8.dp, 8.dp, 8.dp)
                   }
                   wrapper.addView(grid)
@@ -773,20 +779,20 @@ jobs:
                   toolsPopup?.dismiss()
                   val popup = LinearLayout(this).apply {
                       orientation = LinearLayout.VERTICAL
-                      setBackgroundResource(R.drawable.popup_border)   // white border + dark fill
+                      setBackgroundResource(R.drawable.popup_border)
                       setPadding(0, 0, 0, 0)
                   }
                   listOf("Select All", "Copy", "Paste").forEach { label ->
                       val tv = TextView(this).apply {
                           text = label; textSize = 20f
-                          setTextColor(0xFFFFFFFF.toInt())      // white text
+                          setTextColor(0xFFFFFFFF.toInt())
                           setPadding(16.dp, 10.dp, 16.dp, 10.dp)
                           setOnTouchListener { v, event ->
                               when (event.actionMasked) {
                                   MotionEvent.ACTION_DOWN -> {
                                       (v as? TextView)?.apply {
-                                          setBackgroundColor(0xFFFFFFFF.toInt())   // white bg
-                                          setTextColor(0xFF000000.toInt())         // black text
+                                          setBackgroundColor(0xFFFFFFFF.toInt())
+                                          setTextColor(0xFF000000.toInt())
                                       }
                                       true
                                   }
@@ -810,7 +816,7 @@ jobs:
                                       }
                                       action()
                                       (v as? TextView)?.apply {
-                                          setBackgroundColor(0x00000000.toInt())   // transparent (drawable shows)
+                                          setBackgroundColor(0x00000000.toInt())
                                           setTextColor(0xFFFFFFFF.toInt())
                                       }
                                       true
@@ -828,7 +834,6 @@ jobs:
                       }
                       popup.addView(tv)
                   }
-                  // Original wrap-content measurement
                   popup.measure(
                       View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED),
                       View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED)
@@ -839,7 +844,6 @@ jobs:
                   toolsPopup = PopupWindow(popup, popupWidth, popupHeight, true).apply {
                       setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
                       isOutsideTouchable = true; elevation = 8f
-                      // Position directly above the anchor
                       showAsDropDown(anchor, 0, -popupHeight)
                   }
               }
@@ -1126,17 +1130,23 @@ jobs:
           android.suppressUnsupportedCompileSdk=36
           ENDOFFILE
 
-      - name: Generate fixed keystore
+      # Only generate the keystore if it isn't already cached
+      - name: Generate fixed keystore (if missing)
         run: |
-          keytool -genkey -v \
-            -keystore app/release.keystore \
-            -alias greyb \
-            -keyalg RSA \
-            -keysize 2048 \
-            -validity 10000 \
-            -storepass greyb2024 \
-            -keypass greyb2024 \
-            -dname "CN=GreyB, OU=GreyB, O=GreyB Keyboard, L=Test, S=Test, C=US"
+          if [ ! -f app/release.keystore ]; then
+            keytool -genkey -v \
+              -keystore app/release.keystore \
+              -alias greyb \
+              -keyalg RSA \
+              -keysize 2048 \
+              -validity 10000 \
+              -storepass greyb2024 \
+              -keypass greyb2024 \
+              -dname "CN=GreyB, OU=GreyB, O=GreyB Keyboard, L=Test, S=Test, C=US"
+            echo "✅ New keystore created (will be cached for future builds)"
+          else
+            echo "✅ Using existing cached keystore"
+          fi
 
       - name: Generate launcher icons
         run: |
