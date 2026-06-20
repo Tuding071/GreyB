@@ -171,7 +171,7 @@ jobs:
           </shape>
           ENDOFFILE
 
-          # pressable background for symbol items (blends with popup, press white/black)
+          # pressable background for symbol/emoji items (blends with popup, press white/black)
           cat > app/src/main/res/drawable/key_bg_selector.xml << 'ENDOFFILE'
           <?xml version="1.0" encoding="utf-8"?>
           <selector xmlns:android="http://schemas.android.com/apk/res/android">
@@ -495,35 +495,35 @@ jobs:
                   view.setTextColor(0xFFFFFFFF.toInt())
               }
 
-              // ── Symbols popup (6 per row, scrollable, stays open) ──
+              // ── Symbols popup (6 per row, scrollable, stays open, most-used symbols first) ──
               private fun showSymbolsPopup(anchor: View) {
                   symbolsPopup?.dismiss()
                   val symbols = listOf(
-                      "!","@","#","$","%","&","*","(",")","+",
-                      "-","=","/",":",";","\"","'","?","~","_",
-                      ".",",","\\","|","^","`","´",
+                      // Most commonly used — top of grid
+                      ".",",","!","?","@","#","$","%","&","*","(",")","-","+","=","/",":",";","'","\"",
+                      // Common punctuation extras
+                      "~","_","\\","|","^","`","°","•","…","«","»","¿","¡","§","¶","©","®","™","‰","µ",
+                      // Brackets
                       "[","]","{","}","<",">",
-                      "€","£","¥","₱","¢","₹",
-                      "°","•","…","«","»","¿","¡","×","÷","√","∞","≈","≠","≤","≥"
+                      // Math
+                      "×","÷","√","∞","≈","≠","≤","≥","±","∑","∏","π","∆",
+                      // Currency
+                      "€","£","¥","₱","¢","₹","₩","₽","₿",
+                      // Arrows
+                      "→","←","↑","↓","↔","⇒","⇐"
                   )
-                  val grid = GridLayout(this).apply {
-                      columnCount = 6
-                      useDefaultMargins = false   // perfect alignment
-                  }
+                  val grid = GridLayout(this).apply { columnCount = 6; useDefaultMargins = true }
                   val popupWidth = (resources.displayMetrics.widthPixels * 0.8).toInt()
                   val cellSize = popupWidth / 6
                   symbols.forEach { sym ->
                       val tv = TextView(this).apply {
                           text = sym; textSize = 18f; gravity = Gravity.CENTER
                           setTextColor(0xFFFFFFFF.toInt())
-                          background = resources.getDrawable(R.drawable.key_bg_selector, null)
-                          setOnClickListener { commitText(sym) }
+                          layoutParams = GridLayout.LayoutParams().apply { width = cellSize; height = cellSize }
+                          background = resources.getDrawable(R.drawable.key_bg_selector, null)  // press effect
+                          setOnClickListener { commitText(sym) }   // stays open
                       }
-                      val params = GridLayout.LayoutParams().apply {
-                          width = cellSize
-                          height = cellSize
-                      }
-                      grid.addView(tv, params)
+                      grid.addView(tv)
                   }
                   val label = TextView(this).apply {
                       text = "Symbols"
@@ -545,8 +545,113 @@ jobs:
                   wrapper.addView(label)
                   wrapper.addView(scroll)
 
-                  val popupHeight = 240.dp
+                  val popupHeight = 280.dp
                   symbolsPopup = PopupWindow(wrapper, popupWidth, popupHeight, true).apply {
+                      setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
+                      isOutsideTouchable = true
+                      isFocusable = true       // back press dismiss
+                      elevation = 8f
+                      showAtLocation(rootFrame, Gravity.CENTER, 0, 0)
+                  }
+              }
+
+              // ── Emoji popup (categorized, labeled, 6 per row, scrollable, stays open) ──
+              private fun showEmojiPopup(anchor: View) {
+                  emojiPopup?.dismiss()
+                  val categories = listOf(
+                      "😀 Smileys" to listOf(
+                          "😀","😃","😄","😁","😆","😅","😂","🤣","😊","😇",
+                          "🙂","🙃","😉","😌","😍","🥰","😘","😗","😙","😚",
+                          "😋","😛","😝","😜","🤪","🤨","🧐","🤓","😎","🥳"
+                      ),
+                      "👋 Gestures" to listOf(
+                          "👋","🤚","🖐","✋","🖖","👌","🤌","🤏","✌","🤞",
+                          "🤟","🤘","🤙","👈","👉","👆","👇","☝","👍","👎",
+                          "✊","👊","🤛","🤜"
+                      ),
+                      "❤️ Hearts" to listOf(
+                          "❤️","🧡","💛","💚","💙","💜","🖤","🤍","🤎","💔",
+                          "❣️","💕"
+                      ),
+                      "🐶 Animals" to listOf(
+                          "🐶","🐱","🐭","🐹","🐰","🦊","🐻","🐼","🐨","🐯",
+                          "🦁","🐮","🐷","🐸","🐵","🐔","🐧","🐦","🐤","🦆",
+                          "🦅","🦉","🦇","🐺"
+                      ),
+                      "🍎 Food" to listOf(
+                          "🍏","🍎","🍐","🍊","🍋","🍌","🍉","🍇","🍓","🫐",
+                          "🍈","🍒","🍑","🥭","🍍","🥥","🥝","🍅","🍆","🥑",
+                          "🍕","🍔","🍟","🌭"
+                      ),
+                      "✈️ Travel" to listOf(
+                          "✈️","🚗","🚕","🚙","🚌","🚎","🏎","🚓","🚑","🚒",
+                          "🚚","🚲","🛵","🚀","🛸","⛵","🚂","🗽","🗼","🏖"
+                      ),
+                      "⚽ Activities" to listOf(
+                          "⚽","🏀","🏈","⚾","🎾","🏐","🏉","🎱","🏓","🏸",
+                          "🥊","🎮","🎲","🎯","🎸","🎹","🎨","📚","✏️","💻",
+                          "📱","⌚","🎁","🎉"
+                      ),
+                      "✅ Symbols" to listOf(
+                          "✅","❌","⭐","🌟","✨","🔥","💯","❗","❓","💤",
+                          "🔔","🔒"
+                      )
+                  )
+
+                  val popupWidth = (resources.displayMetrics.widthPixels * 0.8).toInt()
+                  val cellSize = popupWidth / 6
+
+                  val container = LinearLayout(this).apply {
+                      orientation = LinearLayout.VERTICAL
+                  }
+
+                  categories.forEach { (catLabel, emojis) ->
+                      container.addView(TextView(this).apply {
+                          text = catLabel
+                          textSize = 14f
+                          setTextColor(0xFF4FC3F7.toInt())
+                          gravity = Gravity.START
+                          setPadding(4.dp, 10.dp, 0, 4.dp)
+                      })
+                      val grid = GridLayout(this).apply { columnCount = 6; useDefaultMargins = true }
+                      emojis.forEach { emoji ->
+                          val tv = TextView(this).apply {
+                              text = emoji
+                              textSize = 26f
+                              gravity = Gravity.CENTER
+                              layoutParams = GridLayout.LayoutParams().apply { width = cellSize; height = cellSize }
+                              background = resources.getDrawable(R.drawable.key_bg_selector, null)
+                              setOnClickListener { commitText(emoji) }   // stays open
+                          }
+                          grid.addView(tv)
+                      }
+                      container.addView(grid)
+                  }
+
+                  val topLabel = TextView(this).apply {
+                      text = "Emojis"
+                      textSize = 16f; setTextColor(0xFFFFFFFF.toInt())
+                      gravity = Gravity.CENTER; setPadding(0, 8.dp, 0, 8.dp)
+                  }
+
+                  val scroll = ScrollView(this).apply {
+                      addView(container)
+                      layoutParams = ViewGroup.LayoutParams(
+                          ViewGroup.LayoutParams.MATCH_PARENT,
+                          ViewGroup.LayoutParams.WRAP_CONTENT
+                      )
+                  }
+
+                  val wrapper = LinearLayout(this).apply {
+                      orientation = LinearLayout.VERTICAL
+                      setBackgroundResource(R.drawable.popup_border)
+                      setPadding(8.dp, 0, 8.dp, 8.dp)
+                  }
+                  wrapper.addView(topLabel)
+                  wrapper.addView(scroll)
+
+                  val popupHeight = 320.dp
+                  emojiPopup = PopupWindow(wrapper, popupWidth, popupHeight, true).apply {
                       setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
                       isOutsideTouchable = true
                       isFocusable = true
@@ -555,40 +660,7 @@ jobs:
                   }
               }
 
-              // ── Emoji popup ──
-              private fun showEmojiPopup(anchor: View) {
-                  emojiPopup?.dismiss()
-                  val emojis = listOf("😀","😂","😍","🥰","😎","👍","🔥","🎉")
-                  val grid = GridLayout(this).apply { columnCount = 4; useDefaultMargins = true }
-                  val popupWidth = (resources.displayMetrics.widthPixels * 0.8).toInt()
-                  val cellSize = popupWidth / 4
-                  emojis.forEach { emoji ->
-                      val tv = TextView(this).apply {
-                          text = emoji; textSize = 36f; gravity = Gravity.CENTER
-                          layoutParams = GridLayout.LayoutParams().apply { width = cellSize; height = cellSize }
-                      }
-                      setupKey(tv, R.drawable.key_bg) { commitText(emoji); emojiPopup?.dismiss() }
-                      grid.addView(tv)
-                  }
-                  val wrapper = LinearLayout(this).apply {
-                      orientation = LinearLayout.VERTICAL
-                      setBackgroundResource(R.drawable.popup_border)
-                      setPadding(8.dp, 8.dp, 8.dp, 8.dp)
-                  }
-                  wrapper.addView(grid)
-                  wrapper.measure(
-                      View.MeasureSpec.makeMeasureSpec(popupWidth, View.MeasureSpec.EXACTLY),
-                      View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED)
-                  )
-                  val popupHeight = wrapper.measuredHeight
-                  emojiPopup = PopupWindow(wrapper, popupWidth, popupHeight, true).apply {
-                      setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
-                      isOutsideTouchable = true; elevation = 8f
-                      showAtLocation(rootFrame, Gravity.CENTER, 0, 0)
-                  }
-              }
-
-              // ── Clipboard popup ──
+              // ── Clipboard popup (centred) ──
               private fun showClipboardPopup(anchor: View) {
                   clipboardPopup?.dismiss()
                   val contentView = if (clipboardItems.isEmpty()) {
