@@ -424,8 +424,6 @@ jobs:
               private var symbolsPopup: PopupWindow? = null
               private var emojiPopup: PopupWindow? = null
               private var clipboardPopup: PopupWindow? = null
-              private var bottomSheetContainer: FrameLayout? = null
-              private var isBottomSheetVisible = false
 
               private val clipboardItems = mutableListOf<String>()
               private val PREFS_NAME = "greyb_kb"
@@ -1014,7 +1012,6 @@ jobs:
                   stopBackspaceRepeat()
                   toolsPopup?.dismiss(); symbolsPopup?.dismiss()
                   emojiPopup?.dismiss(); clipboardPopup?.dismiss()
-                  dismissBottomSheet()
               }
           }
           ENDOFFILE
