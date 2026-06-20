@@ -161,6 +161,7 @@ jobs:
           </layer-list>
           ENDOFFILE
 
+          # White border + dark fill for all popups
           cat > app/src/main/res/drawable/popup_border.xml << 'ENDOFFILE'
           <?xml version="1.0" encoding="utf-8"?>
           <shape xmlns:android="http://schemas.android.com/apk/res/android">
@@ -485,13 +486,22 @@ jobs:
                   view.setTextColor(0xFFFFFFFF.toInt())
               }
 
-              // ── Symbols popup (centred in keyboard, same size) ──
+              // ── Symbols popup (scrollable, label, stays open after tap) ──
               private fun showSymbolsPopup(anchor: View) {
                   symbolsPopup?.dismiss()
+                  // Extended symbols list: commonly used first, then more
                   val symbols = listOf(
+                      // Common punctuation & symbols
                       "!","@","#","$","%","&","*","(",")","+",
                       "-","=","/",":",";","\"","'","?","~","_",
-                      "[","]","{","}","<",">","|","\\","^"
+                      // More punctuation
+                      ".",",","\\","|","^","`","´",
+                      // Brackets / braces
+                      "[","]","{","}","<",">",
+                      // Currency
+                      "€","£","¥","₱","¢","₹",
+                      // Math & other
+                      "°","•","…","«","»","¿","¡","×","÷","√","∞","≈","≠","≤","≥"
                   )
                   val grid = GridLayout(this).apply { columnCount = 8; useDefaultMargins = true }
                   val popupWidth = (resources.displayMetrics.widthPixels * 0.8).toInt()
@@ -502,25 +512,37 @@ jobs:
                           setTextColor(0xFFFFFFFF.toInt())
                           layoutParams = GridLayout.LayoutParams().apply { width = cellSize; height = cellSize }
                       }
-                      setupKey(tv, R.drawable.key_bg) { commitText(sym); symbolsPopup?.dismiss() }
+                      // Action: commit the symbol, do NOT dismiss the popup
+                      setupKey(tv, R.drawable.key_bg) { commitText(sym) }
                       grid.addView(tv)
+                  }
+                  // Wrap in a vertical layout with label and scroll
+                  val label = TextView(this).apply {
+                      text = "Symbols"
+                      textSize = 16f; setTextColor(0xFFFFFFFF.toInt())
+                      gravity = Gravity.CENTER; setPadding(0, 8.dp, 0, 8.dp)
+                  }
+                  val scroll = ScrollView(this).apply {
+                      addView(grid)
+                      layoutParams = ViewGroup.LayoutParams(
+                          ViewGroup.LayoutParams.MATCH_PARENT,
+                          ViewGroup.LayoutParams.WRAP_CONTENT
+                      )
                   }
                   val wrapper = LinearLayout(this).apply {
                       orientation = LinearLayout.VERTICAL
                       setBackgroundResource(R.drawable.popup_border)
-                      setPadding(8.dp, 8.dp, 8.dp, 8.dp)
+                      setPadding(8.dp, 0, 8.dp, 8.dp)
                   }
-                  wrapper.addView(grid)
+                  wrapper.addView(label)
+                  wrapper.addView(scroll)
 
-                  wrapper.measure(
-                      View.MeasureSpec.makeMeasureSpec(popupWidth, View.MeasureSpec.EXACTLY),
-                      View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED)
-                  )
-                  val popupHeight = wrapper.measuredHeight
-
+                  val popupHeight = 240.dp   // fixed height, scroll if needed
                   symbolsPopup = PopupWindow(wrapper, popupWidth, popupHeight, true).apply {
                       setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
-                      isOutsideTouchable = true; elevation = 8f
+                      isOutsideTouchable = true
+                      isFocusable = true       // allows back press to dismiss
+                      elevation = 8f
                       showAtLocation(rootFrame, Gravity.CENTER, 0, 0)
                   }
               }
