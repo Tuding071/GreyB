@@ -500,7 +500,7 @@ jobs:
                   view.setTextColor(0xFFFFFFFF.toInt())
               }
 
-              // ── Symbols popup (6 per row, scrollable, stays open, most-used symbols first) ──
+              // ── Symbols popup (5 per row, scrollable, stays open, most-used symbols first) ──
               private fun showSymbolsPopup(anchor: View) {
                   symbolsPopup?.dismiss()
                   val symbols = listOf(
@@ -517,18 +517,14 @@ jobs:
                       // Arrows
                       "→","←","↑","↓","↔","⇒","⇐"
                   )
+                  val grid = GridLayout(this).apply { columnCount = 5; useDefaultMargins = true }
                   val popupWidth = (resources.displayMetrics.widthPixels * 0.8).toInt()
-                  val margin = 2.dp
-                  val cellSize = (popupWidth - margin * 2 * 6) / 6
-                  val grid = GridLayout(this).apply { columnCount = 6; useDefaultMargins = false }
+                  val cellSize = popupWidth / 5
                   symbols.forEach { sym ->
                       val tv = TextView(this).apply {
                           text = sym; textSize = 18f; gravity = Gravity.CENTER
                           setTextColor(0xFFFFFFFF.toInt())
-                          layoutParams = GridLayout.LayoutParams().apply {
-                              width = cellSize; height = cellSize
-                              setMargins(margin, margin, margin, margin)
-                          }
+                          layoutParams = GridLayout.LayoutParams().apply { width = cellSize; height = cellSize }
                           background = resources.getDrawable(R.drawable.key_bg_selector, null)  // press effect
                           setOnClickListener { commitText(sym) }   // stays open
                       }
@@ -564,7 +560,7 @@ jobs:
                   }
               }
 
-              // ── Emoji popup (Recently Used at top, then categorized, 6 per row, scrollable, stays open) ──
+              // ── Emoji popup (Recently Used at top, then categorized, 5 per row, scrollable, stays open) ──
               private fun showEmojiPopup(anchor: View) {
                   emojiPopup?.dismiss()
 
@@ -613,8 +609,7 @@ jobs:
                   ))
 
                   val popupWidth = (resources.displayMetrics.widthPixels * 0.8).toInt()
-                  val margin = 2.dp
-                  val cellSize = (popupWidth - margin * 2 * 6) / 6
+                  val cellSize = popupWidth / 5
 
                   val container = LinearLayout(this).apply {
                       orientation = LinearLayout.VERTICAL
@@ -628,16 +623,13 @@ jobs:
                           gravity = Gravity.START
                           setPadding(4.dp, 10.dp, 0, 4.dp)
                       })
-                      val grid = GridLayout(this).apply { columnCount = 6; useDefaultMargins = false }
+                      val grid = GridLayout(this).apply { columnCount = 5; useDefaultMargins = true }
                       emojis.forEach { emoji ->
                           val tv = TextView(this).apply {
                               text = emoji
                               textSize = 26f
                               gravity = Gravity.CENTER
-                              layoutParams = GridLayout.LayoutParams().apply {
-                                  width = cellSize; height = cellSize
-                                  setMargins(margin, margin, margin, margin)
-                              }
+                              layoutParams = GridLayout.LayoutParams().apply { width = cellSize; height = cellSize }
                               background = resources.getDrawable(R.drawable.key_bg_selector, null)
                               setOnClickListener { commitEmoji(emoji) }   // stays open
                           }
