@@ -163,12 +163,13 @@ jobs:
           </shape>
           ENDOFFILE
 
-          # NEW: white background for press feedback (used temporarily by suggestion/popup)
-          cat > app/src/main/res/drawable/key_bg_white.xml << 'ENDOFFILE'
+          # NEW: Background for the symbols strip (rounded, like keys)
+          cat > app/src/main/res/drawable/symbols_strip_bg.xml << 'ENDOFFILE'
           <?xml version="1.0" encoding="utf-8"?>
           <shape xmlns:android="http://schemas.android.com/apk/res/android">
-              <solid android:color="#FFFFFF"/>
-              <corners android:radius="8dp"/>
+              <solid android:color="#2C2C2C"/>
+              <corners android:radius="16dp"/>
+              <stroke android:width="1dp" android:color="#444444"/>
           </shape>
           ENDOFFILE
 
@@ -213,7 +214,7 @@ jobs:
               android:orientation="vertical"
               android:background="#1e1e1e">
 
-              <!-- SUGGESTION ROW (dark default, press feedback added in Kotlin) -->
+              <!-- SUGGESTION ROW (centred sug1, dark default) -->
               <LinearLayout
                   android:layout_width="match_parent"
                   android:layout_height="55dp"
@@ -527,6 +528,7 @@ jobs:
                   isBottomSheetVisible = false
               }
 
+              // ── Symbols strip: centred, rounded corners ──
               private fun createSymbolsContent(): View {
                   val symbols = listOf(
                       "!","@","#","$","%","&","*","(",")","+",
@@ -556,7 +558,24 @@ jobs:
                       setupKey(tv, R.drawable.key_bg) { commitText(sym) ; dismissBottomSheet() }
                       grid.addView(tv)
                   }
-                  return grid
+
+                  // Wrap in a rounded container (middle strip)
+                  val wrapper = LinearLayout(this).apply {
+                      orientation = LinearLayout.VERTICAL
+                      setBackgroundResource(R.drawable.symbols_strip_bg)
+                      gravity = Gravity.CENTER
+                      setPadding(16.dp, 16.dp, 16.dp, 16.dp)
+                      // Centre horizontally with margins
+                      layoutParams = LinearLayout.LayoutParams(
+                          ViewGroup.LayoutParams.MATCH_PARENT,
+                          ViewGroup.LayoutParams.WRAP_CONTENT
+                      ).apply {
+                          leftMargin = 32.dp
+                          rightMargin = 32.dp
+                      }
+                  }
+                  wrapper.addView(grid)
+                  return wrapper
               }
 
               private fun createEmojiContent(): View {
@@ -637,12 +656,12 @@ jobs:
                   // Add press feedback to suggestion views (white bg / black text on touch)
                   listOf(sugView1, sugView2, sugView3).forEach { sv ->
                       if (sv == null) return@forEach
-                      sv.setTag(R.id.original_bg_tag, R.drawable.key_bg_dark)  // default dark bg
+                      sv.setTag(R.id.original_bg_tag, R.drawable.key_bg_dark)
                       sv.setOnTouchListener { view, event ->
                           when (event.actionMasked) {
                               MotionEvent.ACTION_DOWN -> {
                                   (view as? TextView)?.apply {
-                                      setBackgroundResource(R.drawable.key_bg_white)
+                                      setBackgroundResource(R.drawable.key_bg_pressed)
                                       setTextColor(0xFF000000.toInt())
                                   }
                                   true
@@ -651,7 +670,6 @@ jobs:
                                   (view as? TextView)?.let { tv ->
                                       val word = tv.text?.toString()?.trim() ?: ""
                                       if (word.isNotEmpty()) commitSuggestion(word)
-                                      // Restore original state
                                       val originalBg = tv.getTag(R.id.original_bg_tag) as? Int
                                           ?: R.drawable.key_bg_dark
                                       tv.setBackgroundResource(originalBg)
@@ -989,7 +1007,6 @@ jobs:
 
                   sugView2?.text = matches.getOrNull(1) ?: ""
                   sugView3?.text = matches.getOrNull(2) ?: ""
-                  // Keep default white text (no permanent black)
                   sugView2?.setTextColor(0xFFFFFFFF.toInt())
                   sugView3?.setTextColor(0xFFFFFFFF.toInt())
               }
