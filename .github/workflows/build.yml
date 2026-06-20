@@ -445,8 +445,12 @@ jobs:
               private val clipboardItems = mutableListOf<String>()
               private val PREFS_NAME = "greyb_kb"
               private val PREFS_CLIP = "clipboard"
+              private val PREFS_RECENT_EMOJI = "recent_emoji"
               private val MAX_CLIP = 10
+              private val MAX_RECENT_EMOJI = 10
               private var clipAdapter: ClipboardAdapter? = null
+
+              private val recentEmojis = mutableListOf<String>()
 
               private val bsHandler = Handler(Looper.getMainLooper())
               private var bsRunnable: Runnable? = null
@@ -462,6 +466,7 @@ jobs:
               override fun onCreate() {
                   super.onCreate()
                   loadClipboard()
+                  loadRecentEmojis()
               }
 
               override fun onCreateInputView(): View {
@@ -555,10 +560,15 @@ jobs:
                   }
               }
 
-              // ── Emoji popup (categorized, labeled, 6 per row, scrollable, stays open) ──
+              // ── Emoji popup (Recently Used at top, then categorized, 6 per row, scrollable, stays open) ──
               private fun showEmojiPopup(anchor: View) {
                   emojiPopup?.dismiss()
-                  val categories = listOf(
+
+                  val categories = mutableListOf<Pair<String, List<String>>>()
+                  if (recentEmojis.isNotEmpty()) {
+                      categories.add("🕒 Recently Used" to recentEmojis.toList())
+                  }
+                  categories.addAll(listOf(
                       "😀 Smileys" to listOf(
                           "😀","😃","😄","😁","😆","😅","😂","🤣","😊","😇",
                           "🙂","🙃","😉","😌","😍","🥰","😘","😗","😙","😚",
@@ -596,7 +606,7 @@ jobs:
                           "✅","❌","⭐","🌟","✨","🔥","💯","❗","❓","💤",
                           "🔔","🔒"
                       )
-                  )
+                  ))
 
                   val popupWidth = (resources.displayMetrics.widthPixels * 0.8).toInt()
                   val cellSize = popupWidth / 6
@@ -621,7 +631,7 @@ jobs:
                               gravity = Gravity.CENTER
                               layoutParams = GridLayout.LayoutParams().apply { width = cellSize; height = cellSize }
                               background = resources.getDrawable(R.drawable.key_bg_selector, null)
-                              setOnClickListener { commitText(emoji) }   // stays open
+                              setOnClickListener { commitEmoji(emoji) }   // stays open
                           }
                           grid.addView(tv)
                       }
@@ -959,6 +969,11 @@ jobs:
 
               private fun commitText(s: String) { currentInputConnection?.commitText(s, 1) }
 
+              private fun commitEmoji(emoji: String) {
+                  commitText(emoji)
+                  addToRecentEmoji(emoji)
+              }
+
               private fun stopBackspaceRepeat() {
                   bsRunnable?.let { bsHandler.removeCallbacks(it) }; bsRunnable = null
               }
@@ -1134,6 +1149,26 @@ jobs:
                       .getString(PREFS_CLIP, "") ?: ""
                   clipboardItems.clear()
                   if (s.isNotEmpty()) clipboardItems.addAll(s.split("\u001F"))
+              }
+
+              private fun addToRecentEmoji(emoji: String) {
+                  recentEmojis.remove(emoji)
+                  recentEmojis.add(0, emoji)
+                  if (recentEmojis.size > MAX_RECENT_EMOJI) recentEmojis.removeAt(recentEmojis.size - 1)
+                  saveRecentEmojis()
+              }
+
+              private fun saveRecentEmojis() {
+                  getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE).edit()
+                      .putString(PREFS_RECENT_EMOJI, recentEmojis.take(MAX_RECENT_EMOJI).joinToString("\u001F"))
+                      .apply()
+              }
+
+              private fun loadRecentEmojis() {
+                  val s = getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+                      .getString(PREFS_RECENT_EMOJI, "") ?: ""
+                  recentEmojis.clear()
+                  if (s.isNotEmpty()) recentEmojis.addAll(s.split("\u001F"))
               }
 
               private val Int.dp get() = (this * resources.displayMetrics.density).toInt()
