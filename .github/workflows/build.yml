@@ -163,7 +163,7 @@ jobs:
           </shape>
           ENDOFFILE
 
-          # NEW: Background for the symbols strip (rounded, like keys)
+          # Kept for possible future use but not needed now
           cat > app/src/main/res/drawable/symbols_strip_bg.xml << 'ENDOFFILE'
           <?xml version="1.0" encoding="utf-8"?>
           <shape xmlns:android="http://schemas.android.com/apk/res/android">
@@ -214,7 +214,7 @@ jobs:
               android:orientation="vertical"
               android:background="#1e1e1e">
 
-              <!-- SUGGESTION ROW (centred sug1, dark default) -->
+              <!-- SUGGESTION ROW (centred sug1) -->
               <LinearLayout
                   android:layout_width="match_parent"
                   android:layout_height="55dp"
@@ -501,6 +501,7 @@ jobs:
                           ViewGroup.LayoutParams.WRAP_CONTENT
                       ).apply { gravity = Gravity.BOTTOM }
                   }
+                  // Minimal label at top – will be replaced by the content's own title
                   bottomSheet.addView(TextView(this).apply {
                       text = ""
                       textSize = 16f
@@ -528,7 +529,7 @@ jobs:
                   isBottomSheetVisible = false
               }
 
-              // ── Symbols strip: centred, rounded corners ──
+              // ── Symbols screen: full width, 8 per row, grid at top, spacer below ──
               private fun createSymbolsContent(): View {
                   val symbols = listOf(
                       "!","@","#","$","%","&","*","(",")","+",
@@ -536,14 +537,14 @@ jobs:
                       "[","]","{","}","<",">","|","\\","^"
                   )
                   val grid = GridLayout(this).apply {
-                      columnCount = 10
+                      columnCount = 8
                       useDefaultMargins = true
                       layoutParams = LinearLayout.LayoutParams(
                           ViewGroup.LayoutParams.MATCH_PARENT,
                           ViewGroup.LayoutParams.WRAP_CONTENT
                       )
                   }
-                  val cellSize = (resources.displayMetrics.widthPixels - 64.dp) / 10
+                  val cellSize = (resources.displayMetrics.widthPixels - 64.dp) / 8
                   symbols.forEach { sym ->
                       val tv = TextView(this).apply {
                           text = sym
@@ -559,22 +560,37 @@ jobs:
                       grid.addView(tv)
                   }
 
-                  // Wrap in a rounded container (middle strip)
+                  // Wrap in a vertical layout: title → grid → spacer
                   val wrapper = LinearLayout(this).apply {
                       orientation = LinearLayout.VERTICAL
-                      setBackgroundResource(R.drawable.symbols_strip_bg)
-                      gravity = Gravity.CENTER
-                      setPadding(16.dp, 16.dp, 16.dp, 16.dp)
-                      // Centre horizontally with margins
+                      setPadding(16.dp, 8.dp, 16.dp, 0)
                       layoutParams = LinearLayout.LayoutParams(
                           ViewGroup.LayoutParams.MATCH_PARENT,
                           ViewGroup.LayoutParams.WRAP_CONTENT
-                      ).apply {
-                          leftMargin = 32.dp
-                          rightMargin = 32.dp
-                      }
+                      )
                   }
+
+                  // Title
+                  wrapper.addView(TextView(this).apply {
+                      text = "Symbols"
+                      textSize = 16f
+                      setTextColor(0xFFFFFFFF.toInt())
+                      gravity = Gravity.CENTER
+                      setPadding(0, 8.dp, 0, 12.dp)
+                  })
+
+                  // Grid
                   wrapper.addView(grid)
+
+                  // Spacer to push grid to the top
+                  val spacer = View(this).apply {
+                      layoutParams = LinearLayout.LayoutParams(
+                          ViewGroup.LayoutParams.MATCH_PARENT,
+                          40.dp   // height to keep extra room at bottom
+                      )
+                  }
+                  wrapper.addView(spacer)
+
                   return wrapper
               }
 
@@ -653,7 +669,7 @@ jobs:
                   sugView2 = v.findViewById(R.id.sug2)
                   sugView3 = v.findViewById(R.id.sug3)
 
-                  // Add press feedback to suggestion views (white bg / black text on touch)
+                  // Press feedback for suggestions (white bg / black text on touch)
                   listOf(sugView1, sugView2, sugView3).forEach { sv ->
                       if (sv == null) return@forEach
                       sv.setTag(R.id.original_bg_tag, R.drawable.key_bg_dark)
