@@ -154,7 +154,7 @@ jobs:
           </layer-list>
           ENDOFFILE
 
-          # Thin white border, dark grey fill – used for all popups
+          # White border + dark fill for all popups
           cat > app/src/main/res/drawable/popup_border.xml << 'ENDOFFILE'
           <?xml version="1.0" encoding="utf-8"?>
           <shape xmlns:android="http://schemas.android.com/apk/res/android">
@@ -479,7 +479,7 @@ jobs:
                   view.setTextColor(0xFFFFFFFF.toInt())
               }
 
-              // ── Symbols popup (centred, with white border, safely inside screen) ──
+              // ── Symbols popup (centred in keyboard, same size) ──
               private fun showSymbolsPopup(anchor: View) {
                   symbolsPopup?.dismiss()
                   val symbols = listOf(
@@ -488,7 +488,8 @@ jobs:
                       "[","]","{","}","<",">","|","\\","^"
                   )
                   val grid = GridLayout(this).apply { columnCount = 8; useDefaultMargins = true }
-                  val cellSize = (resources.displayMetrics.widthPixels - 64.dp) / 8
+                  val popupWidth = (resources.displayMetrics.widthPixels * 0.8).toInt()   // same width for all
+                  val cellSize = popupWidth / 8
                   symbols.forEach { sym ->
                       val tv = TextView(this).apply {
                           text = sym; textSize = 18f; gravity = Gravity.CENTER
@@ -505,32 +506,26 @@ jobs:
                   }
                   wrapper.addView(grid)
 
-                  // Fixed popup width (away from edges)
-                  val popupWidth = resources.displayMetrics.widthPixels - 64.dp
-                  // Measure to get height
                   wrapper.measure(
                       View.MeasureSpec.makeMeasureSpec(popupWidth, View.MeasureSpec.EXACTLY),
                       View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED)
                   )
                   val popupHeight = wrapper.measuredHeight
 
-                  // Centre horizontally above the anchor
-                  val anchorWidth = anchor.width
-                  val xOffset = -(popupWidth - anchorWidth) / 2
-
                   symbolsPopup = PopupWindow(wrapper, popupWidth, popupHeight, true).apply {
                       setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
                       isOutsideTouchable = true; elevation = 8f
-                      showAsDropDown(anchor, xOffset, -popupHeight)
+                      showAtLocation(rootFrame, Gravity.CENTER, 0, 0)
                   }
               }
 
-              // ── Emoji popup (centred, same style) ──
+              // ── Emoji popup (centred in keyboard, same size) ──
               private fun showEmojiPopup(anchor: View) {
                   emojiPopup?.dismiss()
                   val emojis = listOf("😀","😂","😍","🥰","😎","👍","🔥","🎉")
                   val grid = GridLayout(this).apply { columnCount = 4; useDefaultMargins = true }
-                  val cellSize = (resources.displayMetrics.widthPixels - 64.dp) / 4
+                  val popupWidth = (resources.displayMetrics.widthPixels * 0.8).toInt()
+                  val cellSize = popupWidth / 4
                   emojis.forEach { emoji ->
                       val tv = TextView(this).apply {
                           text = emoji; textSize = 36f; gravity = Gravity.CENTER
@@ -546,23 +541,20 @@ jobs:
                   }
                   wrapper.addView(grid)
 
-                  val popupWidth = resources.displayMetrics.widthPixels - 64.dp
                   wrapper.measure(
                       View.MeasureSpec.makeMeasureSpec(popupWidth, View.MeasureSpec.EXACTLY),
                       View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED)
                   )
                   val popupHeight = wrapper.measuredHeight
-                  val anchorWidth = anchor.width
-                  val xOffset = -(popupWidth - anchorWidth) / 2
 
                   emojiPopup = PopupWindow(wrapper, popupWidth, popupHeight, true).apply {
                       setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
                       isOutsideTouchable = true; elevation = 8f
-                      showAsDropDown(anchor, xOffset, -popupHeight)
+                      showAtLocation(rootFrame, Gravity.CENTER, 0, 0)
                   }
               }
 
-              // ── Clipboard popup (centred, same style) ──
+              // ── Clipboard popup (centred in keyboard, same size) ──
               private fun showClipboardPopup(anchor: View) {
                   clipboardPopup?.dismiss()
                   val contentView = if (clipboardItems.isEmpty()) {
@@ -598,19 +590,17 @@ jobs:
                   }
                   wrapper.addView(contentView)
 
-                  val popupWidth = resources.displayMetrics.widthPixels - 64.dp
+                  val popupWidth = (resources.displayMetrics.widthPixels * 0.8).toInt()
                   wrapper.measure(
                       View.MeasureSpec.makeMeasureSpec(popupWidth, View.MeasureSpec.EXACTLY),
                       View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED)
                   )
                   val popupHeight = wrapper.measuredHeight
-                  val anchorWidth = anchor.width
-                  val xOffset = -(popupWidth - anchorWidth) / 2
 
                   clipboardPopup = PopupWindow(wrapper, popupWidth, popupHeight, true).apply {
                       setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
                       isOutsideTouchable = true; elevation = 8f
-                      showAsDropDown(anchor, xOffset, -popupHeight)
+                      showAtLocation(rootFrame, Gravity.CENTER, 0, 0)
                   }
               }
 
@@ -778,7 +768,7 @@ jobs:
                   return v
               }
 
-              // ── Edit popup: also using white border, dark grey, white press feedback ──
+              // ── Edit popup: original size, directly above the Edit button ──
               private fun showToolsPopup(anchor: View) {
                   toolsPopup?.dismiss()
                   val popup = LinearLayout(this).apply {
@@ -838,20 +828,19 @@ jobs:
                       }
                       popup.addView(tv)
                   }
-                  // Fixed width, centred above the anchor
-                  val popupWidth = resources.displayMetrics.widthPixels - 64.dp
+                  // Original wrap-content measurement
                   popup.measure(
-                      View.MeasureSpec.makeMeasureSpec(popupWidth, View.MeasureSpec.EXACTLY),
+                      View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED),
                       View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED)
                   )
                   val popupHeight = popup.measuredHeight
-                  val anchorWidth = anchor.width
-                  val xOffset = -(popupWidth - anchorWidth) / 2
+                  val popupWidth = popup.measuredWidth
 
                   toolsPopup = PopupWindow(popup, popupWidth, popupHeight, true).apply {
                       setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
                       isOutsideTouchable = true; elevation = 8f
-                      showAsDropDown(anchor, xOffset, -popupHeight)
+                      // Position directly above the anchor
+                      showAsDropDown(anchor, 0, -popupHeight)
                   }
               }
 
