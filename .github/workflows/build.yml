@@ -171,6 +171,15 @@ jobs:
           </shape>
           ENDOFFILE
 
+          # NEW: pressable background for symbol items (blends with popup, press white/black)
+          cat > app/src/main/res/drawable/key_bg_selector.xml << 'ENDOFFILE'
+          <?xml version="1.0" encoding="utf-8"?>
+          <selector xmlns:android="http://schemas.android.com/apk/res/android">
+              <item android:state_pressed="true" android:drawable="@drawable/key_bg_pressed"/>
+              <item android:drawable="@drawable/key_bg_dark"/>
+          </selector>
+          ENDOFFILE
+
       - name: Generate values
         run: |
           cat > app/src/main/res/values/colors.xml << 'ENDOFFILE'
@@ -486,37 +495,30 @@ jobs:
                   view.setTextColor(0xFFFFFFFF.toInt())
               }
 
-              // ── Symbols popup (scrollable, label, stays open after tap) ──
+              // ── Symbols popup (6 per row, scrollable, stays open, uses click + selector) ──
               private fun showSymbolsPopup(anchor: View) {
                   symbolsPopup?.dismiss()
-                  // Extended symbols list: commonly used first, then more
                   val symbols = listOf(
-                      // Common punctuation & symbols
                       "!","@","#","$","%","&","*","(",")","+",
                       "-","=","/",":",";","\"","'","?","~","_",
-                      // More punctuation
                       ".",",","\\","|","^","`","´",
-                      // Brackets / braces
                       "[","]","{","}","<",">",
-                      // Currency
                       "€","£","¥","₱","¢","₹",
-                      // Math & other
                       "°","•","…","«","»","¿","¡","×","÷","√","∞","≈","≠","≤","≥"
                   )
-                  val grid = GridLayout(this).apply { columnCount = 8; useDefaultMargins = true }
+                  val grid = GridLayout(this).apply { columnCount = 6; useDefaultMargins = true }
                   val popupWidth = (resources.displayMetrics.widthPixels * 0.8).toInt()
-                  val cellSize = popupWidth / 8
+                  val cellSize = popupWidth / 6
                   symbols.forEach { sym ->
                       val tv = TextView(this).apply {
                           text = sym; textSize = 18f; gravity = Gravity.CENTER
                           setTextColor(0xFFFFFFFF.toInt())
                           layoutParams = GridLayout.LayoutParams().apply { width = cellSize; height = cellSize }
+                          background = resources.getDrawable(R.drawable.key_bg_selector, null)  // press effect
+                          setOnClickListener { commitText(sym) }   // stays open
                       }
-                      // Action: commit the symbol, do NOT dismiss the popup
-                      setupKey(tv, R.drawable.key_bg) { commitText(sym) }
                       grid.addView(tv)
                   }
-                  // Wrap in a vertical layout with label and scroll
                   val label = TextView(this).apply {
                       text = "Symbols"
                       textSize = 16f; setTextColor(0xFFFFFFFF.toInt())
@@ -537,17 +539,17 @@ jobs:
                   wrapper.addView(label)
                   wrapper.addView(scroll)
 
-                  val popupHeight = 240.dp   // fixed height, scroll if needed
+                  val popupHeight = 240.dp
                   symbolsPopup = PopupWindow(wrapper, popupWidth, popupHeight, true).apply {
                       setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
                       isOutsideTouchable = true
-                      isFocusable = true       // allows back press to dismiss
+                      isFocusable = true       // back press dismiss
                       elevation = 8f
                       showAtLocation(rootFrame, Gravity.CENTER, 0, 0)
                   }
               }
 
-              // ── Emoji popup (centred in keyboard, same size) ──
+              // ── Emoji popup (centred) ──
               private fun showEmojiPopup(anchor: View) {
                   emojiPopup?.dismiss()
                   val emojis = listOf("😀","😂","😍","🥰","😎","👍","🔥","🎉")
@@ -568,13 +570,11 @@ jobs:
                       setPadding(8.dp, 8.dp, 8.dp, 8.dp)
                   }
                   wrapper.addView(grid)
-
                   wrapper.measure(
                       View.MeasureSpec.makeMeasureSpec(popupWidth, View.MeasureSpec.EXACTLY),
                       View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED)
                   )
                   val popupHeight = wrapper.measuredHeight
-
                   emojiPopup = PopupWindow(wrapper, popupWidth, popupHeight, true).apply {
                       setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
                       isOutsideTouchable = true; elevation = 8f
@@ -582,7 +582,7 @@ jobs:
                   }
               }
 
-              // ── Clipboard popup (centred in keyboard, same size) ──
+              // ── Clipboard popup (centred) ──
               private fun showClipboardPopup(anchor: View) {
                   clipboardPopup?.dismiss()
                   val contentView = if (clipboardItems.isEmpty()) {
@@ -617,14 +617,12 @@ jobs:
                       setPadding(8.dp, 8.dp, 8.dp, 8.dp)
                   }
                   wrapper.addView(contentView)
-
                   val popupWidth = (resources.displayMetrics.widthPixels * 0.8).toInt()
                   wrapper.measure(
                       View.MeasureSpec.makeMeasureSpec(popupWidth, View.MeasureSpec.EXACTLY),
                       View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED)
                   )
                   val popupHeight = wrapper.measuredHeight
-
                   clipboardPopup = PopupWindow(wrapper, popupWidth, popupHeight, true).apply {
                       setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
                       isOutsideTouchable = true; elevation = 8f
@@ -796,7 +794,7 @@ jobs:
                   return v
               }
 
-              // ── Edit popup: original size, directly above the Edit button ──
+              // ── Edit popup ──
               private fun showToolsPopup(anchor: View) {
                   toolsPopup?.dismiss()
                   val popup = LinearLayout(this).apply {
@@ -862,7 +860,6 @@ jobs:
                   )
                   val popupHeight = popup.measuredHeight
                   val popupWidth = popup.measuredWidth
-
                   toolsPopup = PopupWindow(popup, popupWidth, popupHeight, true).apply {
                       setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
                       isOutsideTouchable = true; elevation = 8f
