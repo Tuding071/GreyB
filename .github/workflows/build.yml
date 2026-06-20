@@ -163,16 +163,6 @@ jobs:
           </shape>
           ENDOFFILE
 
-          # Kept for possible future use but not needed now
-          cat > app/src/main/res/drawable/symbols_strip_bg.xml << 'ENDOFFILE'
-          <?xml version="1.0" encoding="utf-8"?>
-          <shape xmlns:android="http://schemas.android.com/apk/res/android">
-              <solid android:color="#2C2C2C"/>
-              <corners android:radius="16dp"/>
-              <stroke android:width="1dp" android:color="#444444"/>
-          </shape>
-          ENDOFFILE
-
       - name: Generate values
         run: |
           cat > app/src/main/res/values/colors.xml << 'ENDOFFILE'
@@ -431,6 +421,7 @@ jobs:
               private lateinit var rootFrame: FrameLayout
               private lateinit var qwertyView: View
               private var toolsPopup: PopupWindow? = null
+              private var symbolsPopup: PopupWindow? = null
               private var bottomSheetContainer: FrameLayout? = null
               private var isBottomSheetVisible = false
 
@@ -501,7 +492,6 @@ jobs:
                           ViewGroup.LayoutParams.WRAP_CONTENT
                       ).apply { gravity = Gravity.BOTTOM }
                   }
-                  // Minimal label at top – will be replaced by the content's own title
                   bottomSheet.addView(TextView(this).apply {
                       text = ""
                       textSize = 16f
@@ -529,8 +519,10 @@ jobs:
                   isBottomSheetVisible = false
               }
 
-              // ── Symbols screen: full width, 8 per row, grid at top, spacer below ──
-              private fun createSymbolsContent(): View {
+              // ── Symbols popup: 8 per row, dark background, above the button ──
+              private fun showSymbolsPopup(anchor: View) {
+                  symbolsPopup?.dismiss()
+
                   val symbols = listOf(
                       "!","@","#","$","%","&","*","(",")","+",
                       "-","=","/",":",";","\"","'","?","~","_",
@@ -539,16 +531,12 @@ jobs:
                   val grid = GridLayout(this).apply {
                       columnCount = 8
                       useDefaultMargins = true
-                      layoutParams = LinearLayout.LayoutParams(
-                          ViewGroup.LayoutParams.MATCH_PARENT,
-                          ViewGroup.LayoutParams.WRAP_CONTENT
-                      )
                   }
                   val cellSize = (resources.displayMetrics.widthPixels - 64.dp) / 8
                   symbols.forEach { sym ->
                       val tv = TextView(this).apply {
                           text = sym
-                          textSize = 20f
+                          textSize = 18f
                           gravity = Gravity.CENTER
                           setTextColor(0xFFFFFFFF.toInt())
                           layoutParams = GridLayout.LayoutParams().apply {
@@ -556,42 +544,40 @@ jobs:
                               height = cellSize
                           }
                       }
-                      setupKey(tv, R.drawable.key_bg) { commitText(sym) ; dismissBottomSheet() }
+                      // Reuse the same press-feedback mechanism
+                      setupKey(tv, R.drawable.key_bg) {
+                          commitText(sym)
+                          symbolsPopup?.dismiss()
+                      }
                       grid.addView(tv)
                   }
 
-                  // Wrap in a vertical layout: title → grid → spacer
+                  // Wrap the grid in a rounded container
                   val wrapper = LinearLayout(this).apply {
                       orientation = LinearLayout.VERTICAL
-                      setPadding(16.dp, 8.dp, 16.dp, 0)
-                      layoutParams = LinearLayout.LayoutParams(
-                          ViewGroup.LayoutParams.MATCH_PARENT,
-                          ViewGroup.LayoutParams.WRAP_CONTENT
-                      )
+                      setBackgroundResource(R.drawable.popup_border)
+                      setPadding(4.dp, 4.dp, 4.dp, 4.dp)
                   }
-
-                  // Title
-                  wrapper.addView(TextView(this).apply {
-                      text = "Symbols"
-                      textSize = 16f
-                      setTextColor(0xFFFFFFFF.toInt())
-                      gravity = Gravity.CENTER
-                      setPadding(0, 8.dp, 0, 12.dp)
-                  })
-
-                  // Grid
                   wrapper.addView(grid)
 
-                  // Spacer to push grid to the top
-                  val spacer = View(this).apply {
-                      layoutParams = LinearLayout.LayoutParams(
-                          ViewGroup.LayoutParams.MATCH_PARENT,
-                          40.dp   // height to keep extra room at bottom
-                      )
-                  }
-                  wrapper.addView(spacer)
+                  // Measure to position exactly above the anchor
+                  wrapper.measure(
+                      View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED),
+                      View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED)
+                  )
+                  val popupHeight = wrapper.measuredHeight
 
-                  return wrapper
+                  symbolsPopup = PopupWindow(
+                      wrapper,
+                      ViewGroup.LayoutParams.WRAP_CONTENT,
+                      ViewGroup.LayoutParams.WRAP_CONTENT,
+                      true
+                  ).apply {
+                      setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
+                      isOutsideTouchable = true
+                      elevation = 8f
+                      showAsDropDown(anchor, 0, -popupHeight)
+                  }
               }
 
               private fun createEmojiContent(): View {
@@ -777,8 +763,9 @@ jobs:
                       sendKey(KeyEvent.KEYCODE_ENTER) ; clearSugs()
                   }
 
+                  // Symbols button now opens a popup
                   setupKey(v.findViewById<TextView>(R.id.btn_symbols), R.drawable.key_bg_dark) {
-                      showBottomSheet(createSymbolsContent())
+                      showSymbolsPopup(it)
                   }
                   setupKey(v.findViewById<TextView>(R.id.btn_emoji), R.drawable.key_bg_dark) {
                       showBottomSheet(createEmojiContent())
@@ -1124,6 +1111,7 @@ jobs:
                   super.onDestroy()
                   stopBackspaceRepeat()
                   toolsPopup?.dismiss()
+                  symbolsPopup?.dismiss()
                   dismissBottomSheet()
               }
           }
