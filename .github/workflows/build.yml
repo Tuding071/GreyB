@@ -495,7 +495,7 @@ jobs:
                   view.setTextColor(0xFFFFFFFF.toInt())
               }
 
-              // ── Symbols popup (6 per row, scrollable, stays open, uses click + selector) ──
+              // ── Symbols popup (7 per row, scrollable, stays open, uses click + selector) ──
               private fun showSymbolsPopup(anchor: View) {
                   symbolsPopup?.dismiss()
                   val symbols = listOf(
@@ -506,9 +506,9 @@ jobs:
                       "€","£","¥","₱","¢","₹",
                       "°","•","…","«","»","¿","¡","×","÷","√","∞","≈","≠","≤","≥"
                   )
-                  val grid = GridLayout(this).apply { columnCount = 6; useDefaultMargins = true }
+                  val grid = GridLayout(this).apply { columnCount = 7; useDefaultMargins = true }
                   val popupWidth = (resources.displayMetrics.widthPixels * 0.8).toInt()
-                  val cellSize = popupWidth / 6
+                  val cellSize = popupWidth / 7
                   symbols.forEach { sym ->
                       val tv = TextView(this).apply {
                           text = sym; textSize = 18f; gravity = Gravity.CENTER
