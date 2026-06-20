@@ -154,11 +154,11 @@ jobs:
           </layer-list>
           ENDOFFILE
 
-          cat > app/src/main/res/drawable/popup_border.xml << 'ENDOFFILE'
+          # NEW: dark rounded popup background (no border)
+          cat > app/src/main/res/drawable/popup_bg_dark.xml << 'ENDOFFILE'
           <?xml version="1.0" encoding="utf-8"?>
           <shape xmlns:android="http://schemas.android.com/apk/res/android">
               <solid android:color="#2C2C2C"/>
-              <stroke android:width="1dp" android:color="#FFFFFF"/>
               <corners android:radius="8dp"/>
           </shape>
           ENDOFFILE
@@ -499,7 +499,7 @@ jobs:
                   }
                   val wrapper = LinearLayout(this).apply {
                       orientation = LinearLayout.VERTICAL
-                      setBackgroundResource(R.drawable.popup_border)
+                      setBackgroundResource(R.drawable.popup_bg_dark)   // dark rounded, no border
                       setPadding(4.dp, 4.dp, 4.dp, 4.dp)
                   }
                   wrapper.addView(grid)
@@ -531,7 +531,7 @@ jobs:
                   }
                   val wrapper = LinearLayout(this).apply {
                       orientation = LinearLayout.VERTICAL
-                      setBackgroundResource(R.drawable.popup_border)
+                      setBackgroundResource(R.drawable.popup_bg_dark)
                       setPadding(4.dp, 4.dp, 4.dp, 4.dp)
                   }
                   wrapper.addView(grid)
@@ -547,7 +547,7 @@ jobs:
                   }
               }
 
-              // ── Clipboard popup ──
+              // ── Clipboard popup (with press feedback on items) ──
               private fun showClipboardPopup(anchor: View) {
                   clipboardPopup?.dismiss()
                   val contentView = if (clipboardItems.isEmpty()) {
@@ -578,7 +578,7 @@ jobs:
                   }
                   val wrapper = LinearLayout(this).apply {
                       orientation = LinearLayout.VERTICAL
-                      setBackgroundResource(R.drawable.popup_border)
+                      setBackgroundResource(R.drawable.popup_bg_dark)
                       setPadding(4.dp, 4.dp, 4.dp, 4.dp)
                   }
                   wrapper.addView(contentView)
@@ -758,24 +758,25 @@ jobs:
                   return v
               }
 
-              // ── Edit popup ──
+              // ── Edit popup: dark grey bg, white text, white press bg ──
               private fun showToolsPopup(anchor: View) {
                   toolsPopup?.dismiss()
                   val popup = LinearLayout(this).apply {
                       orientation = LinearLayout.VERTICAL
-                      setBackgroundColor(0xFFFFFFFF.toInt())
+                      setBackgroundColor(0xFF2C2C2C.toInt())   // dark grey
                       setPadding(0, 0, 0, 0)
                   }
                   listOf("Select All", "Copy", "Paste").forEach { label ->
                       val tv = TextView(this).apply {
                           text = label; textSize = 20f
-                          setTextColor(0xFF000000.toInt()); setPadding(16.dp, 10.dp, 16.dp, 10.dp)
+                          setTextColor(0xFFFFFFFF.toInt())      // white text
+                          setPadding(16.dp, 10.dp, 16.dp, 10.dp)
                           setOnTouchListener { v, event ->
                               when (event.actionMasked) {
                                   MotionEvent.ACTION_DOWN -> {
                                       (v as? TextView)?.apply {
-                                          setBackgroundColor(0xFF000000.toInt())
-                                          setTextColor(0xFFFFFFFF.toInt())
+                                          setBackgroundColor(0xFFFFFFFF.toInt())   // white bg
+                                          setTextColor(0xFF000000.toInt())         // black text
                                       }
                                       true
                                   }
@@ -799,15 +800,15 @@ jobs:
                                       }
                                       action()
                                       (v as? TextView)?.apply {
-                                          setBackgroundColor(0xFFFFFFFF.toInt())
-                                          setTextColor(0xFF000000.toInt())
+                                          setBackgroundColor(0xFF2C2C2C.toInt())   // back to dark grey
+                                          setTextColor(0xFFFFFFFF.toInt())         // white text
                                       }
                                       true
                                   }
                                   MotionEvent.ACTION_CANCEL -> {
                                       (v as? TextView)?.apply {
-                                          setBackgroundColor(0xFFFFFFFF.toInt())
-                                          setTextColor(0xFF000000.toInt())
+                                          setBackgroundColor(0xFF2C2C2C.toInt())
+                                          setTextColor(0xFFFFFFFF.toInt())
                                       }
                                       true
                                   }
@@ -981,6 +982,22 @@ jobs:
                   }
                   override fun onBindViewHolder(h: VH, pos: Int) {
                       h.tv.text = items[pos]
+                      // Add press feedback on both the row and the delete button
+                      h.root.setOnTouchListener { v, event ->
+                          when (event.actionMasked) {
+                              MotionEvent.ACTION_DOWN -> {
+                                  h.root.setBackgroundColor(0xFFFFFFFF.toInt())   // white bg
+                                  h.tv.setTextColor(0xFF000000.toInt())           // black text
+                                  false   // let click happen
+                              }
+                              MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
+                                  h.root.setBackgroundColor(0xFF2C2C2C.toInt())   // back to dark
+                                  h.tv.setTextColor(0xFFFFFFFF.toInt())           // white text
+                                  false
+                              }
+                              else -> false
+                          }
+                      }
                       h.root.setOnClickListener { onPaste(items[pos]) }
                       h.del.setOnClickListener { onDelete(h.adapterPosition) }
                   }
