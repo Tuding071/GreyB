@@ -154,11 +154,12 @@ jobs:
           </layer-list>
           ENDOFFILE
 
-          # NEW: dark rounded popup background (no border)
-          cat > app/src/main/res/drawable/popup_bg_dark.xml << 'ENDOFFILE'
+          # Thin white border, dark grey fill – used for all popups
+          cat > app/src/main/res/drawable/popup_border.xml << 'ENDOFFILE'
           <?xml version="1.0" encoding="utf-8"?>
           <shape xmlns:android="http://schemas.android.com/apk/res/android">
               <solid android:color="#2C2C2C"/>
+              <stroke android:width="1dp" android:color="#FFFFFF"/>
               <corners android:radius="8dp"/>
           </shape>
           ENDOFFILE
@@ -478,7 +479,7 @@ jobs:
                   view.setTextColor(0xFFFFFFFF.toInt())
               }
 
-              // ── Symbols popup ──
+              // ── Symbols popup (centred, with white border, safely inside screen) ──
               private fun showSymbolsPopup(anchor: View) {
                   symbolsPopup?.dismiss()
                   val symbols = listOf(
@@ -499,23 +500,32 @@ jobs:
                   }
                   val wrapper = LinearLayout(this).apply {
                       orientation = LinearLayout.VERTICAL
-                      setBackgroundResource(R.drawable.popup_bg_dark)   // dark rounded, no border
-                      setPadding(4.dp, 4.dp, 4.dp, 4.dp)
+                      setBackgroundResource(R.drawable.popup_border)   // white border
+                      setPadding(8.dp, 8.dp, 8.dp, 8.dp)
                   }
                   wrapper.addView(grid)
+
+                  // Fixed popup width (away from edges)
+                  val popupWidth = resources.displayMetrics.widthPixels - 64.dp
+                  // Measure to get height
                   wrapper.measure(
-                      View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED),
+                      View.MeasureSpec.makeMeasureSpec(popupWidth, View.MeasureSpec.EXACTLY),
                       View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED)
                   )
-                  symbolsPopup = PopupWindow(wrapper, ViewGroup.LayoutParams.WRAP_CONTENT,
-                      ViewGroup.LayoutParams.WRAP_CONTENT, true).apply {
+                  val popupHeight = wrapper.measuredHeight
+
+                  // Centre horizontally above the anchor
+                  val anchorWidth = anchor.width
+                  val xOffset = -(popupWidth - anchorWidth) / 2
+
+                  symbolsPopup = PopupWindow(wrapper, popupWidth, popupHeight, true).apply {
                       setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
                       isOutsideTouchable = true; elevation = 8f
-                      showAsDropDown(anchor, 0, -wrapper.measuredHeight)
+                      showAsDropDown(anchor, xOffset, -popupHeight)
                   }
               }
 
-              // ── Emoji popup ──
+              // ── Emoji popup (centred, same style) ──
               private fun showEmojiPopup(anchor: View) {
                   emojiPopup?.dismiss()
                   val emojis = listOf("😀","😂","😍","🥰","😎","👍","🔥","🎉")
@@ -531,23 +541,28 @@ jobs:
                   }
                   val wrapper = LinearLayout(this).apply {
                       orientation = LinearLayout.VERTICAL
-                      setBackgroundResource(R.drawable.popup_bg_dark)
-                      setPadding(4.dp, 4.dp, 4.dp, 4.dp)
+                      setBackgroundResource(R.drawable.popup_border)
+                      setPadding(8.dp, 8.dp, 8.dp, 8.dp)
                   }
                   wrapper.addView(grid)
+
+                  val popupWidth = resources.displayMetrics.widthPixels - 64.dp
                   wrapper.measure(
-                      View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED),
+                      View.MeasureSpec.makeMeasureSpec(popupWidth, View.MeasureSpec.EXACTLY),
                       View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED)
                   )
-                  emojiPopup = PopupWindow(wrapper, ViewGroup.LayoutParams.WRAP_CONTENT,
-                      ViewGroup.LayoutParams.WRAP_CONTENT, true).apply {
+                  val popupHeight = wrapper.measuredHeight
+                  val anchorWidth = anchor.width
+                  val xOffset = -(popupWidth - anchorWidth) / 2
+
+                  emojiPopup = PopupWindow(wrapper, popupWidth, popupHeight, true).apply {
                       setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
                       isOutsideTouchable = true; elevation = 8f
-                      showAsDropDown(anchor, 0, -wrapper.measuredHeight)
+                      showAsDropDown(anchor, xOffset, -popupHeight)
                   }
               }
 
-              // ── Clipboard popup (with press feedback on items) ──
+              // ── Clipboard popup (centred, same style) ──
               private fun showClipboardPopup(anchor: View) {
                   clipboardPopup?.dismiss()
                   val contentView = if (clipboardItems.isEmpty()) {
@@ -578,19 +593,24 @@ jobs:
                   }
                   val wrapper = LinearLayout(this).apply {
                       orientation = LinearLayout.VERTICAL
-                      setBackgroundResource(R.drawable.popup_bg_dark)
-                      setPadding(4.dp, 4.dp, 4.dp, 4.dp)
+                      setBackgroundResource(R.drawable.popup_border)
+                      setPadding(8.dp, 8.dp, 8.dp, 8.dp)
                   }
                   wrapper.addView(contentView)
+
+                  val popupWidth = resources.displayMetrics.widthPixels - 64.dp
                   wrapper.measure(
-                      View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED),
+                      View.MeasureSpec.makeMeasureSpec(popupWidth, View.MeasureSpec.EXACTLY),
                       View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED)
                   )
-                  clipboardPopup = PopupWindow(wrapper, ViewGroup.LayoutParams.WRAP_CONTENT,
-                      ViewGroup.LayoutParams.WRAP_CONTENT, true).apply {
+                  val popupHeight = wrapper.measuredHeight
+                  val anchorWidth = anchor.width
+                  val xOffset = -(popupWidth - anchorWidth) / 2
+
+                  clipboardPopup = PopupWindow(wrapper, popupWidth, popupHeight, true).apply {
                       setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
                       isOutsideTouchable = true; elevation = 8f
-                      showAsDropDown(anchor, 0, -wrapper.measuredHeight)
+                      showAsDropDown(anchor, xOffset, -popupHeight)
                   }
               }
 
@@ -758,12 +778,12 @@ jobs:
                   return v
               }
 
-              // ── Edit popup: dark grey bg, white text, white press bg ──
+              // ── Edit popup: also using white border, dark grey, white press feedback ──
               private fun showToolsPopup(anchor: View) {
                   toolsPopup?.dismiss()
                   val popup = LinearLayout(this).apply {
                       orientation = LinearLayout.VERTICAL
-                      setBackgroundColor(0xFF2C2C2C.toInt())   // dark grey
+                      setBackgroundResource(R.drawable.popup_border)   // white border + dark fill
                       setPadding(0, 0, 0, 0)
                   }
                   listOf("Select All", "Copy", "Paste").forEach { label ->
@@ -800,14 +820,14 @@ jobs:
                                       }
                                       action()
                                       (v as? TextView)?.apply {
-                                          setBackgroundColor(0xFF2C2C2C.toInt())   // back to dark grey
-                                          setTextColor(0xFFFFFFFF.toInt())         // white text
+                                          setBackgroundColor(0x00000000.toInt())   // transparent (drawable shows)
+                                          setTextColor(0xFFFFFFFF.toInt())
                                       }
                                       true
                                   }
                                   MotionEvent.ACTION_CANCEL -> {
                                       (v as? TextView)?.apply {
-                                          setBackgroundColor(0xFF2C2C2C.toInt())
+                                          setBackgroundColor(0x00000000.toInt())
                                           setTextColor(0xFFFFFFFF.toInt())
                                       }
                                       true
@@ -818,15 +838,20 @@ jobs:
                       }
                       popup.addView(tv)
                   }
+                  // Fixed width, centred above the anchor
+                  val popupWidth = resources.displayMetrics.widthPixels - 64.dp
                   popup.measure(
-                      View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED),
+                      View.MeasureSpec.makeMeasureSpec(popupWidth, View.MeasureSpec.EXACTLY),
                       View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED)
                   )
-                  toolsPopup = PopupWindow(popup, ViewGroup.LayoutParams.WRAP_CONTENT,
-                      ViewGroup.LayoutParams.WRAP_CONTENT, true).apply {
+                  val popupHeight = popup.measuredHeight
+                  val anchorWidth = anchor.width
+                  val xOffset = -(popupWidth - anchorWidth) / 2
+
+                  toolsPopup = PopupWindow(popup, popupWidth, popupHeight, true).apply {
                       setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
                       isOutsideTouchable = true; elevation = 8f
-                      showAsDropDown(anchor, 0, -popup.measuredHeight)
+                      showAsDropDown(anchor, xOffset, -popupHeight)
                   }
               }
 
@@ -982,17 +1007,16 @@ jobs:
                   }
                   override fun onBindViewHolder(h: VH, pos: Int) {
                       h.tv.text = items[pos]
-                      // Add press feedback on both the row and the delete button
                       h.root.setOnTouchListener { v, event ->
                           when (event.actionMasked) {
                               MotionEvent.ACTION_DOWN -> {
-                                  h.root.setBackgroundColor(0xFFFFFFFF.toInt())   // white bg
-                                  h.tv.setTextColor(0xFF000000.toInt())           // black text
-                                  false   // let click happen
+                                  h.root.setBackgroundColor(0xFFFFFFFF.toInt())
+                                  h.tv.setTextColor(0xFF000000.toInt())
+                                  false
                               }
                               MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
-                                  h.root.setBackgroundColor(0xFF2C2C2C.toInt())   // back to dark
-                                  h.tv.setTextColor(0xFFFFFFFF.toInt())           // white text
+                                  h.root.setBackgroundColor(0xFF2C2C2C.toInt())
+                                  h.tv.setTextColor(0xFFFFFFFF.toInt())
                                   false
                               }
                               else -> false
