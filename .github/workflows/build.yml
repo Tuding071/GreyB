@@ -500,36 +500,41 @@ jobs:
                   view.setTextColor(0xFFFFFFFF.toInt())
               }
 
-              // ── Symbols popup (5 per row, scrollable, stays open, most-used symbols first) ──
+              // ── Symbols popup (5 per row, exactly like fixed symbols) ──
               private fun showSymbolsPopup(anchor: View) {
                   symbolsPopup?.dismiss()
                   val symbols = listOf(
-                      // Most commonly used — top of grid
                       ".",",","!","?","@","#","$","%","&","*","(",")","-","+","=","/",":",";","'","\"",
-                      // Common punctuation extras
                       "~","_","\\","|","^","`","°","•","…","«","»","¿","¡","§","¶","©","®","™","‰","µ",
-                      // Brackets
                       "[","]","{","}","<",">",
-                      // Math
                       "×","÷","√","∞","≈","≠","≤","≥","±","∑","∏","π","∆",
-                      // Currency
                       "€","£","¥","₱","¢","₹","₩","₽","₿",
-                      // Arrows
                       "→","←","↑","↓","↔","⇒","⇐"
                   )
-                  val grid = GridLayout(this).apply { columnCount = 5; useDefaultMargins = true }
+                  val wrapperPadding = 8.dp
                   val popupWidth = (resources.displayMetrics.widthPixels * 0.8).toInt()
-                  val cellSize = popupWidth / 5
+                  val innerWidth = popupWidth - 2 * wrapperPadding
+                  val colCount = 5
+                  val cellSize = innerWidth / colCount
+
+                  val grid = GridLayout(this).apply {
+                      columnCount = colCount
+                      useDefaultMargins = false
+                  }
                   symbols.forEach { sym ->
                       val tv = TextView(this).apply {
                           text = sym; textSize = 18f; gravity = Gravity.CENTER
                           setTextColor(0xFFFFFFFF.toInt())
-                          layoutParams = GridLayout.LayoutParams().apply { width = cellSize; height = cellSize }
-                          background = resources.getDrawable(R.drawable.key_bg_selector, null)  // press effect
-                          setOnClickListener { commitText(sym) }   // stays open
+                          background = resources.getDrawable(R.drawable.key_bg_selector, null)
+                          setOnClickListener { commitText(sym) }
                       }
-                      grid.addView(tv)
+                      val params = GridLayout.LayoutParams().apply {
+                          width = cellSize
+                          height = cellSize
+                      }
+                      grid.addView(tv, params)
                   }
+
                   val label = TextView(this).apply {
                       text = "Symbols"
                       textSize = 16f; setTextColor(0xFFFFFFFF.toInt())
@@ -545,7 +550,7 @@ jobs:
                   val wrapper = LinearLayout(this).apply {
                       orientation = LinearLayout.VERTICAL
                       setBackgroundResource(R.drawable.popup_border)
-                      setPadding(8.dp, 0, 8.dp, 8.dp)
+                      setPadding(wrapperPadding, 0, wrapperPadding, 8.dp)
                   }
                   wrapper.addView(label)
                   wrapper.addView(scroll)
@@ -554,13 +559,13 @@ jobs:
                   symbolsPopup = PopupWindow(wrapper, popupWidth, popupHeight, true).apply {
                       setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
                       isOutsideTouchable = true
-                      isFocusable = true       // back press dismiss
+                      isFocusable = true
                       elevation = 8f
                       showAtLocation(rootFrame, Gravity.CENTER, 0, 0)
                   }
               }
 
-              // ── Emoji popup (Recently Used at top, then categorized, 5 per row, scrollable, stays open) ──
+              // ── Emoji popup (now fixed: 5 per row, consistent with symbols) ──
               private fun showEmojiPopup(anchor: View) {
                   emojiPopup?.dismiss()
 
@@ -608,8 +613,11 @@ jobs:
                       )
                   ))
 
+                  val wrapperPadding = 8.dp
                   val popupWidth = (resources.displayMetrics.widthPixels * 0.8).toInt()
-                  val cellSize = popupWidth / 5
+                  val innerWidth = popupWidth - 2 * wrapperPadding
+                  val colCount = 5
+                  val cellSize = innerWidth / colCount
 
                   val container = LinearLayout(this).apply {
                       orientation = LinearLayout.VERTICAL
@@ -623,17 +631,23 @@ jobs:
                           gravity = Gravity.START
                           setPadding(4.dp, 10.dp, 0, 4.dp)
                       })
-                      val grid = GridLayout(this).apply { columnCount = 5; useDefaultMargins = true }
+                      val grid = GridLayout(this).apply {
+                          columnCount = colCount
+                          useDefaultMargins = false
+                      }
                       emojis.forEach { emoji ->
                           val tv = TextView(this).apply {
                               text = emoji
                               textSize = 26f
                               gravity = Gravity.CENTER
-                              layoutParams = GridLayout.LayoutParams().apply { width = cellSize; height = cellSize }
                               background = resources.getDrawable(R.drawable.key_bg_selector, null)
-                              setOnClickListener { commitEmoji(emoji) }   // stays open
+                              setOnClickListener { commitEmoji(emoji) }
                           }
-                          grid.addView(tv)
+                          val params = GridLayout.LayoutParams().apply {
+                              width = cellSize
+                              height = cellSize
+                          }
+                          grid.addView(tv, params)
                       }
                       container.addView(grid)
                   }
@@ -655,7 +669,7 @@ jobs:
                   val wrapper = LinearLayout(this).apply {
                       orientation = LinearLayout.VERTICAL
                       setBackgroundResource(R.drawable.popup_border)
-                      setPadding(8.dp, 0, 8.dp, 8.dp)
+                      setPadding(wrapperPadding, 0, wrapperPadding, 8.dp)
                   }
                   wrapper.addView(topLabel)
                   wrapper.addView(scroll)
