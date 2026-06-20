@@ -544,7 +544,6 @@ jobs:
                               height = cellSize
                           }
                       }
-                      // Reuse the same press-feedback mechanism
                       setupKey(tv, R.drawable.key_bg) {
                           commitText(sym)
                           symbolsPopup?.dismiss()
@@ -764,9 +763,11 @@ jobs:
                   }
 
                   // Symbols button now opens a popup
-                  setupKey(v.findViewById<TextView>(R.id.btn_symbols), R.drawable.key_bg_dark) {
-                      showSymbolsPopup(it)
+                  val symbolsBtn = v.findViewById<TextView>(R.id.btn_symbols)
+                  setupKey(symbolsBtn, R.drawable.key_bg_dark) {
+                      showSymbolsPopup(symbolsBtn)
                   }
+
                   setupKey(v.findViewById<TextView>(R.id.btn_emoji), R.drawable.key_bg_dark) {
                       showBottomSheet(createEmojiContent())
                   }
