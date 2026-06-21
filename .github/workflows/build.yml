@@ -876,7 +876,7 @@ jobs:
                   var dragStarted = false
                   var lastCursorMoveX = 0f
                   val DRAG_THRESHOLD = 50.dp.toFloat()
-                  val CURSOR_INTERVAL = 30.dp.toFloat()
+                  val CURSOR_INTERVAL = 20.dp.toFloat()
 
                   spaceView.setOnTouchListener { _, event ->
                       when (event.actionMasked) {
