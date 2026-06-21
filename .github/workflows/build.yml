@@ -432,6 +432,7 @@ jobs:
           import android.widget.*
           import androidx.recyclerview.widget.*
           import android.inputmethodservice.InputMethodService
+          import kotlin.math.abs
 
           class Keyboard : InputMethodService() {
 
@@ -447,7 +448,7 @@ jobs:
               private val PREFS_CLIP = "clipboard"
               private val PREFS_RECENT_EMOJI = "recent_emoji"
               private val MAX_CLIP = 10
-              private val MAX_RECENT_EMOJI = 12
+              private val MAX_RECENT_EMOJI = 10          // reduced to 10
               private var clipAdapter: ClipboardAdapter? = null
 
               private val recentEmojis = mutableListOf<String>()
@@ -565,7 +566,7 @@ jobs:
                   }
               }
 
-              // ── Emoji popup (now fixed: 5 per row, consistent with symbols) ──
+              // ── Emoji popup (5 per row, consistent with symbols) ──
               private fun showEmojiPopup(anchor: View) {
                   emojiPopup?.dismiss()
 
@@ -845,9 +846,55 @@ jobs:
                       }
                   }
 
-                  setupKey(v.findViewById<TextView>(R.id.btn_space),  R.drawable.key_bg_dark) {
-                      sendKey(KeyEvent.KEYCODE_SPACE); clearSugs()
+                  // ── Space bar with drag-to-cursor feature ──
+                  val spaceView = v.findViewById<TextView>(R.id.btn_space)
+                  spaceView.setTag(R.id.original_bg_tag, R.drawable.key_bg_dark)
+                  var startX = 0f
+                  var dragStarted = false
+                  var lastArrowX = 0f
+                  val DRAG_THRESHOLD = 50.dp.toFloat()
+                  val ARROW_INTERVAL = 40.dp.toFloat()
+
+                  spaceView.setOnTouchListener { _, event ->
+                      when (event.actionMasked) {
+                          MotionEvent.ACTION_DOWN -> {
+                              pressKey(spaceView)
+                              startX = event.x
+                              dragStarted = false
+                              lastArrowX = startX
+                              true
+                          }
+                          MotionEvent.ACTION_MOVE -> {
+                              val delta = event.x - startX
+                              if (abs(delta) >= DRAG_THRESHOLD && !dragStarted) {
+                                  dragStarted = true
+                                  val direction = if (delta > 0) KeyEvent.KEYCODE_DPAD_RIGHT else KeyEvent.KEYCODE_DPAD_LEFT
+                                  sendKey(direction)
+                                  lastArrowX = event.x
+                              } else if (dragStarted) {
+                                  val dx = event.x - lastArrowX
+                                  if (abs(dx) >= ARROW_INTERVAL) {
+                                      val direction = if (dx > 0) KeyEvent.KEYCODE_DPAD_RIGHT else KeyEvent.KEYCODE_DPAD_LEFT
+                                      sendKey(direction)
+                                      lastArrowX = event.x
+                                  }
+                              }
+                              true
+                          }
+                          MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
+                              releaseKey(spaceView)
+                              if (!dragStarted) {
+                                  // Normal tap → insert space
+                                  sendKey(KeyEvent.KEYCODE_SPACE)
+                                  clearSugs()
+                              }
+                              dragStarted = false
+                              true
+                          }
+                          else -> true
+                      }
                   }
+
                   setupKey(v.findViewById<TextView>(R.id.btn_comma),  R.drawable.key_bg) {
                       sendKey(KeyEvent.KEYCODE_COMMA); clearSugs()
                   }
