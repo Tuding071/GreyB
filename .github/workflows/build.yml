@@ -448,7 +448,7 @@ jobs:
               private val PREFS_CLIP = "clipboard"
               private val PREFS_RECENT_EMOJI = "recent_emoji"
               private val MAX_CLIP = 10
-              private val MAX_RECENT_EMOJI = 10          // now 10
+              private val MAX_RECENT_EMOJI = 10
               private var clipAdapter: ClipboardAdapter? = null
 
               private val recentEmojis = mutableListOf<String>()
@@ -501,7 +501,30 @@ jobs:
                   view.setTextColor(0xFFFFFFFF.toInt())
               }
 
-              // ── Symbols popup (5 per row, exactly like fixed symbols) ──
+              // ── Cursor movement using selection, not DPAD keys ──
+              private fun moveCursor(right: Boolean) {
+                  val ic = currentInputConnection ?: return
+                  val req = ExtractedTextRequest()
+                  req.token = 0
+                  req.flags = 0
+                  val extracted = ic.getExtractedText(req, 0)
+                  if (extracted != null) {
+                      val pos = extracted.selectionStart
+                      val textLen = extracted.text?.length ?: 0
+                      val newPos = if (right) {
+                          minOf(pos + 1, textLen)
+                      } else {
+                          maxOf(pos - 1, 0)
+                      }
+                      ic.setSelection(newPos, newPos)
+                  } else {
+                      // fallback to DPAD if extracted text not supported (rare)
+                      val key = if (right) KeyEvent.KEYCODE_DPAD_RIGHT else KeyEvent.KEYCODE_DPAD_LEFT
+                      sendKey(key)
+                  }
+              }
+
+              // ── Symbols popup (5 per row) ──
               private fun showSymbolsPopup(anchor: View) {
                   symbolsPopup?.dismiss()
                   val symbols = listOf(
@@ -566,7 +589,7 @@ jobs:
                   }
               }
 
-              // ── Emoji popup (5 per row, consistent with symbols) ──
+              // ── Emoji popup (5 per row) ──
               private fun showEmojiPopup(anchor: View) {
                   emojiPopup?.dismiss()
 
@@ -685,7 +708,7 @@ jobs:
                   }
               }
 
-              // ── Clipboard popup (centred) ──
+              // ── Clipboard popup ──
               private fun showClipboardPopup(anchor: View) {
                   clipboardPopup?.dismiss()
                   val contentView = if (clipboardItems.isEmpty()) {
@@ -846,14 +869,14 @@ jobs:
                       }
                   }
 
-                  // ── Space bar with drag-to-cursor (30dp interval) ──
+                  // ── Space bar drag‑to‑cursor (uses setSelection) ──
                   val spaceView = v.findViewById<TextView>(R.id.btn_space)
                   spaceView.setTag(R.id.original_bg_tag, R.drawable.key_bg_dark)
                   var startX = 0f
                   var dragStarted = false
-                  var lastArrowX = 0f
+                  var lastCursorMoveX = 0f
                   val DRAG_THRESHOLD = 50.dp.toFloat()
-                  val ARROW_INTERVAL = 30.dp.toFloat()      // 30dp now
+                  val CURSOR_INTERVAL = 30.dp.toFloat()
 
                   spaceView.setOnTouchListener { _, event ->
                       when (event.actionMasked) {
@@ -861,22 +884,22 @@ jobs:
                               pressKey(spaceView)
                               startX = event.x
                               dragStarted = false
-                              lastArrowX = startX
+                              lastCursorMoveX = startX
                               true
                           }
                           MotionEvent.ACTION_MOVE -> {
                               val delta = event.x - startX
                               if (abs(delta) >= DRAG_THRESHOLD && !dragStarted) {
                                   dragStarted = true
-                                  val direction = if (delta > 0) KeyEvent.KEYCODE_DPAD_RIGHT else KeyEvent.KEYCODE_DPAD_LEFT
-                                  sendKey(direction)
-                                  lastArrowX = event.x
+                                  val right = delta > 0
+                                  moveCursor(right)
+                                  lastCursorMoveX = event.x
                               } else if (dragStarted) {
-                                  val dx = event.x - lastArrowX
-                                  if (abs(dx) >= ARROW_INTERVAL) {
-                                      val direction = if (dx > 0) KeyEvent.KEYCODE_DPAD_RIGHT else KeyEvent.KEYCODE_DPAD_LEFT
-                                      sendKey(direction)
-                                      lastArrowX = event.x
+                                  val dx = event.x - lastCursorMoveX
+                                  if (abs(dx) >= CURSOR_INTERVAL) {
+                                      val right = dx > 0
+                                      moveCursor(right)
+                                      lastCursorMoveX = event.x
                                   }
                               }
                               true
