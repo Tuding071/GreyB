@@ -69,28 +69,16 @@ jobs:
                   android:label="GreyB Keyboard"
                   android:icon="@mipmap/ic_launcher"
                   android:supportsRtl="true">
-
-                  <activity
-                      android:name=".MainActivity"
-                      android:label="GreyB Keyboard"
-                      android:exported="true">
+                  <activity android:name=".MainActivity" android:label="GreyB Keyboard" android:exported="true">
                       <intent-filter>
-                          <action android:name="android.intent.action.MAIN" />
-                          <category android:name="android.intent.category.LAUNCHER" />
+                          <action android:name="android.intent.action.MAIN"/>
+                          <category android:name="android.intent.category.LAUNCHER"/>
                       </intent-filter>
                   </activity>
-
-                  <service
-                      android:name=".Keyboard"
-                      android:label="GreyB Keyboard"
-                      android:permission="android.permission.BIND_INPUT_METHOD"
-                      android:exported="true">
-                      <intent-filter>
-                          <action android:name="android.view.InputMethod" />
-                      </intent-filter>
-                      <meta-data
-                          android:name="android.view.im"
-                          android:resource="@xml/method" />
+                  <service android:name=".Keyboard" android:label="GreyB Keyboard"
+                      android:permission="android.permission.BIND_INPUT_METHOD" android:exported="true">
+                      <intent-filter><action android:name="android.view.InputMethod"/></intent-filter>
+                      <meta-data android:name="android.view.im" android:resource="@xml/method"/>
                   </service>
               </application>
           </manifest>
@@ -101,10 +89,7 @@ jobs:
           cat > app/src/main/res/xml/method.xml << 'ENDOFFILE'
           <?xml version="1.0" encoding="utf-8"?>
           <input-method xmlns:android="http://schemas.android.com/apk/res/android">
-              <subtype
-                  android:label="English"
-                  android:imeSubtypeLocale="en_US"
-                  android:imeSubtypeMode="keyboard" />
+              <subtype android:label="English" android:imeSubtypeLocale="en_US" android:imeSubtypeMode="keyboard"/>
           </input-method>
           ENDOFFILE
 
@@ -218,72 +203,31 @@ jobs:
               android:orientation="vertical"
               android:background="#1e1e1e">
 
-              <LinearLayout
-                  android:layout_width="match_parent"
-                  android:layout_height="55dp"
-                  android:orientation="horizontal"
-                  android:gravity="center_vertical"
-                  android:paddingStart="3dp"
-                  android:paddingEnd="3dp">
-
-                  <TextView
-                      android:id="@+id/btn_clipboard"
-                      android:layout_width="42dp"
-                      android:layout_height="match_parent"
-                      android:gravity="center"
-                      android:text="Clip"
-                      android:textColor="#ffffff"
-                      android:textSize="13sp"
-                      android:background="@drawable/key_bg_dark"/>
-
-                  <LinearLayout
-                      android:layout_width="0dp"
-                      android:layout_height="match_parent"
-                      android:layout_weight="1"
-                      android:orientation="horizontal"
-                      android:gravity="center_vertical">
-
-                      <TextView android:id="@+id/sug2"
-                          android:layout_width="0dp" android:layout_height="match_parent"
-                          android:layout_weight="1" android:gravity="center"
-                          android:background="@drawable/key_bg_dark"
-                          android:textColor="#ffffff" android:textSize="18sp"
-                          android:paddingStart="3dp" android:paddingEnd="3dp"/>
-
-                      <TextView android:id="@+id/sug1"
-                          android:layout_width="0dp" android:layout_height="match_parent"
-                          android:layout_weight="1" android:gravity="center"
-                          android:background="@drawable/key_bg_dark"
-                          android:textColor="#ffffff" android:textSize="18sp"
-                          android:paddingStart="3dp" android:paddingEnd="3dp"/>
-
-                      <TextView android:id="@+id/sug3"
-                          android:layout_width="0dp" android:layout_height="match_parent"
-                          android:layout_weight="1" android:gravity="center"
-                          android:background="@drawable/key_bg_dark"
-                          android:textColor="#ffffff" android:textSize="18sp"
-                          android:paddingStart="3dp" android:paddingEnd="3dp"/>
-
+              <LinearLayout android:layout_width="match_parent" android:layout_height="55dp"
+                  android:orientation="horizontal" android:gravity="center_vertical"
+                  android:paddingStart="3dp" android:paddingEnd="3dp">
+                  <TextView android:id="@+id/btn_clipboard" android:layout_width="42dp"
+                      android:layout_height="match_parent" android:gravity="center" android:text="Clip"
+                      android:textColor="#ffffff" android:textSize="13sp" android:background="@drawable/key_bg_dark"/>
+                  <LinearLayout android:layout_width="0dp" android:layout_height="match_parent"
+                      android:layout_weight="1" android:orientation="horizontal" android:gravity="center_vertical">
+                      <TextView android:id="@+id/sug2" android:layout_width="0dp" android:layout_height="match_parent"
+                          android:layout_weight="1" android:gravity="center" android:background="@drawable/key_bg_dark"
+                          android:textColor="#ffffff" android:textSize="18sp" android:paddingStart="3dp" android:paddingEnd="3dp"/>
+                      <TextView android:id="@+id/sug1" android:layout_width="0dp" android:layout_height="match_parent"
+                          android:layout_weight="1" android:gravity="center" android:background="@drawable/key_bg_dark"
+                          android:textColor="#ffffff" android:textSize="18sp" android:paddingStart="3dp" android:paddingEnd="3dp"/>
+                      <TextView android:id="@+id/sug3" android:layout_width="0dp" android:layout_height="match_parent"
+                          android:layout_weight="1" android:gravity="center" android:background="@drawable/key_bg_dark"
+                          android:textColor="#ffffff" android:textSize="18sp" android:paddingStart="3dp" android:paddingEnd="3dp"/>
                   </LinearLayout>
-
-                  <TextView
-                      android:id="@+id/btn_tools"
-                      android:layout_width="42dp"
-                      android:layout_height="match_parent"
-                      android:gravity="center"
-                      android:text="Edit"
-                      android:textColor="#ffffff"
-                      android:textSize="13sp"
-                      android:background="@drawable/key_bg_dark"/>
-
+                  <TextView android:id="@+id/btn_tools" android:layout_width="42dp"
+                      android:layout_height="match_parent" android:gravity="center" android:text="Edit"
+                      android:textColor="#ffffff" android:textSize="13sp" android:background="@drawable/key_bg_dark"/>
               </LinearLayout>
 
-              <LinearLayout
-                  android:layout_width="match_parent"
-                  android:layout_height="55dp"
-                  android:orientation="horizontal"
-                  android:paddingStart="3dp"
-                  android:paddingEnd="3dp">
+              <LinearLayout android:layout_width="match_parent" android:layout_height="55dp"
+                  android:orientation="horizontal" android:paddingStart="3dp" android:paddingEnd="3dp">
                   <TextView android:id="@+id/k1" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="1" android:textColor="#fff" android:textSize="24sp" android:background="@drawable/key_bg"/>
                   <TextView android:id="@+id/k2" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="2" android:textColor="#fff" android:textSize="24sp" android:background="@drawable/key_bg"/>
                   <TextView android:id="@+id/k3" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="3" android:textColor="#fff" android:textSize="24sp" android:background="@drawable/key_bg"/>
@@ -296,12 +240,8 @@ jobs:
                   <TextView android:id="@+id/k0" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="0" android:textColor="#fff" android:textSize="24sp" android:background="@drawable/key_bg"/>
               </LinearLayout>
 
-              <LinearLayout
-                  android:layout_width="match_parent"
-                  android:layout_height="55dp"
-                  android:orientation="horizontal"
-                  android:paddingStart="3dp"
-                  android:paddingEnd="3dp">
+              <LinearLayout android:layout_width="match_parent" android:layout_height="55dp"
+                  android:orientation="horizontal" android:paddingStart="3dp" android:paddingEnd="3dp">
                   <TextView android:id="@+id/kq" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="q" android:textColor="#fff" android:textSize="24sp" android:background="@drawable/key_bg"/>
                   <TextView android:id="@+id/kw" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="w" android:textColor="#fff" android:textSize="24sp" android:background="@drawable/key_bg"/>
                   <TextView android:id="@+id/ke" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="e" android:textColor="#fff" android:textSize="24sp" android:background="@drawable/key_bg"/>
@@ -314,12 +254,8 @@ jobs:
                   <TextView android:id="@+id/kp" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="p" android:textColor="#fff" android:textSize="24sp" android:background="@drawable/key_bg"/>
               </LinearLayout>
 
-              <LinearLayout
-                  android:layout_width="match_parent"
-                  android:layout_height="55dp"
-                  android:orientation="horizontal"
-                  android:paddingStart="3dp"
-                  android:paddingEnd="3dp">
+              <LinearLayout android:layout_width="match_parent" android:layout_height="55dp"
+                  android:orientation="horizontal" android:paddingStart="3dp" android:paddingEnd="3dp">
                   <View android:id="@+id/asdf_spacer_left" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="0.5" android:focusable="false" android:clickable="true" android:background="#00000000"/>
                   <TextView android:id="@+id/ka" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="a" android:textColor="#fff" android:textSize="24sp" android:background="@drawable/key_bg"/>
                   <TextView android:id="@+id/ks" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="s" android:textColor="#fff" android:textSize="24sp" android:background="@drawable/key_bg"/>
@@ -333,12 +269,8 @@ jobs:
                   <View android:id="@+id/asdf_spacer_right" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="0.5" android:focusable="false" android:clickable="true" android:background="#00000000"/>
               </LinearLayout>
 
-              <LinearLayout
-                  android:layout_width="match_parent"
-                  android:layout_height="55dp"
-                  android:orientation="horizontal"
-                  android:paddingStart="3dp"
-                  android:paddingEnd="3dp">
+              <LinearLayout android:layout_width="match_parent" android:layout_height="55dp"
+                  android:orientation="horizontal" android:paddingStart="3dp" android:paddingEnd="3dp">
                   <TextView android:id="@+id/btn_shift" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1.5" android:gravity="center" android:text="Shft" android:textColor="#fff" android:textSize="14sp" android:background="@drawable/key_bg_dark"/>
                   <TextView android:id="@+id/kz" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="z" android:textColor="#fff" android:textSize="24sp" android:background="@drawable/key_bg"/>
                   <TextView android:id="@+id/kx" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="x" android:textColor="#fff" android:textSize="24sp" android:background="@drawable/key_bg"/>
@@ -350,12 +282,8 @@ jobs:
                   <TextView android:id="@+id/btn_backspace" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1.5" android:gravity="center" android:text="Del" android:textColor="#fff" android:textSize="14sp" android:background="@drawable/key_bg_dark"/>
               </LinearLayout>
 
-              <LinearLayout
-                  android:layout_width="match_parent"
-                  android:layout_height="55dp"
-                  android:orientation="horizontal"
-                  android:paddingStart="3dp"
-                  android:paddingEnd="3dp">
+              <LinearLayout android:layout_width="match_parent" android:layout_height="55dp"
+                  android:orientation="horizontal" android:paddingStart="3dp" android:paddingEnd="3dp">
                   <TextView android:id="@+id/btn_symbols" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1.5" android:gravity="center" android:text="\?123" android:textColor="#fff" android:textSize="16sp" android:background="@drawable/key_bg_dark"/>
                   <TextView android:id="@+id/btn_emoji" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="Emj" android:textColor="#fff" android:textSize="13sp" android:background="@drawable/key_bg_dark"/>
                   <TextView android:id="@+id/btn_comma" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="," android:textColor="#fff" android:textSize="24sp" android:background="@drawable/key_bg"/>
@@ -389,16 +317,12 @@ jobs:
                       gravity = Gravity.CENTER
                   }
                   root.addView(TextView(this).apply {
-                      text = "GreyB Keyboard"
-                      textSize = 32f
-                      setTextColor(0xFFFFFFFF.toInt())
-                      setPadding(0, 0, 0, 24.dp)
+                      text = "GreyB Keyboard"; textSize = 32f
+                      setTextColor(0xFFFFFFFF.toInt()); setPadding(0, 0, 0, 24.dp)
                   })
                   root.addView(TextView(this).apply {
                       text = "Enable the keyboard in\nSettings → System → Languages & Input"
-                      textSize = 18f
-                      setTextColor(0xFFAAAAAA.toInt())
-                      gravity = Gravity.CENTER
+                      textSize = 18f; setTextColor(0xFFAAAAAA.toInt()); gravity = Gravity.CENTER
                   })
                   setContentView(root)
               }
@@ -499,12 +423,9 @@ jobs:
                   view.setTextColor(0xFFFFFFFF.toInt())
               }
 
-              // ── Cursor movement using selection ──
               private fun moveCursor(right: Boolean) {
                   val ic = currentInputConnection ?: return
-                  val req = ExtractedTextRequest()
-                  req.token = 0
-                  req.flags = 0
+                  val req = ExtractedTextRequest().apply { token = 0; flags = 0 }
                   val extracted = ic.getExtractedText(req, 0)
                   if (extracted != null) {
                       val pos = extracted.selectionStart
@@ -512,28 +433,23 @@ jobs:
                       val newPos = if (right) minOf(pos + 1, textLen) else maxOf(pos - 1, 0)
                       ic.setSelection(newPos, newPos)
                   } else {
-                      val key = if (right) KeyEvent.KEYCODE_DPAD_RIGHT else KeyEvent.KEYCODE_DPAD_LEFT
-                      sendKey(key)
+                      sendKey(if (right) KeyEvent.KEYCODE_DPAD_RIGHT else KeyEvent.KEYCODE_DPAD_LEFT)
                   }
               }
 
-              // ── Symbols popup (5 per row) ──
+              // ── Symbols popup (5 per row, 280dp) ──
               private fun showSymbolsPopup(anchor: View) {
                   symbolsPopup?.dismiss()
                   val symbols = listOf(
                       ".",",","!","?","@","#","$","%","&","*","(",")","-","+","=","/",":",";","'","\"",
                       "~","_","\\","|","^","`","°","•","…","«","»","¿","¡","§","¶","©","®","™","‰","µ",
-                      "[","]","{","}","<",">",
-                      "×","÷","√","∞","≈","≠","≤","≥","±","∑","∏","π","∆",
-                      "€","£","¥","₱","¢","₹","₩","₽","₿",
-                      "→","←","↑","↓","↔","⇒","⇐"
+                      "[","]","{","}","<",">","×","÷","√","∞","≈","≠","≤","≥","±","∑","∏","π","∆",
+                      "€","£","¥","₱","¢","₹","₩","₽","₿","→","←","↑","↓","↔","⇒","⇐"
                   )
-                  val wrapperPadding = 8.dp
+                  val wp = 8.dp
                   val popupWidth = (resources.displayMetrics.widthPixels * 0.8).toInt()
-                  val innerWidth = popupWidth - 2 * wrapperPadding
-                  val colCount = 5
-                  val cellSize = innerWidth / colCount
-                  val grid = GridLayout(this).apply { columnCount = colCount; useDefaultMargins = false }
+                  val cellSize = (popupWidth - 2 * wp) / 5
+                  val grid = GridLayout(this).apply { columnCount = 5; useDefaultMargins = false }
                   symbols.forEach { sym ->
                       val tv = TextView(this).apply {
                           text = sym; textSize = 18f; gravity = Gravity.CENTER
@@ -554,7 +470,7 @@ jobs:
                   val wrapper = LinearLayout(this).apply {
                       orientation = LinearLayout.VERTICAL
                       setBackgroundResource(R.drawable.popup_border)
-                      setPadding(wrapperPadding, 0, wrapperPadding, 8.dp)
+                      setPadding(wp, 0, wp, 8.dp)
                   }
                   wrapper.addView(label); wrapper.addView(scroll)
                   symbolsPopup = PopupWindow(wrapper, popupWidth, 280.dp, true).apply {
@@ -579,18 +495,16 @@ jobs:
                       "⚽ Activities" to listOf("⚽","🏀","🏈","⚾","🎾","🏐","🏉","🎱","🏓","🏸","🥊","🎮","🎲","🎯","🎸","🎹","🎨","📚","✏️","💻","📱","⌚","🎁","🎉"),
                       "✅ Symbols" to listOf("✅","❌","⭐","🌟","✨","🔥","💯","❗","❓","💤","🔔","🔒")
                   ))
-                  val wrapperPadding = 8.dp
+                  val wp = 8.dp
                   val popupWidth = (resources.displayMetrics.widthPixels * 0.8).toInt()
-                  val innerWidth = popupWidth - 2 * wrapperPadding
-                  val colCount = 5
-                  val cellSize = innerWidth / colCount
+                  val cellSize = (popupWidth - 2 * wp) / 5
                   val container = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
                   categories.forEach { (catLabel, emojis) ->
                       container.addView(TextView(this).apply {
                           text = catLabel; textSize = 14f; setTextColor(0xFF4FC3F7.toInt())
                           gravity = Gravity.START; setPadding(4.dp, 10.dp, 0, 4.dp)
                       })
-                      val grid = GridLayout(this).apply { columnCount = colCount; useDefaultMargins = false }
+                      val grid = GridLayout(this).apply { columnCount = 5; useDefaultMargins = false }
                       emojis.forEach { emoji ->
                           val tv = TextView(this).apply {
                               text = emoji; textSize = 26f; gravity = Gravity.CENTER
@@ -612,7 +526,7 @@ jobs:
                   val wrapper = LinearLayout(this).apply {
                       orientation = LinearLayout.VERTICAL
                       setBackgroundResource(R.drawable.popup_border)
-                      setPadding(wrapperPadding, 0, wrapperPadding, 8.dp)
+                      setPadding(wp, 0, wp, 8.dp)
                   }
                   wrapper.addView(topLabel); wrapper.addView(scroll)
                   emojiPopup = PopupWindow(wrapper, popupWidth, 320.dp, true).apply {
@@ -622,35 +536,69 @@ jobs:
                   }
               }
 
-              // ── Clipboard popup with tabs (Recent / Saved) ──
+              // ── Clipboard popup: tabs + preview swap inside same fixed window ──
               private fun showClipboardPopup(anchor: View) {
                   clipboardPopup?.dismiss()
                   val popupWidth = (resources.displayMetrics.widthPixels * 0.8).toInt()
+                  val POPUP_HEIGHT = 280.dp
+                  val TAB_HEIGHT  = 40.dp
+                  val CONTENT_HEIGHT = POPUP_HEIGHT - TAB_HEIGHT
 
-                  // Preview overlay – shown on long press, hidden on release
-                  val previewView = TextView(this).apply {
-                      visibility = View.GONE
-                      setBackgroundColor(0xFF111111.toInt())
-                      setTextColor(0xFFDDDDDD.toInt())
-                      textSize = 13f
-                      setPadding(10.dp, 8.dp, 10.dp, 8.dp)
-                      maxLines = 4
-                      ellipsize = android.text.TextUtils.TruncateAt.END
+                  // contentBox is the bordered area whose children we swap for preview
+                  val contentBox = LinearLayout(this).apply {
+                      orientation = LinearLayout.VERTICAL
+                      setBackgroundResource(R.drawable.popup_border)
+                      layoutParams = LinearLayout.LayoutParams(
+                          ViewGroup.LayoutParams.MATCH_PARENT, CONTENT_HEIGHT)
                   }
 
-                  val contentContainer = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
-
-                  // Mutable refs so switchTab (defined below) can update them
                   var recentTabView: TextView? = null
                   var savedTabView: TextView? = null
                   var switchTabFn: ((String) -> Unit)? = null
+
+                  // Preview: swap contentBox children — same window, same size
+                  val onPreviewStart: (String) -> Unit = { text ->
+                      val current = contentBox.getChildAt(0)
+                      contentBox.tag = current       // save to restore later
+                      contentBox.removeAllViews()
+                      val tv = TextView(this).apply {
+                          this.text = text
+                          textSize = 16f
+                          setTextColor(0xFFCCCCCC.toInt())
+                          setPadding(14.dp, 12.dp, 14.dp, 12.dp)
+                          maxLines = 10
+                          ellipsize = android.text.TextUtils.TruncateAt.END
+                          layoutParams = ViewGroup.LayoutParams(
+                              ViewGroup.LayoutParams.MATCH_PARENT,
+                              ViewGroup.LayoutParams.WRAP_CONTENT
+                          )
+                      }
+                      val sv = ScrollView(this).apply {
+                          layoutParams = ViewGroup.LayoutParams(
+                              ViewGroup.LayoutParams.MATCH_PARENT,
+                              ViewGroup.LayoutParams.MATCH_PARENT)
+                          addView(tv)
+                      }
+                      contentBox.addView(sv)
+                  }
+                  val onPreviewEnd: () -> Unit = {
+                      val saved = contentBox.tag as? View
+                      if (saved != null) {
+                          contentBox.removeAllViews()
+                          contentBox.addView(saved)
+                          contentBox.tag = null
+                      }
+                  }
 
                   fun buildList(items: MutableList<String>, isRecent: Boolean): View {
                       if (items.isEmpty()) {
                           return TextView(this).apply {
                               text = if (isRecent) "No recent items" else "No saved items"
-                              textSize = 14f; setTextColor(0xFF555555.toInt())
-                              gravity = Gravity.CENTER; setPadding(16.dp, 20.dp, 16.dp, 20.dp)
+                              textSize = 16f; setTextColor(0xFF555555.toInt())
+                              gravity = Gravity.CENTER
+                              layoutParams = ViewGroup.LayoutParams(
+                                  ViewGroup.LayoutParams.MATCH_PARENT,
+                                  ViewGroup.LayoutParams.MATCH_PARENT)
                           }
                       }
                       val adapter = ClipboardAdapter(
@@ -674,8 +622,8 @@ jobs:
                                   }
                               }
                           },
-                          onPreviewStart = { text -> previewView.text = text; previewView.visibility = View.VISIBLE },
-                          onPreviewEnd = { previewView.visibility = View.GONE }
+                          onPreviewStart = onPreviewStart,
+                          onPreviewEnd = onPreviewEnd
                       )
                       if (isRecent) clipAdapter = adapter else savedAdapter = adapter
                       return RecyclerView(this).apply {
@@ -683,16 +631,15 @@ jobs:
                           this.adapter = adapter
                           layoutParams = ViewGroup.LayoutParams(
                               ViewGroup.LayoutParams.MATCH_PARENT,
-                              (180 * resources.displayMetrics.density).toInt()
-                          )
+                              ViewGroup.LayoutParams.MATCH_PARENT)
                       }
                   }
 
                   fun switchTab(tab: String) {
                       activeClipTab = tab
-                      contentContainer.removeAllViews()
-                      contentContainer.addView(previewView)
-                      contentContainer.addView(buildList(if (tab == "recent") clipboardItems else savedItems, tab == "recent"))
+                      contentBox.removeAllViews()
+                      contentBox.tag = null
+                      contentBox.addView(buildList(if (tab == "recent") clipboardItems else savedItems, tab == "recent"))
                       recentTabView?.apply {
                           setBackgroundColor(if (tab == "recent") 0xFF2C2C2C.toInt() else 0xFF1A1A1A.toInt())
                           setTextColor(if (tab == "recent") 0xFF4FC3F7.toInt() else 0xFF555555.toInt())
@@ -704,47 +651,42 @@ jobs:
                   }
                   switchTabFn = ::switchTab
 
-                  // Tab row — sits visually outside/above the bordered content box
+                  // Tab row – visually outside/above the bordered box
                   val tabRow = LinearLayout(this).apply {
                       orientation = LinearLayout.HORIZONTAL
                       setBackgroundColor(0xFF1A1A1A.toInt())
+                      layoutParams = LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, TAB_HEIGHT)
                   }
                   recentTabView = TextView(this).apply {
                       text = "Recent"; textSize = 13f; gravity = Gravity.CENTER
-                      setPadding(0, 10.dp, 0, 10.dp)
-                      layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
+                      setPadding(0, 0, 0, 0)
+                      layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.MATCH_PARENT, 1f)
                       setOnClickListener { switchTab("recent") }
                   }
                   savedTabView = TextView(this).apply {
                       text = "Saved"; textSize = 13f; gravity = Gravity.CENTER
-                      setPadding(0, 10.dp, 0, 10.dp)
-                      layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
+                      setPadding(0, 0, 0, 0)
+                      layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.MATCH_PARENT, 1f)
                       setOnClickListener { switchTab("saved") }
                   }
-                  tabRow.addView(recentTabView)
-                  tabRow.addView(savedTabView)
+                  tabRow.addView(recentTabView); tabRow.addView(savedTabView)
 
-                  // Content box — bordered
-                  val contentBox = LinearLayout(this).apply {
+                  val outer = LinearLayout(this).apply {
                       orientation = LinearLayout.VERTICAL
-                      setBackgroundResource(R.drawable.popup_border)
+                      layoutParams = ViewGroup.LayoutParams(popupWidth, POPUP_HEIGHT)
                   }
-                  contentBox.addView(contentContainer)
+                  outer.addView(tabRow); outer.addView(contentBox)
 
-                  val outer = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
-                  outer.addView(tabRow)
-                  outer.addView(contentBox)
+                  switchTab(activeClipTab)
 
-                  switchTab(activeClipTab) // initialise with last-used tab
-
-                  clipboardPopup = PopupWindow(outer, popupWidth, ViewGroup.LayoutParams.WRAP_CONTENT, true).apply {
+                  clipboardPopup = PopupWindow(outer, popupWidth, POPUP_HEIGHT, true).apply {
                       setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
                       isOutsideTouchable = true; isFocusable = true; elevation = 8f
                       showAtLocation(rootFrame, Gravity.CENTER, 0, 0)
                   }
               }
 
-              // ── Delete confirmation popup ──
+              // ── Delete confirmation small popup ──
               private fun showDeleteConfirm(anchor: View, onConfirm: () -> Unit) {
                   confirmPopup?.dismiss()
                   val d = resources.displayMetrics.density
@@ -752,26 +694,13 @@ jobs:
                   val layout = LinearLayout(this).apply {
                       orientation = LinearLayout.HORIZONTAL
                       setBackgroundResource(R.drawable.popup_border)
-                      setPadding(dp8, dp4, dp8, dp4)
-                      gravity = Gravity.CENTER_VERTICAL
+                      setPadding(dp8, dp4, dp8, dp4); gravity = Gravity.CENTER_VERTICAL
                   }
-                  layout.addView(TextView(this).apply {
-                      text = "Delete?"; textSize = 13f; setTextColor(0xFFCCCCCC.toInt())
-                      setPadding(0, 0, dp10, 0)
-                  })
-                  val yesBtn = TextView(this).apply {
-                      text = "Yes"; textSize = 13f; setTextColor(0xFFFF5252.toInt())
-                      setPadding(dp8, dp4, dp8, dp4)
-                  }
-                  val noBtn = TextView(this).apply {
-                      text = "No"; textSize = 13f; setTextColor(0xFF888888.toInt())
-                      setPadding(dp8, dp4, dp4, dp4)
-                  }
+                  layout.addView(TextView(this).apply { text = "Delete?"; textSize = 13f; setTextColor(0xFFCCCCCC.toInt()); setPadding(0, 0, dp10, 0) })
+                  val yesBtn = TextView(this).apply { text = "Yes"; textSize = 13f; setTextColor(0xFFFF5252.toInt()); setPadding(dp8, dp4, dp8, dp4) }
+                  val noBtn  = TextView(this).apply { text = "No";  textSize = 13f; setTextColor(0xFF888888.toInt()); setPadding(dp8, dp4, dp4, dp4) }
                   layout.addView(yesBtn); layout.addView(noBtn)
-                  layout.measure(
-                      View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED),
-                      View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED)
-                  )
+                  layout.measure(View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED), View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED))
                   val pw = layout.measuredWidth; val ph = layout.measuredHeight
                   confirmPopup = PopupWindow(layout, pw, ph, true).apply {
                       setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
@@ -799,15 +728,13 @@ jobs:
                   sugView1 = v.findViewById(R.id.sug1)
                   sugView2 = v.findViewById(R.id.sug2)
                   sugView3 = v.findViewById(R.id.sug3)
-
                   listOf(sugView1, sugView2, sugView3).forEach { sv ->
                       if (sv == null) return@forEach
                       sv.setTag(R.id.original_bg_tag, R.drawable.key_bg_dark)
                       sv.setOnTouchListener { view, event ->
                           when (event.actionMasked) {
                               MotionEvent.ACTION_DOWN -> {
-                                  (view as? TextView)?.apply { setBackgroundResource(R.drawable.key_bg_pressed); setTextColor(0xFF000000.toInt()) }
-                                  true
+                                  (view as? TextView)?.apply { setBackgroundResource(R.drawable.key_bg_pressed); setTextColor(0xFF000000.toInt()) }; true
                               }
                               MotionEvent.ACTION_UP -> {
                                   (view as? TextView)?.let { tv ->
@@ -815,15 +742,13 @@ jobs:
                                       if (word.isNotEmpty()) commitSuggestion(word)
                                       tv.setBackgroundResource(tv.getTag(R.id.original_bg_tag) as? Int ?: R.drawable.key_bg_dark)
                                       tv.setTextColor(0xFFFFFFFF.toInt())
-                                  }
-                                  true
+                                  }; true
                               }
                               MotionEvent.ACTION_CANCEL -> {
                                   (view as? TextView)?.let { tv ->
                                       tv.setBackgroundResource(tv.getTag(R.id.original_bg_tag) as? Int ?: R.drawable.key_bg_dark)
                                       tv.setTextColor(0xFFFFFFFF.toInt())
-                                  }
-                                  true
+                                  }; true
                               }
                               else -> true
                           }
@@ -831,17 +756,12 @@ jobs:
                   }
 
                   val letters = "qwertyuiopasdfghjklzxcvbnm"
-                  val ids = listOf(
-                      R.id.kq,R.id.kw,R.id.ke,R.id.kr,R.id.kt,R.id.ky,R.id.ku,R.id.ki,R.id.ko,R.id.kp,
+                  val ids = listOf(R.id.kq,R.id.kw,R.id.ke,R.id.kr,R.id.kt,R.id.ky,R.id.ku,R.id.ki,R.id.ko,R.id.kp,
                       R.id.ka,R.id.ks,R.id.kd,R.id.kf,R.id.kg,R.id.kh,R.id.kj,R.id.kk,R.id.kl,
-                      R.id.kz,R.id.kx,R.id.kc,R.id.kv,R.id.kb,R.id.kn,R.id.km
-                  )
-                  ids.forEachIndexed { i, id ->
-                      setupKey(v.findViewById<TextView>(id), R.drawable.key_bg) { typeChar(letters[i]) }
-                  }
+                      R.id.kz,R.id.kx,R.id.kc,R.id.kv,R.id.kb,R.id.kn,R.id.km)
+                  ids.forEachIndexed { i, id -> setupKey(v.findViewById<TextView>(id), R.drawable.key_bg) { typeChar(letters[i]) } }
 
-                  val numIds = listOf(R.id.k1,R.id.k2,R.id.k3,R.id.k4,R.id.k5,
-                                      R.id.k6,R.id.k7,R.id.k8,R.id.k9,R.id.k0)
+                  val numIds = listOf(R.id.k1,R.id.k2,R.id.k3,R.id.k4,R.id.k5,R.id.k6,R.id.k7,R.id.k8,R.id.k9,R.id.k0)
                   "1234567890".forEachIndexed { i, c ->
                       val kc = KeyEvent.KEYCODE_0 + (c - '0')
                       setupKey(v.findViewById<TextView>(numIds[i]), R.drawable.key_bg) { sendKey(kc); clearSugs() }
@@ -862,18 +782,13 @@ jobs:
                   backspace.setOnTouchListener { _, event ->
                       when (event.actionMasked) {
                           MotionEvent.ACTION_DOWN -> {
-                              pressKey(backspace)
-                              sendKey(KeyEvent.KEYCODE_DEL)
-                              bsRunnable = object : Runnable {
-                                  override fun run() { sendKey(KeyEvent.KEYCODE_DEL); bsHandler.postDelayed(this, 50) }
-                              }
-                              bsHandler.postDelayed(bsRunnable!!, 300)
-                              true
+                              pressKey(backspace); sendKey(KeyEvent.KEYCODE_DEL)
+                              bsRunnable = object : Runnable { override fun run() { sendKey(KeyEvent.KEYCODE_DEL); bsHandler.postDelayed(this, 50) } }
+                              bsHandler.postDelayed(bsRunnable!!, 300); true
                           }
                           MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
                               releaseKey(backspace); stopBackspaceRepeat()
-                              bsHandler.postDelayed({ updateSuggestions() }, 80)
-                              true
+                              bsHandler.postDelayed({ updateSuggestions() }, 80); true
                           }
                           else -> true
                       }
@@ -886,17 +801,11 @@ jobs:
                   val DRAG_THRESHOLD = 50.dp.toFloat(); val CURSOR_INTERVAL = 20.dp.toFloat()
                   spaceView.setOnTouchListener { _, event ->
                       when (event.actionMasked) {
-                          MotionEvent.ACTION_DOWN -> {
-                              pressKey(spaceView); startX = event.x; dragStarted = false; lastCursorMoveX = startX; true
-                          }
+                          MotionEvent.ACTION_DOWN -> { pressKey(spaceView); startX = event.x; dragStarted = false; lastCursorMoveX = startX; true }
                           MotionEvent.ACTION_MOVE -> {
                               val delta = event.x - startX
-                              if (abs(delta) >= DRAG_THRESHOLD && !dragStarted) {
-                                  dragStarted = true; moveCursor(delta > 0); lastCursorMoveX = event.x
-                              } else if (dragStarted) {
-                                  val dx = event.x - lastCursorMoveX
-                                  if (abs(dx) >= CURSOR_INTERVAL) { moveCursor(dx > 0); lastCursorMoveX = event.x }
-                              }
+                              if (abs(delta) >= DRAG_THRESHOLD && !dragStarted) { dragStarted = true; moveCursor(delta > 0); lastCursorMoveX = event.x }
+                              else if (dragStarted) { val dx = event.x - lastCursorMoveX; if (abs(dx) >= CURSOR_INTERVAL) { moveCursor(dx > 0); lastCursorMoveX = event.x } }
                               true
                           }
                           MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
@@ -908,15 +817,14 @@ jobs:
                       }
                   }
 
-                  setupKey(v.findViewById<TextView>(R.id.btn_comma),  R.drawable.key_bg) { sendKey(KeyEvent.KEYCODE_COMMA); clearSugs() }
-                  setupKey(v.findViewById<TextView>(R.id.btn_period), R.drawable.key_bg) { sendKey(KeyEvent.KEYCODE_PERIOD); clearSugs() }
-                  setupKey(v.findViewById<TextView>(R.id.btn_enter),  R.drawable.key_bg_action) { sendKey(KeyEvent.KEYCODE_ENTER); clearSugs() }
+                  setupKey(v.findViewById<TextView>(R.id.btn_comma),  R.drawable.key_bg)        { sendKey(KeyEvent.KEYCODE_COMMA);  clearSugs() }
+                  setupKey(v.findViewById<TextView>(R.id.btn_period), R.drawable.key_bg)        { sendKey(KeyEvent.KEYCODE_PERIOD); clearSugs() }
+                  setupKey(v.findViewById<TextView>(R.id.btn_enter),  R.drawable.key_bg_action) { sendKey(KeyEvent.KEYCODE_ENTER);  clearSugs() }
 
                   val symbolsBtn = v.findViewById<TextView>(R.id.btn_symbols)
                   setupKey(symbolsBtn, R.drawable.key_bg_dark) { showSymbolsPopup(symbolsBtn) }
                   val emojiBtn = v.findViewById<TextView>(R.id.btn_emoji)
                   setupKey(emojiBtn, R.drawable.key_bg_dark) { showEmojiPopup(emojiBtn) }
-
                   val clipboardBtn = v.findViewById<TextView>(R.id.btn_clipboard)
                   setupKey(clipboardBtn, R.drawable.key_bg_dark) {
                       val clip = (getSystemService(Context.CLIPBOARD_SERVICE) as? ClipboardManager)
@@ -924,12 +832,10 @@ jobs:
                       if (!clip.isNullOrEmpty()) addToClipboard(clip)
                       showClipboardPopup(clipboardBtn)
                   }
-
                   val toolsBtn = v.findViewById<TextView>(R.id.btn_tools)
                   setupKey(toolsBtn, R.drawable.key_bg_dark) { showToolsPopup(toolsBtn) }
 
-                  val keyA = v.findViewById<TextView>(R.id.ka)
-                  val keyL = v.findViewById<TextView>(R.id.kl)
+                  val keyA = v.findViewById<TextView>(R.id.ka); val keyL = v.findViewById<TextView>(R.id.kl)
                   v.findViewById<View>(R.id.asdf_spacer_left)?.setOnTouchListener { _, event ->
                       when (event.actionMasked) {
                           MotionEvent.ACTION_DOWN -> { keyA?.let { pressKey(it) }; typeChar('a'); true }
@@ -944,21 +850,15 @@ jobs:
                           else -> true
                       }
                   }
-
                   return v
               }
 
-              // ── Edit popup ──
               private fun showToolsPopup(anchor: View) {
                   toolsPopup?.dismiss()
-                  val popup = LinearLayout(this).apply {
-                      orientation = LinearLayout.VERTICAL
-                      setBackgroundResource(R.drawable.popup_border)
-                  }
+                  val popup = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; setBackgroundResource(R.drawable.popup_border) }
                   listOf("Select All", "Copy", "Paste").forEach { label ->
                       popup.addView(TextView(this).apply {
-                          text = label; textSize = 20f; setTextColor(0xFFFFFFFF.toInt())
-                          setPadding(16.dp, 10.dp, 16.dp, 10.dp)
+                          text = label; textSize = 20f; setTextColor(0xFFFFFFFF.toInt()); setPadding(16.dp, 10.dp, 16.dp, 10.dp)
                           setOnTouchListener { v, event ->
                               when (event.actionMasked) {
                                   MotionEvent.ACTION_DOWN -> { (v as? TextView)?.apply { setBackgroundColor(0xFFFFFFFF.toInt()); setTextColor(0xFF000000.toInt()) }; true }
@@ -972,8 +872,7 @@ jobs:
                                               if (!clip.isNullOrEmpty()) { commitText(clip); addToClipboard(clip) }
                                           }
                                       }
-                                      (v as? TextView)?.apply { setBackgroundColor(0x00000000.toInt()); setTextColor(0xFFFFFFFF.toInt()) }
-                                      true
+                                      (v as? TextView)?.apply { setBackgroundColor(0x00000000.toInt()); setTextColor(0xFFFFFFFF.toInt()) }; true
                                   }
                                   MotionEvent.ACTION_CANCEL -> { (v as? TextView)?.apply { setBackgroundColor(0x00000000.toInt()); setTextColor(0xFFFFFFFF.toInt()) }; true }
                                   else -> false
@@ -981,10 +880,7 @@ jobs:
                           }
                       })
                   }
-                  popup.measure(
-                      View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED),
-                      View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED)
-                  )
+                  popup.measure(View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED), View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED))
                   toolsPopup = PopupWindow(popup, popup.measuredWidth, popup.measuredHeight, true).apply {
                       setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
                       isOutsideTouchable = true; elevation = 8f
@@ -1006,7 +902,6 @@ jobs:
 
               private fun commitText(s: String) { currentInputConnection?.commitText(s, 1) }
               private fun commitEmoji(emoji: String) { commitText(emoji); addToRecentEmoji(emoji) }
-
               private fun stopBackspaceRepeat() { bsRunnable?.let { bsHandler.removeCallbacks(it) }; bsRunnable = null }
 
               private fun toggleShiftState() {
@@ -1017,8 +912,7 @@ jobs:
                       shiftState == ShiftState.OFF    -> ShiftState.ONCE
                       else                            -> ShiftState.OFF
                   }
-                  lastShiftTap = now
-                  updateLetterKeys(qwertyView)
+                  lastShiftTap = now; updateLetterKeys(qwertyView)
               }
 
               private fun updateShiftKeyAppearance(shiftView: TextView) {
@@ -1031,13 +925,11 @@ jobs:
                   val letters = "qwertyuiopasdfghjklzxcvbnm"
                   listOf(R.id.kq,R.id.kw,R.id.ke,R.id.kr,R.id.kt,R.id.ky,R.id.ku,R.id.ki,R.id.ko,R.id.kp,
                       R.id.ka,R.id.ks,R.id.kd,R.id.kf,R.id.kg,R.id.kh,R.id.kj,R.id.kk,R.id.kl,
-                      R.id.kz,R.id.kx,R.id.kc,R.id.kv,R.id.kb,R.id.kn,R.id.km
-                  ).forEachIndexed { i, id ->
+                      R.id.kz,R.id.kx,R.id.kc,R.id.kv,R.id.kb,R.id.kn,R.id.km).forEachIndexed { i, id ->
                       v.findViewById<TextView>(id)?.text = if (upper) letters[i].uppercaseChar().toString() else letters[i].toString()
                   }
               }
 
-              // ── Suggestion logic ──
               private fun extractCurrentWordRaw(before: String): String {
                   val s = before.trimEnd(' ')
                   val idx = s.indexOfLast { !it.isLetter() }
@@ -1047,8 +939,7 @@ jobs:
               private fun updateSuggestions() {
                   val ic = currentInputConnection ?: run { clearSugs(); return }
                   val before = ic.getTextBeforeCursor(50, 0)?.toString() ?: run { clearSugs(); return }
-                  val rawWord = extractCurrentWordRaw(before)
-                  val word = rawWord.lowercase()
+                  val rawWord = extractCurrentWordRaw(before); val word = rawWord.lowercase()
                   if (word.isEmpty()) { clearSugs(); return }
                   Thread {
                       val matches = try {
@@ -1122,16 +1013,14 @@ jobs:
                       }
                       val tv = TextView(ctx).apply {
                           layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
-                          setTextColor(0xFFCCCCCC.toInt()); textSize = 14f
+                          setTextColor(0xFFCCCCCC.toInt()); textSize = 16f
                           maxLines = 1; ellipsize = android.text.TextUtils.TruncateAt.END
                       }
                       val saveBtn = if (showSaveBtn) TextView(ctx).apply {
-                          text = "★"; setTextColor(0xFF555555.toInt()); textSize = 15f
-                          setPadding(dp8, 0, dp4, 0)
+                          text = "★"; setTextColor(0xFF555555.toInt()); textSize = 16f; setPadding(dp8, 0, dp4, 0)
                       } else null
                       val del = TextView(ctx).apply {
-                          text = "✕"; setTextColor(0xFF555555.toInt()); textSize = 15f
-                          setPadding(dp8, 0, dp8, 0)
+                          text = "✕"; setTextColor(0xFF555555.toInt()); textSize = 16f; setPadding(dp8, 0, dp8, 0)
                       }
                       root.addView(tv); saveBtn?.let { root.addView(it) }; root.addView(del)
                       return VH(root, tv, saveBtn, del)
@@ -1184,7 +1073,6 @@ jobs:
                   override fun getItemCount() = items.size
               }
 
-              // ── Clipboard persistence ──
               private fun addToClipboard(text: String) {
                   clipboardItems.remove(text); clipboardItems.add(0, text)
                   if (clipboardItems.size > MAX_CLIP) clipboardItems.removeAt(clipboardItems.size - 1)
@@ -1198,8 +1086,7 @@ jobs:
 
               private fun loadClipboard() {
                   val s = getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE).getString(PREFS_CLIP, "") ?: ""
-                  clipboardItems.clear()
-                  if (s.isNotEmpty()) clipboardItems.addAll(s.split("\u001F"))
+                  clipboardItems.clear(); if (s.isNotEmpty()) clipboardItems.addAll(s.split("\u001F"))
               }
 
               private fun saveSavedItems() {
@@ -1209,11 +1096,9 @@ jobs:
 
               private fun loadSavedItems() {
                   val s = getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE).getString(PREFS_SAVED, "") ?: ""
-                  savedItems.clear()
-                  if (s.isNotEmpty()) savedItems.addAll(s.split("\u001F"))
+                  savedItems.clear(); if (s.isNotEmpty()) savedItems.addAll(s.split("\u001F"))
               }
 
-              // ── Emoji persistence ──
               private fun addToRecentEmoji(emoji: String) {
                   recentEmojis.remove(emoji); recentEmojis.add(0, emoji)
                   if (recentEmojis.size > MAX_RECENT_EMOJI) recentEmojis.removeAt(recentEmojis.size - 1)
@@ -1227,8 +1112,7 @@ jobs:
 
               private fun loadRecentEmojis() {
                   val s = getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE).getString(PREFS_RECENT_EMOJI, "") ?: ""
-                  recentEmojis.clear()
-                  if (s.isNotEmpty()) recentEmojis.addAll(s.split("\u001F"))
+                  recentEmojis.clear(); if (s.isNotEmpty()) recentEmojis.addAll(s.split("\u001F"))
               }
 
               private val Int.dp get() = (this * resources.displayMetrics.density).toInt()
@@ -1327,14 +1211,10 @@ jobs:
           if [ ! -f app/release.keystore ]; then
             keytool -genkey -v \
               -keystore app/release.keystore \
-              -alias greyb \
-              -keyalg RSA \
-              -keysize 2048 \
-              -validity 10000 \
-              -storepass greyb2024 \
-              -keypass greyb2024 \
+              -alias greyb -keyalg RSA -keysize 2048 -validity 10000 \
+              -storepass greyb2024 -keypass greyb2024 \
               -dname "CN=GreyB, OU=GreyB, O=GreyB Keyboard, L=Test, S=Test, C=US"
-            echo "✅ New keystore created (will be cached for future builds)"
+            echo "✅ New keystore created"
           else
             echo "✅ Using existing cached keystore"
           fi
@@ -1348,37 +1228,25 @@ jobs:
           import os
 
           def make_icon(size):
-              BG     = (42, 45, 52, 255)
-              ACCENT = (90, 93, 100, 255)
-              WHITE  = (255, 255, 255, 255)
-              img = Image.new('RGBA', (size, size), BG)
-              d   = ImageDraw.Draw(img)
-              margin = size // 5
-              key_w  = (size - 2 * margin) // 4
-              key_h  = (size - 2 * margin) // 5
-              gap    = max(1, size // 40)
-              start_y = margin + key_h
+              BG = (42, 45, 52, 255); ACCENT = (90, 93, 100, 255); WHITE = (255, 255, 255, 255)
+              img = Image.new('RGBA', (size, size), BG); d = ImageDraw.Draw(img)
+              margin = size // 5; key_w = (size - 2 * margin) // 4; key_h = (size - 2 * margin) // 5
+              gap = max(1, size // 40); start_y = margin + key_h
               for row in range(3):
-                  y = start_y + row * (key_h + gap)
-                  keys_in_row = [4, 4, 3]
+                  y = start_y + row * (key_h + gap); keys_in_row = [4, 4, 3]
                   row_margin = (size - keys_in_row[row] * (key_w + gap) + gap) // 2
                   for col in range(keys_in_row[row]):
                       x = row_margin + col * (key_w + gap)
                       color = ACCENT if (row == 0 and col == 0) else WHITE
                       d.rounded_rectangle([x, y, x + key_w, y + key_h], radius=key_w // 5, fill=color)
-              space_y = start_y + 3 * (key_h + gap)
-              space_w = key_w * 2 + gap
-              space_x = (size - space_w) // 2
+              space_y = start_y + 3 * (key_h + gap); space_w = key_w * 2 + gap; space_x = (size - space_w) // 2
               d.rounded_rectangle([space_x, space_y, space_x + space_w, space_y + key_h], radius=key_w // 5, fill=ACCENT)
               return img
 
           sizes = {'mdpi': 48, 'hdpi': 72, 'xhdpi': 96, 'xxhdpi': 144, 'xxxhdpi': 192}
           for density, s in sizes.items():
-              path = f'app/src/main/res/mipmap-{density}'
-              os.makedirs(path, exist_ok=True)
-              icon = make_icon(s)
-              icon.save(f'{path}/ic_launcher.png')
-              icon.save(f'{path}/ic_launcher_round.png')
+              path = f'app/src/main/res/mipmap-{density}'; os.makedirs(path, exist_ok=True)
+              icon = make_icon(s); icon.save(f'{path}/ic_launcher.png'); icon.save(f'{path}/ic_launcher_round.png')
           print("Icons generated!")
           ENDOFFILE
 
@@ -1406,8 +1274,7 @@ jobs:
                   $BT_PATH/apksigner verify --print-certs "$APK_PATH" 2>/dev/null || echo "⚠️ apksigner verify skipped"
               fi
           else
-              echo "❌ Release APK not found"
-              exit 1
+              echo "❌ Release APK not found"; exit 1
           fi
 
       - name: Bundle APK + source
@@ -1421,7 +1288,6 @@ jobs:
           cp words.txt GreyB-release/ 2>/dev/null || true
 
           APK_SIZE=$(ls -lh app/build/outputs/apk/release/app-release.apk | awk '{print $5}')
-
           cat > GreyB-release/BUILD_INFO.txt << INFOEOF
           Build:      #${{ github.run_number }}
           Commit:     ${{ github.sha }}
