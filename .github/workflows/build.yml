@@ -65,10 +65,7 @@ jobs:
           cat > app/src/main/AndroidManifest.xml << 'ENDOFFILE'
           <?xml version="1.0" encoding="utf-8"?>
           <manifest xmlns:android="http://schemas.android.com/apk/res/android">
-              <application
-                  android:label="GreyB Keyboard"
-                  android:icon="@mipmap/ic_launcher"
-                  android:supportsRtl="true">
+              <application android:label="GreyB Keyboard" android:icon="@mipmap/ic_launcher" android:supportsRtl="true">
                   <activity android:name=".MainActivity" android:label="GreyB Keyboard" android:exported="true">
                       <intent-filter>
                           <action android:name="android.intent.action.MAIN"/>
@@ -198,10 +195,8 @@ jobs:
           <?xml version="1.0" encoding="utf-8"?>
           <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
               android:id="@+id/qwerty_root"
-              android:layout_width="match_parent"
-              android:layout_height="330dp"
-              android:orientation="vertical"
-              android:background="#1e1e1e">
+              android:layout_width="match_parent" android:layout_height="330dp"
+              android:orientation="vertical" android:background="#1e1e1e">
 
               <LinearLayout android:layout_width="match_parent" android:layout_height="55dp"
                   android:orientation="horizontal" android:gravity="center_vertical"
@@ -293,7 +288,6 @@ jobs:
               </LinearLayout>
 
               <View android:layout_width="match_parent" android:layout_height="0dp" android:background="#1e1e1e"/>
-
           </LinearLayout>
           ENDOFFILE
 
@@ -387,18 +381,13 @@ jobs:
 
               override fun onCreate() {
                   super.onCreate()
-                  loadClipboard()
-                  loadSavedItems()
-                  loadRecentEmojis()
+                  loadClipboard(); loadSavedItems(); loadRecentEmojis()
               }
 
               override fun onCreateInputView(): View {
                   window?.window?.navigationBarColor = 0xFF1e1e1e.toInt()
                   rootFrame = FrameLayout(this).apply {
-                      layoutParams = ViewGroup.LayoutParams(
-                          ViewGroup.LayoutParams.MATCH_PARENT,
-                          ViewGroup.LayoutParams.WRAP_CONTENT
-                      )
+                      layoutParams = ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT)
                   }
                   qwertyView = buildQwerty()
                   rootFrame.addView(qwertyView)
@@ -412,15 +401,10 @@ jobs:
                   ic.sendKeyEvent(KeyEvent(t, SystemClock.uptimeMillis(), KeyEvent.ACTION_UP, keyCode, 0, meta))
               }
 
-              private fun pressKey(view: TextView) {
-                  view.setBackgroundResource(R.drawable.key_bg_pressed)
-                  view.setTextColor(0xFF000000.toInt())
-              }
-
+              private fun pressKey(view: TextView) { view.setBackgroundResource(R.drawable.key_bg_pressed); view.setTextColor(0xFF000000.toInt()) }
               private fun releaseKey(view: TextView) {
                   val originalRes = view.getTag(R.id.original_bg_tag) as? Int ?: return
-                  view.setBackgroundResource(originalRes)
-                  view.setTextColor(0xFFFFFFFF.toInt())
+                  view.setBackgroundResource(originalRes); view.setTextColor(0xFFFFFFFF.toInt())
               }
 
               private fun moveCursor(right: Boolean) {
@@ -428,59 +412,35 @@ jobs:
                   val req = ExtractedTextRequest().apply { token = 0; flags = 0 }
                   val extracted = ic.getExtractedText(req, 0)
                   if (extracted != null) {
-                      val pos = extracted.selectionStart
-                      val textLen = extracted.text?.length ?: 0
-                      val newPos = if (right) minOf(pos + 1, textLen) else maxOf(pos - 1, 0)
-                      ic.setSelection(newPos, newPos)
-                  } else {
-                      sendKey(if (right) KeyEvent.KEYCODE_DPAD_RIGHT else KeyEvent.KEYCODE_DPAD_LEFT)
-                  }
+                      val pos = extracted.selectionStart; val textLen = extracted.text?.length ?: 0
+                      ic.setSelection(if (right) minOf(pos + 1, textLen) else maxOf(pos - 1, 0), if (right) minOf(pos + 1, textLen) else maxOf(pos - 1, 0))
+                  } else sendKey(if (right) KeyEvent.KEYCODE_DPAD_RIGHT else KeyEvent.KEYCODE_DPAD_LEFT)
               }
 
-              // ── Symbols popup (5 per row, 280dp) ──
               private fun showSymbolsPopup(anchor: View) {
                   symbolsPopup?.dismiss()
-                  val symbols = listOf(
-                      ".",",","!","?","@","#","$","%","&","*","(",")","-","+","=","/",":",";","'","\"",
-                      "~","_","\\","|","^","`","°","•","…","«","»","¿","¡","§","¶","©","®","™","‰","µ",
-                      "[","]","{","}","<",">","×","÷","√","∞","≈","≠","≤","≥","±","∑","∏","π","∆",
-                      "€","£","¥","₱","¢","₹","₩","₽","₿","→","←","↑","↓","↔","⇒","⇐"
-                  )
-                  val wp = 8.dp
-                  val popupWidth = (resources.displayMetrics.widthPixels * 0.8).toInt()
+                  val symbols = listOf(".",",","!","?","@","#","$","%","&","*","(",")","-","+","=","/",":",";","'","\"","~","_","\\","|","^","`","°","•","…","«","»","¿","¡","§","¶","©","®","™","‰","µ","[","]","{","}","<",">","×","÷","√","∞","≈","≠","≤","≥","±","∑","∏","π","∆","€","£","¥","₱","¢","₹","₩","₽","₿","→","←","↑","↓","↔","⇒","⇐")
+                  val wp = 8.dp; val popupWidth = (resources.displayMetrics.widthPixels * 0.8).toInt()
                   val cellSize = (popupWidth - 2 * wp) / 5
                   val grid = GridLayout(this).apply { columnCount = 5; useDefaultMargins = false }
                   symbols.forEach { sym ->
                       val tv = TextView(this).apply {
-                          text = sym; textSize = 18f; gravity = Gravity.CENTER
-                          setTextColor(0xFFFFFFFF.toInt())
+                          text = sym; textSize = 18f; gravity = Gravity.CENTER; setTextColor(0xFFFFFFFF.toInt())
                           background = resources.getDrawable(R.drawable.key_bg_selector, null)
                           setOnClickListener { commitText(sym) }
                       }
                       grid.addView(tv, GridLayout.LayoutParams().apply { width = cellSize; height = cellSize })
                   }
-                  val label = TextView(this).apply {
-                      text = "Symbols"; textSize = 16f; setTextColor(0xFFFFFFFF.toInt())
-                      gravity = Gravity.CENTER; setPadding(0, 8.dp, 0, 8.dp)
-                  }
-                  val scroll = ScrollView(this).apply {
-                      addView(grid)
-                      layoutParams = ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT)
-                  }
-                  val wrapper = LinearLayout(this).apply {
-                      orientation = LinearLayout.VERTICAL
-                      setBackgroundResource(R.drawable.popup_border)
-                      setPadding(wp, 0, wp, 8.dp)
-                  }
+                  val label = TextView(this).apply { text = "Symbols"; textSize = 16f; setTextColor(0xFFFFFFFF.toInt()); gravity = Gravity.CENTER; setPadding(0, 8.dp, 0, 8.dp) }
+                  val scroll = ScrollView(this).apply { addView(grid); layoutParams = ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT) }
+                  val wrapper = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; setBackgroundResource(R.drawable.popup_border); setPadding(wp, 0, wp, 8.dp) }
                   wrapper.addView(label); wrapper.addView(scroll)
                   symbolsPopup = PopupWindow(wrapper, popupWidth, 280.dp, true).apply {
-                      setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
-                      isOutsideTouchable = true; isFocusable = true; elevation = 8f
+                      setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT)); isOutsideTouchable = true; isFocusable = true; elevation = 8f
                       showAtLocation(rootFrame, Gravity.CENTER, 0, 0)
                   }
               }
 
-              // ── Emoji popup (5 per row) ──
               private fun showEmojiPopup(anchor: View) {
                   emojiPopup?.dismiss()
                   val categories = mutableListOf<Pair<String, List<String>>>()
@@ -495,115 +455,88 @@ jobs:
                       "⚽ Activities" to listOf("⚽","🏀","🏈","⚾","🎾","🏐","🏉","🎱","🏓","🏸","🥊","🎮","🎲","🎯","🎸","🎹","🎨","📚","✏️","💻","📱","⌚","🎁","🎉"),
                       "✅ Symbols" to listOf("✅","❌","⭐","🌟","✨","🔥","💯","❗","❓","💤","🔔","🔒")
                   ))
-                  val wp = 8.dp
-                  val popupWidth = (resources.displayMetrics.widthPixels * 0.8).toInt()
+                  val wp = 8.dp; val popupWidth = (resources.displayMetrics.widthPixels * 0.8).toInt()
                   val cellSize = (popupWidth - 2 * wp) / 5
                   val container = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
                   categories.forEach { (catLabel, emojis) ->
-                      container.addView(TextView(this).apply {
-                          text = catLabel; textSize = 14f; setTextColor(0xFF4FC3F7.toInt())
-                          gravity = Gravity.START; setPadding(4.dp, 10.dp, 0, 4.dp)
-                      })
+                      container.addView(TextView(this).apply { text = catLabel; textSize = 14f; setTextColor(0xFF4FC3F7.toInt()); gravity = Gravity.START; setPadding(4.dp, 10.dp, 0, 4.dp) })
                       val grid = GridLayout(this).apply { columnCount = 5; useDefaultMargins = false }
                       emojis.forEach { emoji ->
-                          val tv = TextView(this).apply {
-                              text = emoji; textSize = 26f; gravity = Gravity.CENTER
-                              background = resources.getDrawable(R.drawable.key_bg_selector, null)
-                              setOnClickListener { commitEmoji(emoji) }
-                          }
+                          val tv = TextView(this).apply { text = emoji; textSize = 26f; gravity = Gravity.CENTER; background = resources.getDrawable(R.drawable.key_bg_selector, null); setOnClickListener { commitEmoji(emoji) } }
                           grid.addView(tv, GridLayout.LayoutParams().apply { width = cellSize; height = cellSize })
                       }
                       container.addView(grid)
                   }
-                  val topLabel = TextView(this).apply {
-                      text = "Emojis"; textSize = 16f; setTextColor(0xFFFFFFFF.toInt())
-                      gravity = Gravity.CENTER; setPadding(0, 8.dp, 0, 8.dp)
-                  }
-                  val scroll = ScrollView(this).apply {
-                      addView(container)
-                      layoutParams = ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT)
-                  }
-                  val wrapper = LinearLayout(this).apply {
-                      orientation = LinearLayout.VERTICAL
-                      setBackgroundResource(R.drawable.popup_border)
-                      setPadding(wp, 0, wp, 8.dp)
-                  }
+                  val topLabel = TextView(this).apply { text = "Emojis"; textSize = 16f; setTextColor(0xFFFFFFFF.toInt()); gravity = Gravity.CENTER; setPadding(0, 8.dp, 0, 8.dp) }
+                  val scroll = ScrollView(this).apply { addView(container); layoutParams = ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT) }
+                  val wrapper = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; setBackgroundResource(R.drawable.popup_border); setPadding(wp, 0, wp, 8.dp) }
                   wrapper.addView(topLabel); wrapper.addView(scroll)
                   emojiPopup = PopupWindow(wrapper, popupWidth, 320.dp, true).apply {
-                      setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
-                      isOutsideTouchable = true; isFocusable = true; elevation = 8f
+                      setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT)); isOutsideTouchable = true; isFocusable = true; elevation = 8f
                       showAtLocation(rootFrame, Gravity.CENTER, 0, 0)
                   }
               }
 
-              // ── Clipboard popup: tabs + preview swap inside same fixed window ──
+              // ── Clipboard popup — preview uses visibility toggle (no hierarchy changes during touch) ──
               private fun showClipboardPopup(anchor: View) {
                   clipboardPopup?.dismiss()
                   val popupWidth = (resources.displayMetrics.widthPixels * 0.8).toInt()
                   val POPUP_HEIGHT = 280.dp
-                  val TAB_HEIGHT  = 40.dp
+                  val TAB_HEIGHT   = 40.dp
                   val CONTENT_HEIGHT = POPUP_HEIGHT - TAB_HEIGHT
 
-                  // contentBox is the bordered area whose children we swap for preview
-                  val contentBox = LinearLayout(this).apply {
-                      orientation = LinearLayout.VERTICAL
-                      setBackgroundResource(R.drawable.popup_border)
-                      layoutParams = LinearLayout.LayoutParams(
-                          ViewGroup.LayoutParams.MATCH_PARENT, CONTENT_HEIGHT)
+                  // Preview text lives in the hierarchy always — we just show/hide it.
+                  // This avoids any addView/removeView during an active touch sequence.
+                  val previewTextView = TextView(this).apply {
+                      textSize = 16f; setTextColor(0xFFCCCCCC.toInt())
+                      setPadding(14.dp, 14.dp, 14.dp, 14.dp)
+                      maxLines = 10
+                      ellipsize = android.text.TextUtils.TruncateAt.END
+                  }
+                  val previewContainer = ScrollView(this).apply {
+                      visibility = View.INVISIBLE
+                      setBackgroundColor(0xFF2C2C2C.toInt())   // same fill as popup
+                      layoutParams = FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT)
+                      addView(previewTextView)
+                  }
+
+                  // List container — also always in hierarchy
+                  val listContainer = FrameLayout(this).apply {
+                      layoutParams = FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT)
+                  }
+
+                  // FrameLayout stacks list + preview; visibility determines which is visible
+                  val contentFrame = FrameLayout(this).apply {
+                      layoutParams = LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, CONTENT_HEIGHT)
+                  }
+                  contentFrame.addView(listContainer)
+                  contentFrame.addView(previewContainer)
+
+                  // Safe preview callbacks — only visibility changes, zero hierarchy modification
+                  val onPreviewStart: (String) -> Unit = { text ->
+                      previewTextView.text = text
+                      listContainer.visibility = View.INVISIBLE
+                      previewContainer.visibility = View.VISIBLE
+                  }
+                  val onPreviewEnd: () -> Unit = {
+                      listContainer.visibility = View.VISIBLE
+                      previewContainer.visibility = View.INVISIBLE
                   }
 
                   var recentTabView: TextView? = null
                   var savedTabView: TextView? = null
                   var switchTabFn: ((String) -> Unit)? = null
 
-                  // Preview: swap contentBox children — same window, same size
-                  val onPreviewStart: (String) -> Unit = { text ->
-                      val current = contentBox.getChildAt(0)
-                      contentBox.tag = current       // save to restore later
-                      contentBox.removeAllViews()
-                      val tv = TextView(this).apply {
-                          this.text = text
-                          textSize = 16f
-                          setTextColor(0xFFCCCCCC.toInt())
-                          setPadding(14.dp, 12.dp, 14.dp, 12.dp)
-                          maxLines = 10
-                          ellipsize = android.text.TextUtils.TruncateAt.END
-                          layoutParams = ViewGroup.LayoutParams(
-                              ViewGroup.LayoutParams.MATCH_PARENT,
-                              ViewGroup.LayoutParams.WRAP_CONTENT
-                          )
-                      }
-                      val sv = ScrollView(this).apply {
-                          layoutParams = ViewGroup.LayoutParams(
-                              ViewGroup.LayoutParams.MATCH_PARENT,
-                              ViewGroup.LayoutParams.MATCH_PARENT)
-                          addView(tv)
-                      }
-                      contentBox.addView(sv)
-                  }
-                  val onPreviewEnd: () -> Unit = {
-                      val saved = contentBox.tag as? View
-                      if (saved != null) {
-                          contentBox.removeAllViews()
-                          contentBox.addView(saved)
-                          contentBox.tag = null
-                      }
-                  }
-
                   fun buildList(items: MutableList<String>, isRecent: Boolean): View {
                       if (items.isEmpty()) {
                           return TextView(this).apply {
                               text = if (isRecent) "No recent items" else "No saved items"
-                              textSize = 16f; setTextColor(0xFF555555.toInt())
-                              gravity = Gravity.CENTER
-                              layoutParams = ViewGroup.LayoutParams(
-                                  ViewGroup.LayoutParams.MATCH_PARENT,
-                                  ViewGroup.LayoutParams.MATCH_PARENT)
+                              textSize = 16f; setTextColor(0xFF555555.toInt()); gravity = Gravity.CENTER
+                              layoutParams = ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT)
                           }
                       }
                       val adapter = ClipboardAdapter(
-                          items = items,
-                          showSaveBtn = isRecent,
+                          items = items, showSaveBtn = isRecent,
                           onPaste = { item -> commitText(item); clipboardPopup?.dismiss() },
                           onSave = { item ->
                               if (!savedItems.contains(item)) {
@@ -627,19 +560,19 @@ jobs:
                       )
                       if (isRecent) clipAdapter = adapter else savedAdapter = adapter
                       return RecyclerView(this).apply {
-                          layoutManager = LinearLayoutManager(this@Keyboard)
-                          this.adapter = adapter
-                          layoutParams = ViewGroup.LayoutParams(
-                              ViewGroup.LayoutParams.MATCH_PARENT,
-                              ViewGroup.LayoutParams.MATCH_PARENT)
+                          layoutManager = LinearLayoutManager(this@Keyboard); this.adapter = adapter
+                          layoutParams = ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT)
                       }
                   }
 
                   fun switchTab(tab: String) {
                       activeClipTab = tab
-                      contentBox.removeAllViews()
-                      contentBox.tag = null
-                      contentBox.addView(buildList(if (tab == "recent") clipboardItems else savedItems, tab == "recent"))
+                      // Reset preview whenever tab switches
+                      previewContainer.visibility = View.INVISIBLE
+                      listContainer.visibility = View.VISIBLE
+                      // Swap list content
+                      listContainer.removeAllViews()
+                      listContainer.addView(buildList(if (tab == "recent") clipboardItems else savedItems, tab == "recent"))
                       recentTabView?.apply {
                           setBackgroundColor(if (tab == "recent") 0xFF2C2C2C.toInt() else 0xFF1A1A1A.toInt())
                           setTextColor(if (tab == "recent") 0xFF4FC3F7.toInt() else 0xFF555555.toInt())
@@ -651,25 +584,27 @@ jobs:
                   }
                   switchTabFn = ::switchTab
 
-                  // Tab row – visually outside/above the bordered box
                   val tabRow = LinearLayout(this).apply {
-                      orientation = LinearLayout.HORIZONTAL
-                      setBackgroundColor(0xFF1A1A1A.toInt())
+                      orientation = LinearLayout.HORIZONTAL; setBackgroundColor(0xFF1A1A1A.toInt())
                       layoutParams = LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, TAB_HEIGHT)
                   }
                   recentTabView = TextView(this).apply {
                       text = "Recent"; textSize = 13f; gravity = Gravity.CENTER
-                      setPadding(0, 0, 0, 0)
                       layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.MATCH_PARENT, 1f)
                       setOnClickListener { switchTab("recent") }
                   }
                   savedTabView = TextView(this).apply {
                       text = "Saved"; textSize = 13f; gravity = Gravity.CENTER
-                      setPadding(0, 0, 0, 0)
                       layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.MATCH_PARENT, 1f)
                       setOnClickListener { switchTab("saved") }
                   }
                   tabRow.addView(recentTabView); tabRow.addView(savedTabView)
+
+                  val contentBox = LinearLayout(this).apply {
+                      orientation = LinearLayout.VERTICAL; setBackgroundResource(R.drawable.popup_border)
+                      layoutParams = LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, CONTENT_HEIGHT)
+                  }
+                  contentBox.addView(contentFrame)
 
                   val outer = LinearLayout(this).apply {
                       orientation = LinearLayout.VERTICAL
@@ -686,25 +621,22 @@ jobs:
                   }
               }
 
-              // ── Delete confirmation small popup ──
               private fun showDeleteConfirm(anchor: View, onConfirm: () -> Unit) {
                   confirmPopup?.dismiss()
                   val d = resources.displayMetrics.density
                   val dp4 = (4 * d).toInt(); val dp8 = (8 * d).toInt(); val dp10 = (10 * d).toInt()
                   val layout = LinearLayout(this).apply {
-                      orientation = LinearLayout.HORIZONTAL
-                      setBackgroundResource(R.drawable.popup_border)
+                      orientation = LinearLayout.HORIZONTAL; setBackgroundResource(R.drawable.popup_border)
                       setPadding(dp8, dp4, dp8, dp4); gravity = Gravity.CENTER_VERTICAL
                   }
                   layout.addView(TextView(this).apply { text = "Delete?"; textSize = 13f; setTextColor(0xFFCCCCCC.toInt()); setPadding(0, 0, dp10, 0) })
                   val yesBtn = TextView(this).apply { text = "Yes"; textSize = 13f; setTextColor(0xFFFF5252.toInt()); setPadding(dp8, dp4, dp8, dp4) }
-                  val noBtn  = TextView(this).apply { text = "No";  textSize = 13f; setTextColor(0xFF888888.toInt()); setPadding(dp8, dp4, dp4, dp4) }
+                  val noBtn  = TextView(this).apply { text = "No";  textSize = 13f; setTextColor(0xFF888888.toInt()); setPadding(dp8, dp4, dp4,  dp4) }
                   layout.addView(yesBtn); layout.addView(noBtn)
                   layout.measure(View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED), View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED))
                   val pw = layout.measuredWidth; val ph = layout.measuredHeight
                   confirmPopup = PopupWindow(layout, pw, ph, true).apply {
-                      setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
-                      isOutsideTouchable = true; elevation = 12f
+                      setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT)); isOutsideTouchable = true; elevation = 12f
                       showAsDropDown(anchor, -(pw / 2), -(ph + dp8))
                   }
                   yesBtn.setOnClickListener { confirmPopup?.dismiss(); onConfirm() }
@@ -724,49 +656,31 @@ jobs:
 
               private fun buildQwerty(): View {
                   val v = layoutInflater.inflate(R.layout.qwerty, null)
-
-                  sugView1 = v.findViewById(R.id.sug1)
-                  sugView2 = v.findViewById(R.id.sug2)
-                  sugView3 = v.findViewById(R.id.sug3)
+                  sugView1 = v.findViewById(R.id.sug1); sugView2 = v.findViewById(R.id.sug2); sugView3 = v.findViewById(R.id.sug3)
                   listOf(sugView1, sugView2, sugView3).forEach { sv ->
                       if (sv == null) return@forEach
                       sv.setTag(R.id.original_bg_tag, R.drawable.key_bg_dark)
                       sv.setOnTouchListener { view, event ->
                           when (event.actionMasked) {
-                              MotionEvent.ACTION_DOWN -> {
-                                  (view as? TextView)?.apply { setBackgroundResource(R.drawable.key_bg_pressed); setTextColor(0xFF000000.toInt()) }; true
-                              }
+                              MotionEvent.ACTION_DOWN -> { (view as? TextView)?.apply { setBackgroundResource(R.drawable.key_bg_pressed); setTextColor(0xFF000000.toInt()) }; true }
                               MotionEvent.ACTION_UP -> {
                                   (view as? TextView)?.let { tv ->
-                                      val word = tv.text?.toString()?.trim() ?: ""
-                                      if (word.isNotEmpty()) commitSuggestion(word)
-                                      tv.setBackgroundResource(tv.getTag(R.id.original_bg_tag) as? Int ?: R.drawable.key_bg_dark)
-                                      tv.setTextColor(0xFFFFFFFF.toInt())
+                                      val word = tv.text?.toString()?.trim() ?: ""; if (word.isNotEmpty()) commitSuggestion(word)
+                                      tv.setBackgroundResource(tv.getTag(R.id.original_bg_tag) as? Int ?: R.drawable.key_bg_dark); tv.setTextColor(0xFFFFFFFF.toInt())
                                   }; true
                               }
                               MotionEvent.ACTION_CANCEL -> {
-                                  (view as? TextView)?.let { tv ->
-                                      tv.setBackgroundResource(tv.getTag(R.id.original_bg_tag) as? Int ?: R.drawable.key_bg_dark)
-                                      tv.setTextColor(0xFFFFFFFF.toInt())
-                                  }; true
+                                  (view as? TextView)?.let { tv -> tv.setBackgroundResource(tv.getTag(R.id.original_bg_tag) as? Int ?: R.drawable.key_bg_dark); tv.setTextColor(0xFFFFFFFF.toInt()) }; true
                               }
                               else -> true
                           }
                       }
                   }
-
                   val letters = "qwertyuiopasdfghjklzxcvbnm"
-                  val ids = listOf(R.id.kq,R.id.kw,R.id.ke,R.id.kr,R.id.kt,R.id.ky,R.id.ku,R.id.ki,R.id.ko,R.id.kp,
-                      R.id.ka,R.id.ks,R.id.kd,R.id.kf,R.id.kg,R.id.kh,R.id.kj,R.id.kk,R.id.kl,
-                      R.id.kz,R.id.kx,R.id.kc,R.id.kv,R.id.kb,R.id.kn,R.id.km)
+                  val ids = listOf(R.id.kq,R.id.kw,R.id.ke,R.id.kr,R.id.kt,R.id.ky,R.id.ku,R.id.ki,R.id.ko,R.id.kp,R.id.ka,R.id.ks,R.id.kd,R.id.kf,R.id.kg,R.id.kh,R.id.kj,R.id.kk,R.id.kl,R.id.kz,R.id.kx,R.id.kc,R.id.kv,R.id.kb,R.id.kn,R.id.km)
                   ids.forEachIndexed { i, id -> setupKey(v.findViewById<TextView>(id), R.drawable.key_bg) { typeChar(letters[i]) } }
-
                   val numIds = listOf(R.id.k1,R.id.k2,R.id.k3,R.id.k4,R.id.k5,R.id.k6,R.id.k7,R.id.k8,R.id.k9,R.id.k0)
-                  "1234567890".forEachIndexed { i, c ->
-                      val kc = KeyEvent.KEYCODE_0 + (c - '0')
-                      setupKey(v.findViewById<TextView>(numIds[i]), R.drawable.key_bg) { sendKey(kc); clearSugs() }
-                  }
-
+                  "1234567890".forEachIndexed { i, c -> val kc = KeyEvent.KEYCODE_0 + (c - '0'); setupKey(v.findViewById<TextView>(numIds[i]), R.drawable.key_bg) { sendKey(kc); clearSugs() } }
                   val shiftKey = v.findViewById<TextView>(R.id.btn_shift)
                   shiftKey.setTag(R.id.original_bg_tag, R.drawable.key_bg_dark)
                   shiftKey.setOnTouchListener { _, event ->
@@ -776,7 +690,6 @@ jobs:
                           else -> true
                       }
                   }
-
                   val backspace = v.findViewById<TextView>(R.id.btn_backspace)
                   backspace.setTag(R.id.original_bg_tag, R.drawable.key_bg_dark)
                   backspace.setOnTouchListener { _, event ->
@@ -786,15 +699,10 @@ jobs:
                               bsRunnable = object : Runnable { override fun run() { sendKey(KeyEvent.KEYCODE_DEL); bsHandler.postDelayed(this, 50) } }
                               bsHandler.postDelayed(bsRunnable!!, 300); true
                           }
-                          MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
-                              releaseKey(backspace); stopBackspaceRepeat()
-                              bsHandler.postDelayed({ updateSuggestions() }, 80); true
-                          }
+                          MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> { releaseKey(backspace); stopBackspaceRepeat(); bsHandler.postDelayed({ updateSuggestions() }, 80); true }
                           else -> true
                       }
                   }
-
-                  // Space bar drag-to-cursor
                   val spaceView = v.findViewById<TextView>(R.id.btn_space)
                   spaceView.setTag(R.id.original_bg_tag, R.drawable.key_bg_dark)
                   var startX = 0f; var dragStarted = false; var lastCursorMoveX = 0f
@@ -805,50 +713,29 @@ jobs:
                           MotionEvent.ACTION_MOVE -> {
                               val delta = event.x - startX
                               if (abs(delta) >= DRAG_THRESHOLD && !dragStarted) { dragStarted = true; moveCursor(delta > 0); lastCursorMoveX = event.x }
-                              else if (dragStarted) { val dx = event.x - lastCursorMoveX; if (abs(dx) >= CURSOR_INTERVAL) { moveCursor(dx > 0); lastCursorMoveX = event.x } }
-                              true
+                              else if (dragStarted) { val dx = event.x - lastCursorMoveX; if (abs(dx) >= CURSOR_INTERVAL) { moveCursor(dx > 0); lastCursorMoveX = event.x } }; true
                           }
-                          MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
-                              releaseKey(spaceView)
-                              if (!dragStarted) { sendKey(KeyEvent.KEYCODE_SPACE); clearSugs() }
-                              dragStarted = false; true
-                          }
+                          MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> { releaseKey(spaceView); if (!dragStarted) { sendKey(KeyEvent.KEYCODE_SPACE); clearSugs() }; dragStarted = false; true }
                           else -> true
                       }
                   }
-
                   setupKey(v.findViewById<TextView>(R.id.btn_comma),  R.drawable.key_bg)        { sendKey(KeyEvent.KEYCODE_COMMA);  clearSugs() }
                   setupKey(v.findViewById<TextView>(R.id.btn_period), R.drawable.key_bg)        { sendKey(KeyEvent.KEYCODE_PERIOD); clearSugs() }
                   setupKey(v.findViewById<TextView>(R.id.btn_enter),  R.drawable.key_bg_action) { sendKey(KeyEvent.KEYCODE_ENTER);  clearSugs() }
-
-                  val symbolsBtn = v.findViewById<TextView>(R.id.btn_symbols)
-                  setupKey(symbolsBtn, R.drawable.key_bg_dark) { showSymbolsPopup(symbolsBtn) }
-                  val emojiBtn = v.findViewById<TextView>(R.id.btn_emoji)
-                  setupKey(emojiBtn, R.drawable.key_bg_dark) { showEmojiPopup(emojiBtn) }
+                  val symbolsBtn = v.findViewById<TextView>(R.id.btn_symbols); setupKey(symbolsBtn, R.drawable.key_bg_dark) { showSymbolsPopup(symbolsBtn) }
+                  val emojiBtn = v.findViewById<TextView>(R.id.btn_emoji); setupKey(emojiBtn, R.drawable.key_bg_dark) { showEmojiPopup(emojiBtn) }
                   val clipboardBtn = v.findViewById<TextView>(R.id.btn_clipboard)
                   setupKey(clipboardBtn, R.drawable.key_bg_dark) {
-                      val clip = (getSystemService(Context.CLIPBOARD_SERVICE) as? ClipboardManager)
-                          ?.primaryClip?.getItemAt(0)?.text?.toString()
-                      if (!clip.isNullOrEmpty()) addToClipboard(clip)
-                      showClipboardPopup(clipboardBtn)
+                      val clip = (getSystemService(Context.CLIPBOARD_SERVICE) as? ClipboardManager)?.primaryClip?.getItemAt(0)?.text?.toString()
+                      if (!clip.isNullOrEmpty()) addToClipboard(clip); showClipboardPopup(clipboardBtn)
                   }
-                  val toolsBtn = v.findViewById<TextView>(R.id.btn_tools)
-                  setupKey(toolsBtn, R.drawable.key_bg_dark) { showToolsPopup(toolsBtn) }
-
+                  val toolsBtn = v.findViewById<TextView>(R.id.btn_tools); setupKey(toolsBtn, R.drawable.key_bg_dark) { showToolsPopup(toolsBtn) }
                   val keyA = v.findViewById<TextView>(R.id.ka); val keyL = v.findViewById<TextView>(R.id.kl)
                   v.findViewById<View>(R.id.asdf_spacer_left)?.setOnTouchListener { _, event ->
-                      when (event.actionMasked) {
-                          MotionEvent.ACTION_DOWN -> { keyA?.let { pressKey(it) }; typeChar('a'); true }
-                          MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> { keyA?.let { releaseKey(it) }; true }
-                          else -> true
-                      }
+                      when (event.actionMasked) { MotionEvent.ACTION_DOWN -> { keyA?.let { pressKey(it) }; typeChar('a'); true }; MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> { keyA?.let { releaseKey(it) }; true }; else -> true }
                   }
                   v.findViewById<View>(R.id.asdf_spacer_right)?.setOnTouchListener { _, event ->
-                      when (event.actionMasked) {
-                          MotionEvent.ACTION_DOWN -> { keyL?.let { pressKey(it) }; typeChar('l'); true }
-                          MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> { keyL?.let { releaseKey(it) }; true }
-                          else -> true
-                      }
+                      when (event.actionMasked) { MotionEvent.ACTION_DOWN -> { keyL?.let { pressKey(it) }; typeChar('l'); true }; MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> { keyL?.let { releaseKey(it) }; true }; else -> true }
                   }
                   return v
               }
@@ -866,11 +753,7 @@ jobs:
                                       when (label) {
                                           "Select All" -> currentInputConnection?.performContextMenuAction(android.R.id.selectAll)
                                           "Copy"       -> currentInputConnection?.performContextMenuAction(android.R.id.copy)
-                                          "Paste"      -> {
-                                              val clip = (getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager)
-                                                  .primaryClip?.getItemAt(0)?.coerceToText(this@Keyboard)?.toString()
-                                              if (!clip.isNullOrEmpty()) { commitText(clip); addToClipboard(clip) }
-                                          }
+                                          "Paste"      -> { val clip = (getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager).primaryClip?.getItemAt(0)?.coerceToText(this@Keyboard)?.toString(); if (!clip.isNullOrEmpty()) { commitText(clip); addToClipboard(clip) } }
                                       }
                                       (v as? TextView)?.apply { setBackgroundColor(0x00000000.toInt()); setTextColor(0xFFFFFFFF.toInt()) }; true
                                   }
@@ -882,8 +765,7 @@ jobs:
                   }
                   popup.measure(View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED), View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED))
                   toolsPopup = PopupWindow(popup, popup.measuredWidth, popup.measuredHeight, true).apply {
-                      setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
-                      isOutsideTouchable = true; elevation = 8f
+                      setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT)); isOutsideTouchable = true; elevation = 8f
                       showAsDropDown(anchor, 0, -popup.measuredHeight)
                   }
               }
@@ -892,11 +774,7 @@ jobs:
                   val kc = KeyEvent.KEYCODE_A + (c.lowercaseChar() - 'a')
                   val meta = if (shiftState != ShiftState.OFF) KeyEvent.META_SHIFT_ON else 0
                   sendKey(kc, meta)
-                  if (shiftState == ShiftState.ONCE) {
-                      shiftState = ShiftState.OFF
-                      updateShiftKeyAppearance(qwertyView.findViewById(R.id.btn_shift))
-                      updateLetterKeys(qwertyView)
-                  }
+                  if (shiftState == ShiftState.ONCE) { shiftState = ShiftState.OFF; updateShiftKeyAppearance(qwertyView.findViewById(R.id.btn_shift)); updateLetterKeys(qwertyView) }
                   bsHandler.postDelayed({ updateSuggestions() }, 80)
               }
 
@@ -906,12 +784,7 @@ jobs:
 
               private fun toggleShiftState() {
                   val now = System.currentTimeMillis()
-                  shiftState = when {
-                      shiftState == ShiftState.LOCKED -> ShiftState.OFF
-                      now - lastShiftTap < 200        -> ShiftState.LOCKED
-                      shiftState == ShiftState.OFF    -> ShiftState.ONCE
-                      else                            -> ShiftState.OFF
-                  }
+                  shiftState = when { shiftState == ShiftState.LOCKED -> ShiftState.OFF; now - lastShiftTap < 200 -> ShiftState.LOCKED; shiftState == ShiftState.OFF -> ShiftState.ONCE; else -> ShiftState.OFF }
                   lastShiftTap = now; updateLetterKeys(qwertyView)
               }
 
@@ -921,18 +794,14 @@ jobs:
               }
 
               private fun updateLetterKeys(v: View) {
-                  val upper = shiftState != ShiftState.OFF
-                  val letters = "qwertyuiopasdfghjklzxcvbnm"
-                  listOf(R.id.kq,R.id.kw,R.id.ke,R.id.kr,R.id.kt,R.id.ky,R.id.ku,R.id.ki,R.id.ko,R.id.kp,
-                      R.id.ka,R.id.ks,R.id.kd,R.id.kf,R.id.kg,R.id.kh,R.id.kj,R.id.kk,R.id.kl,
-                      R.id.kz,R.id.kx,R.id.kc,R.id.kv,R.id.kb,R.id.kn,R.id.km).forEachIndexed { i, id ->
+                  val upper = shiftState != ShiftState.OFF; val letters = "qwertyuiopasdfghjklzxcvbnm"
+                  listOf(R.id.kq,R.id.kw,R.id.ke,R.id.kr,R.id.kt,R.id.ky,R.id.ku,R.id.ki,R.id.ko,R.id.kp,R.id.ka,R.id.ks,R.id.kd,R.id.kf,R.id.kg,R.id.kh,R.id.kj,R.id.kk,R.id.kl,R.id.kz,R.id.kx,R.id.kc,R.id.kv,R.id.kb,R.id.kn,R.id.km).forEachIndexed { i, id ->
                       v.findViewById<TextView>(id)?.text = if (upper) letters[i].uppercaseChar().toString() else letters[i].toString()
                   }
               }
 
               private fun extractCurrentWordRaw(before: String): String {
-                  val s = before.trimEnd(' ')
-                  val idx = s.indexOfLast { !it.isLetter() }
+                  val s = before.trimEnd(' '); val idx = s.indexOfLast { !it.isLetter() }
                   return if (idx < 0) s else s.substring(idx + 1)
               }
 
@@ -942,19 +811,14 @@ jobs:
                   val rawWord = extractCurrentWordRaw(before); val word = rawWord.lowercase()
                   if (word.isEmpty()) { clearSugs(); return }
                   Thread {
-                      val matches = try {
-                          assets.open("words.txt").bufferedReader().useLines { lines ->
-                              lines.map { it.trim().lowercase() }.filter { it.isNotEmpty() && it.startsWith(word) }.take(3).toList()
-                          }
-                      } catch (e: Exception) { emptyList() }
+                      val matches = try { assets.open("words.txt").bufferedReader().useLines { lines -> lines.map { it.trim().lowercase() }.filter { it.isNotEmpty() && it.startsWith(word) }.take(3).toList() } } catch (e: Exception) { emptyList() }
                       bsHandler.post { applySuggestions(rawWord, matches) }
                   }.start()
               }
 
               private fun applySuggestions(rawWord: String, matches: List<String>) {
                   if (matches.isEmpty()) {
-                      val span = SpannableString(rawWord)
-                      span.setSpan(ForegroundColorSpan(0xFFFF0000.toInt()), 0, rawWord.length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
+                      val span = SpannableString(rawWord); span.setSpan(ForegroundColorSpan(0xFFFF0000.toInt()), 0, rawWord.length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
                       sugView1?.text = span; sugView2?.text = ""; sugView3?.text = ""; return
                   }
                   val best = matches[0]
@@ -963,8 +827,7 @@ jobs:
                   val span = SpannableString(display)
                   span.setSpan(ForegroundColorSpan(0xFF4FC3F7.toInt()), 0, prefixLen, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
                   if (prefixLen < display.length) span.setSpan(ForegroundColorSpan(0xFFFFFFFF.toInt()), prefixLen, display.length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
-                  sugView1?.text = span
-                  sugView2?.text = matches.getOrNull(1) ?: ""; sugView3?.text = matches.getOrNull(2) ?: ""
+                  sugView1?.text = span; sugView2?.text = matches.getOrNull(1) ?: ""; sugView3?.text = matches.getOrNull(2) ?: ""
                   sugView2?.setTextColor(0xFFFFFFFF.toInt()); sugView3?.setTextColor(0xFFFFFFFF.toInt())
               }
 
@@ -977,13 +840,9 @@ jobs:
                   val raw = extractCurrentWordRaw(before)
                   val result = if (raw.isNotEmpty() && raw[0].isUpperCase()) word.replaceFirstChar { it.uppercase() } else word
                   ic.deleteSurroundingText(raw.length, 0); ic.commitText("$result ", 1); clearSugs()
-                  if (shiftState == ShiftState.ONCE) {
-                      shiftState = ShiftState.OFF
-                      qwertyView.post { updateShiftKeyAppearance(qwertyView.findViewById(R.id.btn_shift)); updateLetterKeys(qwertyView) }
-                  }
+                  if (shiftState == ShiftState.ONCE) { shiftState = ShiftState.OFF; qwertyView.post { updateShiftKeyAppearance(qwertyView.findViewById(R.id.btn_shift)); updateLetterKeys(qwertyView) } }
               }
 
-              // ── Clipboard adapter ──
               class ClipboardAdapter(
                   private val items: MutableList<String>,
                   private val showSaveBtn: Boolean,
@@ -996,32 +855,21 @@ jobs:
 
                   private val handler = Handler(Looper.getMainLooper())
 
-                  inner class VH(val root: LinearLayout, val tv: TextView, val saveBtn: TextView?, val del: TextView)
-                      : RecyclerView.ViewHolder(root)
+                  inner class VH(val root: LinearLayout, val tv: TextView, val saveBtn: TextView?, val del: TextView) : RecyclerView.ViewHolder(root)
 
                   override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): VH {
-                      val ctx = parent.context
-                      val d = ctx.resources.displayMetrics.density
-                      val dp3 = (3 * d).toInt(); val dp4 = (4 * d).toInt()
-                      val dp8 = (8 * d).toInt(); val dp12 = (12 * d).toInt()
+                      val ctx = parent.context; val d = ctx.resources.displayMetrics.density
+                      val dp3 = (3 * d).toInt(); val dp4 = (4 * d).toInt(); val dp8 = (8 * d).toInt(); val dp12 = (12 * d).toInt()
                       val root = LinearLayout(ctx).apply {
-                          orientation = LinearLayout.HORIZONTAL
-                          setPadding(dp12, dp8, dp8, dp8)
-                          layoutParams = RecyclerView.LayoutParams(
-                              ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT
-                          ).apply { bottomMargin = dp3 }
+                          orientation = LinearLayout.HORIZONTAL; setPadding(dp12, dp8, dp8, dp8)
+                          layoutParams = RecyclerView.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT).apply { bottomMargin = dp3 }
                       }
                       val tv = TextView(ctx).apply {
                           layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
-                          setTextColor(0xFFCCCCCC.toInt()); textSize = 16f
-                          maxLines = 1; ellipsize = android.text.TextUtils.TruncateAt.END
+                          setTextColor(0xFFCCCCCC.toInt()); textSize = 16f; maxLines = 1; ellipsize = android.text.TextUtils.TruncateAt.END
                       }
-                      val saveBtn = if (showSaveBtn) TextView(ctx).apply {
-                          text = "★"; setTextColor(0xFF555555.toInt()); textSize = 16f; setPadding(dp8, 0, dp4, 0)
-                      } else null
-                      val del = TextView(ctx).apply {
-                          text = "✕"; setTextColor(0xFF555555.toInt()); textSize = 16f; setPadding(dp8, 0, dp8, 0)
-                      }
+                      val saveBtn = if (showSaveBtn) TextView(ctx).apply { text = "★"; setTextColor(0xFF555555.toInt()); textSize = 16f; setPadding(dp8, 0, dp4, 0) } else null
+                      val del = TextView(ctx).apply { text = "✕"; setTextColor(0xFF555555.toInt()); textSize = 16f; setPadding(dp8, 0, dp8, 0) }
                       root.addView(tv); saveBtn?.let { root.addView(it) }; root.addView(del)
                       return VH(root, tv, saveBtn, del)
                   }
@@ -1042,32 +890,16 @@ jobs:
                               }
                               MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
                                   h.root.setBackgroundColor(0x00000000.toInt())
-                                  longPressRunnable?.let { handler.removeCallbacks(it) }
-                                  longPressRunnable = null
+                                  longPressRunnable?.let { handler.removeCallbacks(it) }; longPressRunnable = null
                                   onPreviewEnd()
                                   false
                               }
                               else -> false
                           }
                       }
-                      h.root.setOnClickListener {
-                          val sp = h.adapterPosition
-                          if (sp >= 0 && sp < items.size) onPaste(items[sp])
-                      }
-                      h.saveBtn?.setOnClickListener { v ->
-                          val sp = h.adapterPosition
-                          if (sp >= 0 && sp < items.size) {
-                              onSave?.invoke(items[sp])
-                              (v as? TextView)?.apply {
-                                  setTextColor(0xFF4FC3F7.toInt())
-                                  handler.postDelayed({ setTextColor(0xFF555555.toInt()) }, 800)
-                              }
-                          }
-                      }
-                      h.del.setOnClickListener {
-                          val sp = h.adapterPosition
-                          if (sp >= 0) onDeleteRequest(sp, h.del)
-                      }
+                      h.root.setOnClickListener { val sp = h.adapterPosition; if (sp >= 0 && sp < items.size) onPaste(items[sp]) }
+                      h.saveBtn?.setOnClickListener { v -> val sp = h.adapterPosition; if (sp >= 0 && sp < items.size) { onSave?.invoke(items[sp]); (v as? TextView)?.apply { setTextColor(0xFF4FC3F7.toInt()); handler.postDelayed({ setTextColor(0xFF555555.toInt()) }, 800) } } }
+                      h.del.setOnClickListener { val sp = h.adapterPosition; if (sp >= 0) onDeleteRequest(sp, h.del) }
                   }
 
                   override fun getItemCount() = items.size
@@ -1079,49 +911,19 @@ jobs:
                   saveClipboard(); clipAdapter?.notifyDataSetChanged()
               }
 
-              private fun saveClipboard() {
-                  getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE).edit()
-                      .putString(PREFS_CLIP, clipboardItems.take(MAX_CLIP).joinToString("\u001F")).apply()
-              }
-
-              private fun loadClipboard() {
-                  val s = getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE).getString(PREFS_CLIP, "") ?: ""
-                  clipboardItems.clear(); if (s.isNotEmpty()) clipboardItems.addAll(s.split("\u001F"))
-              }
-
-              private fun saveSavedItems() {
-                  getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE).edit()
-                      .putString(PREFS_SAVED, savedItems.take(MAX_SAVED).joinToString("\u001F")).apply()
-              }
-
-              private fun loadSavedItems() {
-                  val s = getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE).getString(PREFS_SAVED, "") ?: ""
-                  savedItems.clear(); if (s.isNotEmpty()) savedItems.addAll(s.split("\u001F"))
-              }
-
-              private fun addToRecentEmoji(emoji: String) {
-                  recentEmojis.remove(emoji); recentEmojis.add(0, emoji)
-                  if (recentEmojis.size > MAX_RECENT_EMOJI) recentEmojis.removeAt(recentEmojis.size - 1)
-                  saveRecentEmojis()
-              }
-
-              private fun saveRecentEmojis() {
-                  getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE).edit()
-                      .putString(PREFS_RECENT_EMOJI, recentEmojis.take(MAX_RECENT_EMOJI).joinToString("\u001F")).apply()
-              }
-
-              private fun loadRecentEmojis() {
-                  val s = getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE).getString(PREFS_RECENT_EMOJI, "") ?: ""
-                  recentEmojis.clear(); if (s.isNotEmpty()) recentEmojis.addAll(s.split("\u001F"))
-              }
+              private fun saveClipboard() { getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE).edit().putString(PREFS_CLIP, clipboardItems.take(MAX_CLIP).joinToString("\u001F")).apply() }
+              private fun loadClipboard() { val s = getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE).getString(PREFS_CLIP, "") ?: ""; clipboardItems.clear(); if (s.isNotEmpty()) clipboardItems.addAll(s.split("\u001F")) }
+              private fun saveSavedItems() { getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE).edit().putString(PREFS_SAVED, savedItems.take(MAX_SAVED).joinToString("\u001F")).apply() }
+              private fun loadSavedItems() { val s = getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE).getString(PREFS_SAVED, "") ?: ""; savedItems.clear(); if (s.isNotEmpty()) savedItems.addAll(s.split("\u001F")) }
+              private fun addToRecentEmoji(emoji: String) { recentEmojis.remove(emoji); recentEmojis.add(0, emoji); if (recentEmojis.size > MAX_RECENT_EMOJI) recentEmojis.removeAt(recentEmojis.size - 1); saveRecentEmojis() }
+              private fun saveRecentEmojis() { getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE).edit().putString(PREFS_RECENT_EMOJI, recentEmojis.take(MAX_RECENT_EMOJI).joinToString("\u001F")).apply() }
+              private fun loadRecentEmojis() { val s = getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE).getString(PREFS_RECENT_EMOJI, "") ?: ""; recentEmojis.clear(); if (s.isNotEmpty()) recentEmojis.addAll(s.split("\u001F")) }
 
               private val Int.dp get() = (this * resources.displayMetrics.density).toInt()
 
               override fun onDestroy() {
-                  super.onDestroy()
-                  stopBackspaceRepeat()
-                  toolsPopup?.dismiss(); symbolsPopup?.dismiss()
-                  emojiPopup?.dismiss(); clipboardPopup?.dismiss(); confirmPopup?.dismiss()
+                  super.onDestroy(); stopBackspaceRepeat()
+                  toolsPopup?.dismiss(); symbolsPopup?.dismiss(); emojiPopup?.dismiss(); clipboardPopup?.dismiss(); confirmPopup?.dismiss()
               }
           }
           ENDOFFILE
@@ -1131,13 +933,8 @@ jobs:
           BUILD_NUMBER: ${{ github.run_number }}
         run: |
           cat > settings.gradle.kts << 'ENDOFFILE'
-          pluginManagement {
-              repositories { google(); mavenCentral(); gradlePluginPortal() }
-          }
-          dependencyResolutionManagement {
-              repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
-              repositories { google(); mavenCentral() }
-          }
+          pluginManagement { repositories { google(); mavenCentral(); gradlePluginPortal() } }
+          dependencyResolutionManagement { repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS); repositories { google(); mavenCentral() } }
           rootProject.name = "GreyB"
           include(":app")
           ENDOFFILE
@@ -1150,52 +947,16 @@ jobs:
           ENDOFFILE
 
           cat > app/build.gradle.kts << APPEOF
-          plugins {
-              id("com.android.application")
-              id("org.jetbrains.kotlin.android")
-          }
-
+          plugins { id("com.android.application"); id("org.jetbrains.kotlin.android") }
           android {
-              namespace  = "com.greyb.keyboard"
-              compileSdk = 36
-
-              defaultConfig {
-                  applicationId = "com.greyb.keyboard"
-                  minSdk        = 26
-                  targetSdk     = 36
-                  versionCode   = ${BUILD_NUMBER}
-                  versionName   = "${BUILD_NUMBER}"
-              }
-
-              signingConfigs {
-                  create("release") {
-                      storeFile     = file("release.keystore")
-                      storePassword = "greyb2024"
-                      keyAlias      = "greyb"
-                      keyPassword   = "greyb2024"
-                  }
-              }
-
-              buildTypes {
-                  release {
-                      isMinifyEnabled   = true
-                      isShrinkResources = true
-                      proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"))
-                      signingConfig = signingConfigs.getByName("release")
-                  }
-              }
-
-              compileOptions {
-                  sourceCompatibility = JavaVersion.VERSION_17
-                  targetCompatibility = JavaVersion.VERSION_17
-              }
+              namespace = "com.greyb.keyboard"; compileSdk = 36
+              defaultConfig { applicationId = "com.greyb.keyboard"; minSdk = 26; targetSdk = 36; versionCode = ${BUILD_NUMBER}; versionName = "${BUILD_NUMBER}" }
+              signingConfigs { create("release") { storeFile = file("release.keystore"); storePassword = "greyb2024"; keyAlias = "greyb"; keyPassword = "greyb2024" } }
+              buildTypes { release { isMinifyEnabled = true; isShrinkResources = true; proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt")); signingConfig = signingConfigs.getByName("release") } }
+              compileOptions { sourceCompatibility = JavaVersion.VERSION_17; targetCompatibility = JavaVersion.VERSION_17 }
               kotlinOptions { jvmTarget = "17" }
           }
-
-          dependencies {
-              implementation("androidx.recyclerview:recyclerview:1.3.2")
-              implementation("androidx.core:core-ktx:1.13.1")
-          }
+          dependencies { implementation("androidx.recyclerview:recyclerview:1.3.2"); implementation("androidx.core:core-ktx:1.13.1") }
           APPEOF
 
           cat > gradle.properties << 'ENDOFFILE'
@@ -1209,11 +970,7 @@ jobs:
       - name: Generate fixed keystore (if missing)
         run: |
           if [ ! -f app/release.keystore ]; then
-            keytool -genkey -v \
-              -keystore app/release.keystore \
-              -alias greyb -keyalg RSA -keysize 2048 -validity 10000 \
-              -storepass greyb2024 -keypass greyb2024 \
-              -dname "CN=GreyB, OU=GreyB, O=GreyB Keyboard, L=Test, S=Test, C=US"
+            keytool -genkey -v -keystore app/release.keystore -alias greyb -keyalg RSA -keysize 2048 -validity 10000 -storepass greyb2024 -keypass greyb2024 -dname "CN=GreyB, OU=GreyB, O=GreyB Keyboard, L=Test, S=Test, C=US"
             echo "✅ New keystore created"
           else
             echo "✅ Using existing cached keystore"
@@ -1228,25 +985,22 @@ jobs:
           import os
 
           def make_icon(size):
-              BG = (42, 45, 52, 255); ACCENT = (90, 93, 100, 255); WHITE = (255, 255, 255, 255)
-              img = Image.new('RGBA', (size, size), BG); d = ImageDraw.Draw(img)
-              margin = size // 5; key_w = (size - 2 * margin) // 4; key_h = (size - 2 * margin) // 5
-              gap = max(1, size // 40); start_y = margin + key_h
+              BG=(42,45,52,255); ACCENT=(90,93,100,255); WHITE=(255,255,255,255)
+              img=Image.new('RGBA',(size,size),BG); d=ImageDraw.Draw(img)
+              margin=size//5; key_w=(size-2*margin)//4; key_h=(size-2*margin)//5; gap=max(1,size//40); start_y=margin+key_h
               for row in range(3):
-                  y = start_y + row * (key_h + gap); keys_in_row = [4, 4, 3]
-                  row_margin = (size - keys_in_row[row] * (key_w + gap) + gap) // 2
+                  y=start_y+row*(key_h+gap); keys_in_row=[4,4,3]; row_margin=(size-keys_in_row[row]*(key_w+gap)+gap)//2
                   for col in range(keys_in_row[row]):
-                      x = row_margin + col * (key_w + gap)
-                      color = ACCENT if (row == 0 and col == 0) else WHITE
-                      d.rounded_rectangle([x, y, x + key_w, y + key_h], radius=key_w // 5, fill=color)
-              space_y = start_y + 3 * (key_h + gap); space_w = key_w * 2 + gap; space_x = (size - space_w) // 2
-              d.rounded_rectangle([space_x, space_y, space_x + space_w, space_y + key_h], radius=key_w // 5, fill=ACCENT)
+                      x=row_margin+col*(key_w+gap); color=ACCENT if (row==0 and col==0) else WHITE
+                      d.rounded_rectangle([x,y,x+key_w,y+key_h],radius=key_w//5,fill=color)
+              space_y=start_y+3*(key_h+gap); space_w=key_w*2+gap; space_x=(size-space_w)//2
+              d.rounded_rectangle([space_x,space_y,space_x+space_w,space_y+key_h],radius=key_w//5,fill=ACCENT)
               return img
 
-          sizes = {'mdpi': 48, 'hdpi': 72, 'xhdpi': 96, 'xxhdpi': 144, 'xxxhdpi': 192}
-          for density, s in sizes.items():
-              path = f'app/src/main/res/mipmap-{density}'; os.makedirs(path, exist_ok=True)
-              icon = make_icon(s); icon.save(f'{path}/ic_launcher.png'); icon.save(f'{path}/ic_launcher_round.png')
+          sizes={'mdpi':48,'hdpi':72,'xhdpi':96,'xxhdpi':144,'xxxhdpi':192}
+          for density,s in sizes.items():
+              path=f'app/src/main/res/mipmap-{density}'; os.makedirs(path,exist_ok=True)
+              icon=make_icon(s); icon.save(f'{path}/ic_launcher.png'); icon.save(f'{path}/ic_launcher_round.png')
           print("Icons generated!")
           ENDOFFILE
 
@@ -1256,9 +1010,7 @@ jobs:
           chmod +x gradlew
 
       - name: Clean build
-        run: |
-          rm -rf app/build
-          ./gradlew clean --no-daemon
+        run: rm -rf app/build && ./gradlew clean --no-daemon
 
       - name: Build signed release APK
         run: ./gradlew assembleRelease --no-daemon
@@ -1270,12 +1022,8 @@ jobs:
               echo "✅ Release APK generated"
               echo "📦 APK size: $(ls -lh "$APK_PATH" | awk '{print $5}')"
               BT_PATH=$(ls -d $ANDROID_HOME/build-tools/* 2>/dev/null | head -1)
-              if [ -n "$BT_PATH" ]; then
-                  $BT_PATH/apksigner verify --print-certs "$APK_PATH" 2>/dev/null || echo "⚠️ apksigner verify skipped"
-              fi
-          else
-              echo "❌ Release APK not found"; exit 1
-          fi
+              if [ -n "$BT_PATH" ]; then $BT_PATH/apksigner verify --print-certs "$APK_PATH" 2>/dev/null || echo "⚠️ apksigner verify skipped"; fi
+          else echo "❌ Release APK not found"; exit 1; fi
 
       - name: Bundle APK + source
         run: |
@@ -1286,7 +1034,6 @@ jobs:
           cp app/src/main/res/layout/qwerty.xml GreyB-release/
           cp .github/workflows/build.yml GreyB-release/
           cp words.txt GreyB-release/ 2>/dev/null || true
-
           APK_SIZE=$(ls -lh app/build/outputs/apk/release/app-release.apk | awk '{print $5}')
           cat > GreyB-release/BUILD_INFO.txt << INFOEOF
           Build:      #${{ github.run_number }}
