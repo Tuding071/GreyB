@@ -159,6 +159,37 @@ jobs:
           </selector>
           ENDOFFILE
 
+          # New drawable for clipboard tab header
+          cat > app/src/main/res/drawable/clip_tab_bg.xml << 'ENDOFFILE'
+          <?xml version="1.0" encoding="utf-8"?>
+          <shape xmlns:android="http://schemas.android.com/apk/res/android">
+              <solid android:color="#2C2C2C"/>
+              <stroke android:width="1dp" android:color="#FFFFFF"/>
+              <corners
+                  android:topLeftRadius="8dp"
+                  android:topRightRadius="8dp"
+                  android:bottomLeftRadius="0dp"
+                  android:bottomRightRadius="0dp"/>
+          </shape>
+          ENDOFFILE
+
+          # New drawable for clipboard list body (no top border)
+          cat > app/src/main/res/drawable/clip_list_bg.xml << 'ENDOFFILE'
+          <?xml version="1.0" encoding="utf-8"?>
+          <shape xmlns:android="http://schemas.android.com/apk/res/android">
+              <solid android:color="#2C2C2C"/>
+              <stroke
+                  android:width="1dp"
+                  android:color="#FFFFFF"
+                  android:top="0dp" />
+              <corners
+                  android:topLeftRadius="0dp"
+                  android:topRightRadius="0dp"
+                  android:bottomLeftRadius="8dp"
+                  android:bottomRightRadius="8dp"/>
+          </shape>
+          ENDOFFILE
+
       - name: Generate values
         run: |
           cat > app/src/main/res/values/colors.xml << 'ENDOFFILE'
@@ -474,7 +505,7 @@ jobs:
                   }
               }
 
-              // ── Clipboard popup ──
+              // ── Clipboard popup (tabs with border, list without top border) ──
               private fun showClipboardPopup(anchor: View) {
                   clipboardPopup?.dismiss()
                   val popupWidth = (resources.displayMetrics.widthPixels * 0.8).toInt()
@@ -621,9 +652,10 @@ jobs:
                   }
                   switchTabFn = ::switchTab
 
-                  // Tab row with press feedback
+                  // Tab row with new background (rounded top corners, border on top/left/right)
                   val tabRow = LinearLayout(this).apply {
                       orientation = LinearLayout.HORIZONTAL
+                      setBackgroundResource(R.drawable.clip_tab_bg)
                       layoutParams = LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, TAB_HEIGHT)
                   }
                   recentTabView = TextView(this).apply {
@@ -654,25 +686,31 @@ jobs:
                   }
                   tabRow.addView(recentTabView); tabRow.addView(savedTabView)
 
+                  // Thin white divider
                   val tabDivider = View(this).apply {
-                      setBackgroundColor(0xFF444444.toInt())
+                      setBackgroundColor(0xFFFFFFFF.toInt())
                       layoutParams = LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 1)
                   }
 
-                  val borderedContainer = LinearLayout(this).apply {
+                  // List area with its own background (no top border, rounded bottom corners)
+                  val listArea = FrameLayout(this).apply {
+                      setBackgroundResource(R.drawable.clip_list_bg)
+                      layoutParams = LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, CONTENT_HEIGHT)
+                  }
+                  listArea.addView(listContainer)
+
+                  val outerContainer = LinearLayout(this).apply {
                       orientation = LinearLayout.VERTICAL
-                      setBackgroundResource(R.drawable.popup_border)
-                      setPadding(0, 0, 0, 0)
                       layoutParams = ViewGroup.LayoutParams(popupWidth, POPUP_HEIGHT)
                   }
-                  borderedContainer.addView(tabRow)
-                  borderedContainer.addView(tabDivider)
-                  borderedContainer.addView(listContainer)
+                  outerContainer.addView(tabRow)
+                  outerContainer.addView(tabDivider)
+                  outerContainer.addView(listArea)
 
                   val outer = FrameLayout(this).apply {
                       layoutParams = ViewGroup.LayoutParams(popupWidth, POPUP_HEIGHT)
                   }
-                  outer.addView(borderedContainer)
+                  outer.addView(outerContainer)
                   outer.addView(previewOverlay)
 
                   switchTab(activeClipTab)
