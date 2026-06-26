@@ -477,7 +477,7 @@ jobs:
                   }
               }
 
-              // ── Clipboard popup (tabs inside border, full‑window preview, tabs seamless) ──
+              // ── Clipboard popup (tabs inside border, full‑window preview, fixes) ──
               private fun showClipboardPopup(anchor: View) {
                   clipboardPopup?.dismiss()
                   val popupWidth = (resources.displayMetrics.widthPixels * 0.8).toInt()
@@ -488,7 +488,6 @@ jobs:
                   var tabRow: LinearLayout? = null
                   var tabDivider: View? = null
 
-                  // Full‑size preview view
                   val previewTextView = TextView(this).apply {
                       textSize = 16f; setTextColor(0xFFCCCCCC.toInt())
                       setPadding(14.dp, 14.dp, 14.dp, 14.dp)
@@ -501,14 +500,10 @@ jobs:
                       addView(previewTextView)
                   }
 
+                  // RecyclerView container — will be replaced by the adapter
                   val listContainer = FrameLayout(this).apply {
-                      layoutParams = FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT)
-                  }
-
-                  val contentFrame = FrameLayout(this).apply {
                       layoutParams = LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, CONTENT_HEIGHT)
                   }
-                  contentFrame.addView(listContainer)
 
                   val onPreviewStart: (String) -> Unit = { text ->
                       previewTextView.text = text
@@ -574,6 +569,7 @@ jobs:
                       tabDivider?.visibility = View.VISIBLE
                       listContainer.removeAllViews()
                       listContainer.addView(buildList(if (tab == "recent") clipboardItems else savedItems, tab == "recent"))
+                      // Fill the whole tab with white, not just the text
                       recentTabView?.apply {
                           setBackgroundColor(if (tab == "recent") 0xFFFFFFFF.toInt() else 0x00000000.toInt())
                           setTextColor(if (tab == "recent") 0xFF000000.toInt() else 0xFFFFFFFF.toInt())
@@ -585,18 +581,20 @@ jobs:
                   }
                   switchTabFn = ::switchTab
 
-                  // Tab row with transparent background – border will show through
+                  // Tab row – no background, transparent to see border
                   tabRow = LinearLayout(this).apply {
                       orientation = LinearLayout.HORIZONTAL
                       layoutParams = LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, TAB_HEIGHT)
                   }
                   recentTabView = TextView(this).apply {
                       text = "Recent"; textSize = 13f; gravity = Gravity.CENTER
+                      setPadding(0, 0, 0, 0)
                       layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.MATCH_PARENT, 1f)
                       setOnClickListener { switchTab("recent") }
                   }
                   savedTabView = TextView(this).apply {
                       text = "Saved"; textSize = 13f; gravity = Gravity.CENTER
+                      setPadding(0, 0, 0, 0)
                       layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.MATCH_PARENT, 1f)
                       setOnClickListener { switchTab("saved") }
                   }
@@ -607,16 +605,16 @@ jobs:
                       layoutParams = LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 1)
                   }
 
-                  // Bordered container with internal padding to show rounded corners around tabs
+                  // Bordered container with little padding so border shows around everything
                   val borderedContainer = LinearLayout(this).apply {
                       orientation = LinearLayout.VERTICAL
                       setBackgroundResource(R.drawable.popup_border)
-                      setPadding(4.dp, 4.dp, 4.dp, 4.dp)   // keep a little space inside so border rounds are visible
+                      setPadding(4.dp, 4.dp, 4.dp, 4.dp)
                       layoutParams = ViewGroup.LayoutParams(popupWidth, POPUP_HEIGHT)
                   }
                   borderedContainer.addView(tabRow)
                   borderedContainer.addView(tabDivider)
-                  borderedContainer.addView(contentFrame)
+                  borderedContainer.addView(listContainer)
 
                   val outer = FrameLayout(this).apply {
                       layoutParams = ViewGroup.LayoutParams(popupWidth, POPUP_HEIGHT)
@@ -898,7 +896,6 @@ jobs:
                       h.root.setOnTouchListener { _, event ->
                           when (event.actionMasked) {
                               MotionEvent.ACTION_DOWN -> {
-                                  // Press feedback: white bg, black text
                                   h.root.setBackgroundColor(0xFFFFFFFF.toInt())
                                   h.tv.setTextColor(0xFF000000.toInt())
                                   val sp = h.adapterPosition
@@ -911,18 +908,18 @@ jobs:
                                   }
                                   true
                               }
+                              MotionEvent.ACTION_MOVE -> {
+                                  // consume move events to keep the touch sequence alive
+                                  true
+                              }
                               MotionEvent.ACTION_UP -> {
-                                  // Remove long-press timer
                                   longPressRunnable?.let { handler.removeCallbacks(it) }
-                                  // Restore normal colors
                                   h.root.setBackgroundColor(0x00000000.toInt())
                                   h.tv.setTextColor(0xFFCCCCCC.toInt())
                                   if (h.isLongPressed) {
-                                      // Long press ended – just dismiss preview, no paste
                                       onPreviewEnd()
                                       h.isLongPressed = false
                                   } else {
-                                      // Normal tap – paste
                                       val sp = h.adapterPosition
                                       if (sp >= 0 && sp < items.size) onPaste(items[sp])
                                   }
@@ -941,7 +938,6 @@ jobs:
                               else -> false
                           }
                       }
-                      // Save button and delete button keep their own click listeners (unchanged)
                       h.saveBtn?.setOnClickListener { v -> val sp = h.adapterPosition; if (sp >= 0 && sp < items.size) { onSave?.invoke(items[sp]); (v as? TextView)?.apply { setTextColor(0xFF4FC3F7.toInt()); handler.postDelayed({ setTextColor(0xFF555555.toInt()) }, 800) } } }
                       h.del.setOnClickListener { val sp = h.adapterPosition; if (sp >= 0) onDeleteRequest(sp, h.del) }
                   }
