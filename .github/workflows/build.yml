@@ -477,7 +477,7 @@ jobs:
                   }
               }
 
-              // ── Clipboard popup ──
+              // ── Clipboard popup (tabs inside border, full‑window preview) ──
               private fun showClipboardPopup(anchor: View) {
                   clipboardPopup?.dismiss()
                   val popupWidth = (resources.displayMetrics.widthPixels * 0.8).toInt()
@@ -485,46 +485,53 @@ jobs:
                   val TAB_HEIGHT   = 40.dp
                   val CONTENT_HEIGHT = POPUP_HEIGHT - TAB_HEIGHT
 
-                  // Preview text (same size as list area) with border
+                  // Full‑size preview view (covers everything when long‑pressing)
                   val previewTextView = TextView(this).apply {
                       textSize = 16f; setTextColor(0xFFCCCCCC.toInt())
                       setPadding(14.dp, 14.dp, 14.dp, 14.dp)
-                      maxLines = 10
+                      maxLines = 20
                       ellipsize = android.text.TextUtils.TruncateAt.END
                   }
-                  val previewScroll = ScrollView(this).apply {
-                      visibility = View.INVISIBLE
-                      setBackgroundResource(R.drawable.popup_border)   // border on preview
-                      layoutParams = FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT)
+                  val fullPreviewScroll = ScrollView(this).apply {
+                      visibility = View.GONE
+                      setBackgroundResource(R.drawable.popup_border)
                       addView(previewTextView)
                   }
 
-                  // List container
+                  // Normal content area
                   val listContainer = FrameLayout(this).apply {
                       layoutParams = FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT)
                   }
 
-                  // FrameLayout stacks list + preview; visibility determines which is visible
+                  // Content frame that stacks list and full‑screen preview
                   val contentFrame = FrameLayout(this).apply {
                       layoutParams = LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, CONTENT_HEIGHT)
                   }
                   contentFrame.addView(listContainer)
-                  contentFrame.addView(previewScroll)
+                  // The full preview covers the entire popup (tabs + content), so it's added to the outer wrapper later.
 
-                  // Safe preview callbacks (visibility only, no hierarchy changes)
+                  // Preview callbacks
                   val onPreviewStart: (String) -> Unit = { text ->
                       previewTextView.text = text
+                      // Hide tabs and list, show full preview
+                      tabRow?.visibility = View.GONE
+                      tabDivider?.visibility = View.GONE
                       listContainer.visibility = View.INVISIBLE
-                      previewScroll.visibility = View.VISIBLE
+                      fullPreviewScroll.visibility = View.VISIBLE
                   }
                   val onPreviewEnd: () -> Unit = {
+                      // Restore tabs and list, hide full preview
+                      tabRow?.visibility = View.VISIBLE
+                      tabDivider?.visibility = View.VISIBLE
                       listContainer.visibility = View.VISIBLE
-                      previewScroll.visibility = View.INVISIBLE
+                      fullPreviewScroll.visibility = View.GONE
                   }
 
                   var recentTabView: TextView? = null
                   var savedTabView: TextView? = null
                   var switchTabFn: ((String) -> Unit)? = null
+                  var tabRow: LinearLayout? = null
+                  var tabDivider: View? = null
 
                   fun buildList(items: MutableList<String>, isRecent: Boolean): View {
                       if (items.isEmpty()) {
@@ -566,8 +573,10 @@ jobs:
 
                   fun switchTab(tab: String) {
                       activeClipTab = tab
-                      previewScroll.visibility = View.INVISIBLE
+                      fullPreviewScroll.visibility = View.GONE
                       listContainer.visibility = View.VISIBLE
+                      tabRow?.visibility = View.VISIBLE
+                      tabDivider?.visibility = View.VISIBLE
                       listContainer.removeAllViews()
                       listContainer.addView(buildList(if (tab == "recent") clipboardItems else savedItems, tab == "recent"))
                       recentTabView?.apply {
@@ -581,8 +590,8 @@ jobs:
                   }
                   switchTabFn = ::switchTab
 
-                  // Tab row with connecting white line
-                  val tabRow = LinearLayout(this).apply {
+                  // Tab row (now inside the bordered container)
+                  tabRow = LinearLayout(this).apply {
                       orientation = LinearLayout.HORIZONTAL; setBackgroundColor(0xFF2C2C2C.toInt())
                       layoutParams = LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, TAB_HEIGHT)
                   }
@@ -598,31 +607,30 @@ jobs:
                   }
                   tabRow.addView(recentTabView); tabRow.addView(savedTabView)
 
-                  // White line below tabs (connects to border)
-                  val tabDivider = View(this).apply {
+                  tabDivider = View(this).apply {
                       setBackgroundColor(0xFFFFFFFF.toInt())
                       layoutParams = LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 1)
                   }
 
-                  val tabContainer = LinearLayout(this).apply {
+                  // Wrap everything (tabs, divider, content) in a single bordered box
+                  val borderedContainer = LinearLayout(this).apply {
                       orientation = LinearLayout.VERTICAL
-                      layoutParams = LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT)
-                  }
-                  tabContainer.addView(tabRow)
-                  tabContainer.addView(tabDivider)
-
-                  // Content box with border
-                  val contentBox = LinearLayout(this).apply {
-                      orientation = LinearLayout.VERTICAL; setBackgroundResource(R.drawable.popup_border)
-                      layoutParams = LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, CONTENT_HEIGHT)
-                  }
-                  contentBox.addView(contentFrame)
-
-                  val outer = LinearLayout(this).apply {
-                      orientation = LinearLayout.VERTICAL
+                      setBackgroundResource(R.drawable.popup_border)
                       layoutParams = ViewGroup.LayoutParams(popupWidth, POPUP_HEIGHT)
                   }
-                  outer.addView(tabContainer); outer.addView(contentBox)
+                  borderedContainer.addView(tabRow)
+                  borderedContainer.addView(tabDivider)
+                  borderedContainer.addView(contentFrame)
+
+                  // The outer layout holds the bordered container and the full‑screen preview stacked
+                  val outer = FrameLayout(this).apply {
+                      layoutParams = ViewGroup.LayoutParams(popupWidth, POPUP_HEIGHT)
+                  }
+                  // Full preview covers the whole size
+                  val fullPreviewParams = FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT)
+                  fullPreviewScroll.layoutParams = fullPreviewParams
+                  outer.addView(borderedContainer)
+                  outer.addView(fullPreviewScroll)
 
                   switchTab(activeClipTab)
 
