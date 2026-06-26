@@ -477,13 +477,17 @@ jobs:
                   }
               }
 
-              // ── Clipboard popup (tabs inside border, full‑window preview) ──
+              // ── Clipboard popup (tabs inside border, full‑window preview, fixed) ──
               private fun showClipboardPopup(anchor: View) {
                   clipboardPopup?.dismiss()
                   val popupWidth = (resources.displayMetrics.widthPixels * 0.8).toInt()
                   val POPUP_HEIGHT = 280.dp
                   val TAB_HEIGHT   = 40.dp
                   val CONTENT_HEIGHT = POPUP_HEIGHT - TAB_HEIGHT
+
+                  // ---- declare tabRow & tabDivider as nullables before they are used in lambdas ----
+                  var tabRow: LinearLayout? = null
+                  var tabDivider: View? = null
 
                   // Full‑size preview view (covers everything when long‑pressing)
                   val previewTextView = TextView(this).apply {
@@ -530,8 +534,6 @@ jobs:
                   var recentTabView: TextView? = null
                   var savedTabView: TextView? = null
                   var switchTabFn: ((String) -> Unit)? = null
-                  var tabRow: LinearLayout? = null
-                  var tabDivider: View? = null
 
                   fun buildList(items: MutableList<String>, isRecent: Boolean): View {
                       if (items.isEmpty()) {
