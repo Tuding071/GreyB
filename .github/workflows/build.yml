@@ -482,8 +482,6 @@ jobs:
                   val TAB_HEIGHT   = 40.dp
                   val CONTENT_HEIGHT = POPUP_HEIGHT - TAB_HEIGHT - 1  // 1 = divider
 
-                  // ── Shared state: no layout changes during touch — only visibility ──
-                  // isLongPressActive prevents paste-click from firing after a long press
                   val isLongPressActive = BooleanArray(1) { false }
 
                   val previewTextView = TextView(this).apply {
@@ -491,7 +489,6 @@ jobs:
                       setPadding(14.dp, 14.dp, 14.dp, 14.dp)
                       maxLines = 20; ellipsize = android.text.TextUtils.TruncateAt.END
                   }
-                  // Preview overlay covers the entire popup — visibility only, no hierarchy changes
                   val previewOverlay = ScrollView(this).apply {
                       visibility = View.INVISIBLE
                       setBackgroundResource(R.drawable.popup_border)
@@ -529,7 +526,6 @@ jobs:
                           items = items,
                           showSaveBtn = isRecent,
                           onPaste = { item ->
-                              // Only paste on a genuine short tap — not after a long press
                               if (!isLongPressActive[0]) { commitText(item); clipboardPopup?.dismiss() }
                           },
                           onSave = { item ->
@@ -558,7 +554,6 @@ jobs:
                           layoutParams = ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT)
                       }
 
-                      // Long press detection via OnItemTouchListener — does NOT block RecyclerView scroll
                       val lpHandler = Handler(Looper.getMainLooper())
                       var lpRunnable: Runnable? = null
                       var downX = 0f; var downY = 0f
@@ -580,10 +575,9 @@ jobs:
                                           }
                                           lpHandler.postDelayed(lpRunnable!!, 500)
                                       }
-                                      false  // never intercept on DOWN — let RV scroll freely
+                                      false
                                   }
                                   MotionEvent.ACTION_MOVE -> {
-                                      // Cancel long press if finger moved enough (scrolling)
                                       if (abs(e.x - downX) > slop || abs(e.y - downY) > slop) {
                                           lpRunnable?.let { lpHandler.removeCallbacks(it) }
                                           lpRunnable = null
@@ -594,10 +588,8 @@ jobs:
                                       lpRunnable?.let { lpHandler.removeCallbacks(it) }
                                       lpRunnable = null
                                       if (isLongPressActive[0]) {
-                                          // Long press release: hide preview and consume UP
-                                          // so the child click listener does NOT fire
                                           onPreviewEnd()
-                                          true
+                                          true  // consume UP → prevents child click
                                       } else false
                                   }
                                   MotionEvent.ACTION_CANCEL -> {
@@ -615,22 +607,21 @@ jobs:
 
                   fun switchTab(tab: String) {
                       activeClipTab = tab
-                      onPreviewEnd()  // hide preview if open when switching tabs
+                      onPreviewEnd()
                       listContainer.removeAllViews()
                       listContainer.addView(buildList(if (tab == "recent") clipboardItems else savedItems, tab == "recent"))
-                      // Selected tab: slightly lighter bg + white text. Unselected: dark + gray text
                       recentTabView?.apply {
-                          setBackgroundColor(if (tab == "recent") 0xFF383838.toInt() else 0xFF1e1e1e.toInt())
-                          setTextColor(if (tab == "recent") 0xFFFFFFFF.toInt() else 0xFF666666.toInt())
+                          setBackgroundColor(if (tab == "recent") 0xFFFFFFFF.toInt() else 0xFF2C2C2C.toInt())
+                          setTextColor(if (tab == "recent") 0xFF000000.toInt() else 0xFFFFFFFF.toInt())
                       }
                       savedTabView?.apply {
-                          setBackgroundColor(if (tab == "saved") 0xFF383838.toInt() else 0xFF1e1e1e.toInt())
-                          setTextColor(if (tab == "saved") 0xFFFFFFFF.toInt() else 0xFF666666.toInt())
+                          setBackgroundColor(if (tab == "saved") 0xFFFFFFFF.toInt() else 0xFF2C2C2C.toInt())
+                          setTextColor(if (tab == "saved") 0xFF000000.toInt() else 0xFFFFFFFF.toInt())
                       }
                   }
                   switchTabFn = ::switchTab
 
-                  // Tab row — flush inside the border (no extra padding on container)
+                  // Tab row with press feedback
                   val tabRow = LinearLayout(this).apply {
                       orientation = LinearLayout.HORIZONTAL
                       layoutParams = LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, TAB_HEIGHT)
@@ -638,12 +629,28 @@ jobs:
                   recentTabView = TextView(this).apply {
                       text = "Recent"; textSize = 13f; gravity = Gravity.CENTER
                       layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.MATCH_PARENT, 1f)
-                      setOnClickListener { switchTab("recent") }
+                      setOnTouchListener { v, event ->
+                          when (event.actionMasked) {
+                              MotionEvent.ACTION_DOWN -> { (v as? TextView)?.apply { setBackgroundColor(0xFFFFFFFF.toInt()); setTextColor(0xFF000000.toInt()) }; true }
+                              MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
+                                  switchTab("recent"); true
+                              }
+                              else -> true
+                          }
+                      }
                   }
                   savedTabView = TextView(this).apply {
                       text = "Saved"; textSize = 13f; gravity = Gravity.CENTER
                       layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.MATCH_PARENT, 1f)
-                      setOnClickListener { switchTab("saved") }
+                      setOnTouchListener { v, event ->
+                          when (event.actionMasked) {
+                              MotionEvent.ACTION_DOWN -> { (v as? TextView)?.apply { setBackgroundColor(0xFFFFFFFF.toInt()); setTextColor(0xFF000000.toInt()) }; true }
+                              MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
+                                  switchTab("saved"); true
+                              }
+                              else -> true
+                          }
+                      }
                   }
                   tabRow.addView(recentTabView); tabRow.addView(savedTabView)
 
@@ -652,7 +659,6 @@ jobs:
                       layoutParams = LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 1)
                   }
 
-                  // Bordered container: 0 padding so tabs fill edge-to-edge with the border
                   val borderedContainer = LinearLayout(this).apply {
                       orientation = LinearLayout.VERTICAL
                       setBackgroundResource(R.drawable.popup_border)
@@ -663,8 +669,6 @@ jobs:
                   borderedContainer.addView(tabDivider)
                   borderedContainer.addView(listContainer)
 
-                  // FrameLayout: borderedContainer + previewOverlay stacked.
-                  // previewOverlay starts INVISIBLE — only visibility is toggled, never add/remove views.
                   val outer = FrameLayout(this).apply {
                       layoutParams = ViewGroup.LayoutParams(popupWidth, POPUP_HEIGHT)
                   }
@@ -870,7 +874,7 @@ jobs:
                   if (shiftState == ShiftState.ONCE) { shiftState = ShiftState.OFF; qwertyView.post { updateShiftKeyAppearance(qwertyView.findViewById(R.id.btn_shift)); updateLetterKeys(qwertyView) } }
               }
 
-              // ── Clipboard adapter — NO touch listener on items, scrolling is free ──
+              // ── ClipboardAdapter with item press feedback ──
               class ClipboardAdapter(
                   private val items: MutableList<String>,
                   private val showSaveBtn: Boolean,
@@ -901,7 +905,24 @@ jobs:
 
                   override fun onBindViewHolder(h: VH, pos: Int) {
                       h.tv.text = items[pos]
-                      // Simple click to paste — long press handled at RecyclerView level
+
+                      // Touch listener for press feedback (white bg / black text)
+                      h.root.setOnTouchListener { v, event ->
+                          when (event.actionMasked) {
+                              MotionEvent.ACTION_DOWN -> {
+                                  (v as? View)?.setBackgroundColor(0xFFFFFFFF.toInt())
+                                  h.tv.setTextColor(0xFF000000.toInt())
+                                  false  // let the click listener still work
+                              }
+                              MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
+                                  (v as? View)?.setBackgroundColor(0x00000000.toInt())
+                                  h.tv.setTextColor(0xFFCCCCCC.toInt())
+                                  false
+                              }
+                              else -> false
+                          }
+                      }
+                      // Click listener for paste (only if not long-pressed — handled at RV level)
                       h.root.setOnClickListener {
                           val sp = h.adapterPosition
                           if (sp >= 0 && sp < items.size) onPaste(items[sp])
