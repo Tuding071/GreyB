@@ -367,14 +367,11 @@ jobs:
               private var activeClipTab = "recent"
 
               private val recentEmojis = mutableListOf<String>()
-
               private val bsHandler = Handler(Looper.getMainLooper())
               private var bsRunnable: Runnable? = null
-
               private var shiftState = ShiftState.OFF
               private var lastShiftTap = 0L
               private enum class ShiftState { OFF, ONCE, LOCKED }
-
               private var sugView1: TextView? = null
               private var sugView2: TextView? = null
               private var sugView3: TextView? = null
@@ -413,7 +410,8 @@ jobs:
                   val extracted = ic.getExtractedText(req, 0)
                   if (extracted != null) {
                       val pos = extracted.selectionStart; val textLen = extracted.text?.length ?: 0
-                      ic.setSelection(if (right) minOf(pos + 1, textLen) else maxOf(pos - 1, 0), if (right) minOf(pos + 1, textLen) else maxOf(pos - 1, 0))
+                      val np = if (right) minOf(pos + 1, textLen) else maxOf(pos - 1, 0)
+                      ic.setSelection(np, np)
                   } else sendKey(if (right) KeyEvent.KEYCODE_DPAD_RIGHT else KeyEvent.KEYCODE_DPAD_LEFT)
               }
 
@@ -426,8 +424,7 @@ jobs:
                   symbols.forEach { sym ->
                       val tv = TextView(this).apply {
                           text = sym; textSize = 18f; gravity = Gravity.CENTER; setTextColor(0xFFFFFFFF.toInt())
-                          background = resources.getDrawable(R.drawable.key_bg_selector, null)
-                          setOnClickListener { commitText(sym) }
+                          background = resources.getDrawable(R.drawable.key_bg_selector, null); setOnClickListener { commitText(sym) }
                       }
                       grid.addView(tv, GridLayout.LayoutParams().apply { width = cellSize; height = cellSize })
                   }
@@ -477,46 +474,43 @@ jobs:
                   }
               }
 
-              // ── Clipboard popup (tabs inside border, full‑window preview, fixes) ──
+              // ── Clipboard popup ──
               private fun showClipboardPopup(anchor: View) {
                   clipboardPopup?.dismiss()
                   val popupWidth = (resources.displayMetrics.widthPixels * 0.8).toInt()
                   val POPUP_HEIGHT = 280.dp
                   val TAB_HEIGHT   = 40.dp
-                  val CONTENT_HEIGHT = POPUP_HEIGHT - TAB_HEIGHT
+                  val CONTENT_HEIGHT = POPUP_HEIGHT - TAB_HEIGHT - 1  // 1 = divider
 
-                  var tabRow: LinearLayout? = null
-                  var tabDivider: View? = null
+                  // ── Shared state: no layout changes during touch — only visibility ──
+                  // isLongPressActive prevents paste-click from firing after a long press
+                  val isLongPressActive = BooleanArray(1) { false }
 
                   val previewTextView = TextView(this).apply {
                       textSize = 16f; setTextColor(0xFFCCCCCC.toInt())
                       setPadding(14.dp, 14.dp, 14.dp, 14.dp)
-                      maxLines = 20
-                      ellipsize = android.text.TextUtils.TruncateAt.END
+                      maxLines = 20; ellipsize = android.text.TextUtils.TruncateAt.END
                   }
-                  val fullPreviewScroll = ScrollView(this).apply {
-                      visibility = View.GONE
+                  // Preview overlay covers the entire popup — visibility only, no hierarchy changes
+                  val previewOverlay = ScrollView(this).apply {
+                      visibility = View.INVISIBLE
                       setBackgroundResource(R.drawable.popup_border)
+                      layoutParams = FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT)
                       addView(previewTextView)
                   }
 
-                  // RecyclerView container — will be replaced by the adapter
-                  val listContainer = FrameLayout(this).apply {
-                      layoutParams = LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, CONTENT_HEIGHT)
-                  }
-
                   val onPreviewStart: (String) -> Unit = { text ->
+                      isLongPressActive[0] = true
                       previewTextView.text = text
-                      tabRow?.visibility = View.GONE
-                      tabDivider?.visibility = View.GONE
-                      listContainer.visibility = View.INVISIBLE
-                      fullPreviewScroll.visibility = View.VISIBLE
+                      previewOverlay.visibility = View.VISIBLE
                   }
                   val onPreviewEnd: () -> Unit = {
-                      tabRow?.visibility = View.VISIBLE
-                      tabDivider?.visibility = View.VISIBLE
-                      listContainer.visibility = View.VISIBLE
-                      fullPreviewScroll.visibility = View.GONE
+                      isLongPressActive[0] = false
+                      previewOverlay.visibility = View.INVISIBLE
+                  }
+
+                  val listContainer = FrameLayout(this).apply {
+                      layoutParams = LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, CONTENT_HEIGHT)
                   }
 
                   var recentTabView: TextView? = null
@@ -532,8 +526,12 @@ jobs:
                           }
                       }
                       val adapter = ClipboardAdapter(
-                          items = items, showSaveBtn = isRecent,
-                          onPaste = { item -> commitText(item); clipboardPopup?.dismiss() },
+                          items = items,
+                          showSaveBtn = isRecent,
+                          onPaste = { item ->
+                              // Only paste on a genuine short tap — not after a long press
+                              if (!isLongPressActive[0]) { commitText(item); clipboardPopup?.dismiss() }
+                          },
                           onSave = { item ->
                               if (!savedItems.contains(item)) {
                                   savedItems.add(0, item)
@@ -550,79 +548,128 @@ jobs:
                                       if (items.isEmpty()) switchTabFn?.invoke(if (isRecent) "recent" else "saved")
                                   }
                               }
-                          },
-                          onPreviewStart = onPreviewStart,
-                          onPreviewEnd = onPreviewEnd
+                          }
                       )
                       if (isRecent) clipAdapter = adapter else savedAdapter = adapter
-                      return RecyclerView(this).apply {
-                          layoutManager = LinearLayoutManager(this@Keyboard); this.adapter = adapter
+
+                      val rv = RecyclerView(this).apply {
+                          layoutManager = LinearLayoutManager(this@Keyboard)
+                          this.adapter = adapter
                           layoutParams = ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT)
                       }
+
+                      // Long press detection via OnItemTouchListener — does NOT block RecyclerView scroll
+                      val lpHandler = Handler(Looper.getMainLooper())
+                      var lpRunnable: Runnable? = null
+                      var downX = 0f; var downY = 0f
+                      var downPos = -1
+                      val slop = 10.dp.toFloat()
+
+                      rv.addOnItemTouchListener(object : RecyclerView.SimpleOnItemTouchListener() {
+                          override fun onInterceptTouchEvent(rv2: RecyclerView, e: MotionEvent): Boolean {
+                              return when (e.actionMasked) {
+                                  MotionEvent.ACTION_DOWN -> {
+                                      downX = e.x; downY = e.y
+                                      val child = rv2.findChildViewUnder(e.x, e.y)
+                                      downPos = if (child != null) rv2.getChildAdapterPosition(child) else -1
+                                      if (downPos >= 0 && downPos < items.size) {
+                                          lpRunnable?.let { lpHandler.removeCallbacks(it) }
+                                          lpRunnable = Runnable {
+                                              lpRunnable = null
+                                              onPreviewStart(items[downPos])
+                                          }
+                                          lpHandler.postDelayed(lpRunnable!!, 500)
+                                      }
+                                      false  // never intercept on DOWN — let RV scroll freely
+                                  }
+                                  MotionEvent.ACTION_MOVE -> {
+                                      // Cancel long press if finger moved enough (scrolling)
+                                      if (abs(e.x - downX) > slop || abs(e.y - downY) > slop) {
+                                          lpRunnable?.let { lpHandler.removeCallbacks(it) }
+                                          lpRunnable = null
+                                      }
+                                      false
+                                  }
+                                  MotionEvent.ACTION_UP -> {
+                                      lpRunnable?.let { lpHandler.removeCallbacks(it) }
+                                      lpRunnable = null
+                                      if (isLongPressActive[0]) {
+                                          // Long press release: hide preview and consume UP
+                                          // so the child click listener does NOT fire
+                                          onPreviewEnd()
+                                          true
+                                      } else false
+                                  }
+                                  MotionEvent.ACTION_CANCEL -> {
+                                      lpRunnable?.let { lpHandler.removeCallbacks(it) }
+                                      lpRunnable = null
+                                      if (isLongPressActive[0]) onPreviewEnd()
+                                      false
+                                  }
+                                  else -> false
+                              }
+                          }
+                      })
+                      return rv
                   }
 
                   fun switchTab(tab: String) {
                       activeClipTab = tab
-                      fullPreviewScroll.visibility = View.GONE
-                      listContainer.visibility = View.VISIBLE
-                      tabRow?.visibility = View.VISIBLE
-                      tabDivider?.visibility = View.VISIBLE
+                      onPreviewEnd()  // hide preview if open when switching tabs
                       listContainer.removeAllViews()
                       listContainer.addView(buildList(if (tab == "recent") clipboardItems else savedItems, tab == "recent"))
-                      // Fill the whole tab with white, not just the text
+                      // Selected tab: slightly lighter bg + white text. Unselected: dark + gray text
                       recentTabView?.apply {
-                          setBackgroundColor(if (tab == "recent") 0xFFFFFFFF.toInt() else 0x00000000.toInt())
-                          setTextColor(if (tab == "recent") 0xFF000000.toInt() else 0xFFFFFFFF.toInt())
+                          setBackgroundColor(if (tab == "recent") 0xFF383838.toInt() else 0xFF1e1e1e.toInt())
+                          setTextColor(if (tab == "recent") 0xFFFFFFFF.toInt() else 0xFF666666.toInt())
                       }
                       savedTabView?.apply {
-                          setBackgroundColor(if (tab == "saved") 0xFFFFFFFF.toInt() else 0x00000000.toInt())
-                          setTextColor(if (tab == "saved") 0xFF000000.toInt() else 0xFFFFFFFF.toInt())
+                          setBackgroundColor(if (tab == "saved") 0xFF383838.toInt() else 0xFF1e1e1e.toInt())
+                          setTextColor(if (tab == "saved") 0xFFFFFFFF.toInt() else 0xFF666666.toInt())
                       }
                   }
                   switchTabFn = ::switchTab
 
-                  // Tab row – no background, transparent to see border
-                  tabRow = LinearLayout(this).apply {
+                  // Tab row — flush inside the border (no extra padding on container)
+                  val tabRow = LinearLayout(this).apply {
                       orientation = LinearLayout.HORIZONTAL
                       layoutParams = LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, TAB_HEIGHT)
                   }
                   recentTabView = TextView(this).apply {
                       text = "Recent"; textSize = 13f; gravity = Gravity.CENTER
-                      setPadding(0, 0, 0, 0)
                       layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.MATCH_PARENT, 1f)
                       setOnClickListener { switchTab("recent") }
                   }
                   savedTabView = TextView(this).apply {
                       text = "Saved"; textSize = 13f; gravity = Gravity.CENTER
-                      setPadding(0, 0, 0, 0)
                       layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.MATCH_PARENT, 1f)
                       setOnClickListener { switchTab("saved") }
                   }
                   tabRow.addView(recentTabView); tabRow.addView(savedTabView)
 
-                  tabDivider = View(this).apply {
-                      setBackgroundColor(0xFFFFFFFF.toInt())
+                  val tabDivider = View(this).apply {
+                      setBackgroundColor(0xFF444444.toInt())
                       layoutParams = LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 1)
                   }
 
-                  // Bordered container with little padding so border shows around everything
+                  // Bordered container: 0 padding so tabs fill edge-to-edge with the border
                   val borderedContainer = LinearLayout(this).apply {
                       orientation = LinearLayout.VERTICAL
                       setBackgroundResource(R.drawable.popup_border)
-                      setPadding(4.dp, 4.dp, 4.dp, 4.dp)
+                      setPadding(0, 0, 0, 0)
                       layoutParams = ViewGroup.LayoutParams(popupWidth, POPUP_HEIGHT)
                   }
                   borderedContainer.addView(tabRow)
                   borderedContainer.addView(tabDivider)
                   borderedContainer.addView(listContainer)
 
+                  // FrameLayout: borderedContainer + previewOverlay stacked.
+                  // previewOverlay starts INVISIBLE — only visibility is toggled, never add/remove views.
                   val outer = FrameLayout(this).apply {
                       layoutParams = ViewGroup.LayoutParams(popupWidth, POPUP_HEIGHT)
                   }
-                  val fullPreviewParams = FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT)
-                  fullPreviewScroll.layoutParams = fullPreviewParams
                   outer.addView(borderedContainer)
-                  outer.addView(fullPreviewScroll)
+                  outer.addView(previewOverlay)
 
                   switchTab(activeClipTab)
 
@@ -643,7 +690,7 @@ jobs:
                   }
                   layout.addView(TextView(this).apply { text = "Delete?"; textSize = 13f; setTextColor(0xFFCCCCCC.toInt()); setPadding(0, 0, dp10, 0) })
                   val yesBtn = TextView(this).apply { text = "Yes"; textSize = 13f; setTextColor(0xFFFF5252.toInt()); setPadding(dp8, dp4, dp8, dp4) }
-                  val noBtn  = TextView(this).apply { text = "No";  textSize = 13f; setTextColor(0xFF888888.toInt()); setPadding(dp8, dp4, dp4,  dp4) }
+                  val noBtn  = TextView(this).apply { text = "No";  textSize = 13f; setTextColor(0xFF888888.toInt()); setPadding(dp8, dp4, dp4, dp4) }
                   layout.addView(yesBtn); layout.addView(noBtn)
                   layout.measure(View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED), View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED))
                   val pw = layout.measuredWidth; val ph = layout.measuredHeight
@@ -675,15 +722,8 @@ jobs:
                       sv.setOnTouchListener { view, event ->
                           when (event.actionMasked) {
                               MotionEvent.ACTION_DOWN -> { (view as? TextView)?.apply { setBackgroundResource(R.drawable.key_bg_pressed); setTextColor(0xFF000000.toInt()) }; true }
-                              MotionEvent.ACTION_UP -> {
-                                  (view as? TextView)?.let { tv ->
-                                      val word = tv.text?.toString()?.trim() ?: ""; if (word.isNotEmpty()) commitSuggestion(word)
-                                      tv.setBackgroundResource(tv.getTag(R.id.original_bg_tag) as? Int ?: R.drawable.key_bg_dark); tv.setTextColor(0xFFFFFFFF.toInt())
-                                  }; true
-                              }
-                              MotionEvent.ACTION_CANCEL -> {
-                                  (view as? TextView)?.let { tv -> tv.setBackgroundResource(tv.getTag(R.id.original_bg_tag) as? Int ?: R.drawable.key_bg_dark); tv.setTextColor(0xFFFFFFFF.toInt()) }; true
-                              }
+                              MotionEvent.ACTION_UP -> { (view as? TextView)?.let { tv -> val word = tv.text?.toString()?.trim() ?: ""; if (word.isNotEmpty()) commitSuggestion(word); tv.setBackgroundResource(tv.getTag(R.id.original_bg_tag) as? Int ?: R.drawable.key_bg_dark); tv.setTextColor(0xFFFFFFFF.toInt()) }; true }
+                              MotionEvent.ACTION_CANCEL -> { (view as? TextView)?.let { tv -> tv.setBackgroundResource(tv.getTag(R.id.original_bg_tag) as? Int ?: R.drawable.key_bg_dark); tv.setTextColor(0xFFFFFFFF.toInt()) }; true }
                               else -> true
                           }
                       }
@@ -695,22 +735,12 @@ jobs:
                   "1234567890".forEachIndexed { i, c -> val kc = KeyEvent.KEYCODE_0 + (c - '0'); setupKey(v.findViewById<TextView>(numIds[i]), R.drawable.key_bg) { sendKey(kc); clearSugs() } }
                   val shiftKey = v.findViewById<TextView>(R.id.btn_shift)
                   shiftKey.setTag(R.id.original_bg_tag, R.drawable.key_bg_dark)
-                  shiftKey.setOnTouchListener { _, event ->
-                      when (event.actionMasked) {
-                          MotionEvent.ACTION_DOWN -> { pressKey(shiftKey); toggleShiftState(); true }
-                          MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> { releaseKey(shiftKey); updateShiftKeyAppearance(shiftKey); true }
-                          else -> true
-                      }
-                  }
+                  shiftKey.setOnTouchListener { _, event -> when (event.actionMasked) { MotionEvent.ACTION_DOWN -> { pressKey(shiftKey); toggleShiftState(); true }; MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> { releaseKey(shiftKey); updateShiftKeyAppearance(shiftKey); true }; else -> true } }
                   val backspace = v.findViewById<TextView>(R.id.btn_backspace)
                   backspace.setTag(R.id.original_bg_tag, R.drawable.key_bg_dark)
                   backspace.setOnTouchListener { _, event ->
                       when (event.actionMasked) {
-                          MotionEvent.ACTION_DOWN -> {
-                              pressKey(backspace); sendKey(KeyEvent.KEYCODE_DEL)
-                              bsRunnable = object : Runnable { override fun run() { sendKey(KeyEvent.KEYCODE_DEL); bsHandler.postDelayed(this, 50) } }
-                              bsHandler.postDelayed(bsRunnable!!, 300); true
-                          }
+                          MotionEvent.ACTION_DOWN -> { pressKey(backspace); sendKey(KeyEvent.KEYCODE_DEL); bsRunnable = object : Runnable { override fun run() { sendKey(KeyEvent.KEYCODE_DEL); bsHandler.postDelayed(this, 50) } }; bsHandler.postDelayed(bsRunnable!!, 300); true }
                           MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> { releaseKey(backspace); stopBackspaceRepeat(); bsHandler.postDelayed({ updateSuggestions() }, 80); true }
                           else -> true
                       }
@@ -722,11 +752,7 @@ jobs:
                   spaceView.setOnTouchListener { _, event ->
                       when (event.actionMasked) {
                           MotionEvent.ACTION_DOWN -> { pressKey(spaceView); startX = event.x; dragStarted = false; lastCursorMoveX = startX; true }
-                          MotionEvent.ACTION_MOVE -> {
-                              val delta = event.x - startX
-                              if (abs(delta) >= DRAG_THRESHOLD && !dragStarted) { dragStarted = true; moveCursor(delta > 0); lastCursorMoveX = event.x }
-                              else if (dragStarted) { val dx = event.x - lastCursorMoveX; if (abs(dx) >= CURSOR_INTERVAL) { moveCursor(dx > 0); lastCursorMoveX = event.x } }; true
-                          }
+                          MotionEvent.ACTION_MOVE -> { val delta = event.x - startX; if (abs(delta) >= DRAG_THRESHOLD && !dragStarted) { dragStarted = true; moveCursor(delta > 0); lastCursorMoveX = event.x } else if (dragStarted) { val dx = event.x - lastCursorMoveX; if (abs(dx) >= CURSOR_INTERVAL) { moveCursor(dx > 0); lastCursorMoveX = event.x } }; true }
                           MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> { releaseKey(spaceView); if (!dragStarted) { sendKey(KeyEvent.KEYCODE_SPACE); clearSugs() }; dragStarted = false; true }
                           else -> true
                       }
@@ -743,12 +769,8 @@ jobs:
                   }
                   val toolsBtn = v.findViewById<TextView>(R.id.btn_tools); setupKey(toolsBtn, R.drawable.key_bg_dark) { showToolsPopup(toolsBtn) }
                   val keyA = v.findViewById<TextView>(R.id.ka); val keyL = v.findViewById<TextView>(R.id.kl)
-                  v.findViewById<View>(R.id.asdf_spacer_left)?.setOnTouchListener { _, event ->
-                      when (event.actionMasked) { MotionEvent.ACTION_DOWN -> { keyA?.let { pressKey(it) }; typeChar('a'); true }; MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> { keyA?.let { releaseKey(it) }; true }; else -> true }
-                  }
-                  v.findViewById<View>(R.id.asdf_spacer_right)?.setOnTouchListener { _, event ->
-                      when (event.actionMasked) { MotionEvent.ACTION_DOWN -> { keyL?.let { pressKey(it) }; typeChar('l'); true }; MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> { keyL?.let { releaseKey(it) }; true }; else -> true }
-                  }
+                  v.findViewById<View>(R.id.asdf_spacer_left)?.setOnTouchListener { _, event -> when (event.actionMasked) { MotionEvent.ACTION_DOWN -> { keyA?.let { pressKey(it) }; typeChar('a'); true }; MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> { keyA?.let { releaseKey(it) }; true }; else -> true } }
+                  v.findViewById<View>(R.id.asdf_spacer_right)?.setOnTouchListener { _, event -> when (event.actionMasked) { MotionEvent.ACTION_DOWN -> { keyL?.let { pressKey(it) }; typeChar('l'); true }; MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> { keyL?.let { releaseKey(it) }; true }; else -> true } }
                   return v
               }
 
@@ -761,14 +783,7 @@ jobs:
                           setOnTouchListener { v, event ->
                               when (event.actionMasked) {
                                   MotionEvent.ACTION_DOWN -> { (v as? TextView)?.apply { setBackgroundColor(0xFFFFFFFF.toInt()); setTextColor(0xFF000000.toInt()) }; true }
-                                  MotionEvent.ACTION_UP -> {
-                                      when (label) {
-                                          "Select All" -> currentInputConnection?.performContextMenuAction(android.R.id.selectAll)
-                                          "Copy"       -> currentInputConnection?.performContextMenuAction(android.R.id.copy)
-                                          "Paste"      -> { val clip = (getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager).primaryClip?.getItemAt(0)?.coerceToText(this@Keyboard)?.toString(); if (!clip.isNullOrEmpty()) { commitText(clip); addToClipboard(clip) } }
-                                      }
-                                      (v as? TextView)?.apply { setBackgroundColor(0x00000000.toInt()); setTextColor(0xFFFFFFFF.toInt()) }; true
-                                  }
+                                  MotionEvent.ACTION_UP -> { when (label) { "Select All" -> currentInputConnection?.performContextMenuAction(android.R.id.selectAll); "Copy" -> currentInputConnection?.performContextMenuAction(android.R.id.copy); "Paste" -> { val clip = (getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager).primaryClip?.getItemAt(0)?.coerceToText(this@Keyboard)?.toString(); if (!clip.isNullOrEmpty()) { commitText(clip); addToClipboard(clip) } } }; (v as? TextView)?.apply { setBackgroundColor(0x00000000.toInt()); setTextColor(0xFFFFFFFF.toInt()) }; true }
                                   MotionEvent.ACTION_CANCEL -> { (v as? TextView)?.apply { setBackgroundColor(0x00000000.toInt()); setTextColor(0xFFFFFFFF.toInt()) }; true }
                                   else -> false
                               }
@@ -855,21 +870,16 @@ jobs:
                   if (shiftState == ShiftState.ONCE) { shiftState = ShiftState.OFF; qwertyView.post { updateShiftKeyAppearance(qwertyView.findViewById(R.id.btn_shift)); updateLetterKeys(qwertyView) } }
               }
 
+              // ── Clipboard adapter — NO touch listener on items, scrolling is free ──
               class ClipboardAdapter(
                   private val items: MutableList<String>,
                   private val showSaveBtn: Boolean,
                   private val onPaste: (String) -> Unit,
                   private val onSave: ((String) -> Unit)?,
-                  private val onDeleteRequest: (Int, View) -> Unit,
-                  private val onPreviewStart: (String) -> Unit,
-                  private val onPreviewEnd: () -> Unit
+                  private val onDeleteRequest: (Int, View) -> Unit
               ) : RecyclerView.Adapter<ClipboardAdapter.VH>() {
 
-                  private val handler = Handler(Looper.getMainLooper())
-
-                  inner class VH(val root: LinearLayout, val tv: TextView, val saveBtn: TextView?, val del: TextView) : RecyclerView.ViewHolder(root) {
-                      var isLongPressed = false
-                  }
+                  inner class VH(val root: LinearLayout, val tv: TextView, val saveBtn: TextView?, val del: TextView) : RecyclerView.ViewHolder(root)
 
                   override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): VH {
                       val ctx = parent.context; val d = ctx.resources.displayMetrics.density
@@ -877,6 +887,7 @@ jobs:
                       val root = LinearLayout(ctx).apply {
                           orientation = LinearLayout.HORIZONTAL; setPadding(dp12, dp8, dp8, dp8)
                           layoutParams = RecyclerView.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT).apply { bottomMargin = dp3 }
+                          isClickable = true; isFocusable = true
                       }
                       val tv = TextView(ctx).apply {
                           layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
@@ -890,56 +901,25 @@ jobs:
 
                   override fun onBindViewHolder(h: VH, pos: Int) {
                       h.tv.text = items[pos]
-                      var longPressRunnable: Runnable? = null
-                      h.isLongPressed = false
-
-                      h.root.setOnTouchListener { _, event ->
-                          when (event.actionMasked) {
-                              MotionEvent.ACTION_DOWN -> {
-                                  h.root.setBackgroundColor(0xFFFFFFFF.toInt())
-                                  h.tv.setTextColor(0xFF000000.toInt())
-                                  val sp = h.adapterPosition
-                                  if (sp >= 0 && sp < items.size) {
-                                      longPressRunnable = Runnable {
-                                          h.isLongPressed = true
-                                          onPreviewStart(items[sp])
-                                      }
-                                      handler.postDelayed(longPressRunnable!!, 500)
-                                  }
-                                  true
+                      // Simple click to paste — long press handled at RecyclerView level
+                      h.root.setOnClickListener {
+                          val sp = h.adapterPosition
+                          if (sp >= 0 && sp < items.size) onPaste(items[sp])
+                      }
+                      h.saveBtn?.setOnClickListener { v ->
+                          val sp = h.adapterPosition
+                          if (sp >= 0 && sp < items.size) {
+                              onSave?.invoke(items[sp])
+                              (v as? TextView)?.apply {
+                                  setTextColor(0xFF4FC3F7.toInt())
+                                  Handler(Looper.getMainLooper()).postDelayed({ setTextColor(0xFF555555.toInt()) }, 800)
                               }
-                              MotionEvent.ACTION_MOVE -> {
-                                  // consume move events to keep the touch sequence alive
-                                  true
-                              }
-                              MotionEvent.ACTION_UP -> {
-                                  longPressRunnable?.let { handler.removeCallbacks(it) }
-                                  h.root.setBackgroundColor(0x00000000.toInt())
-                                  h.tv.setTextColor(0xFFCCCCCC.toInt())
-                                  if (h.isLongPressed) {
-                                      onPreviewEnd()
-                                      h.isLongPressed = false
-                                  } else {
-                                      val sp = h.adapterPosition
-                                      if (sp >= 0 && sp < items.size) onPaste(items[sp])
-                                  }
-                                  true
-                              }
-                              MotionEvent.ACTION_CANCEL -> {
-                                  longPressRunnable?.let { handler.removeCallbacks(it) }
-                                  h.root.setBackgroundColor(0x00000000.toInt())
-                                  h.tv.setTextColor(0xFFCCCCCC.toInt())
-                                  if (h.isLongPressed) {
-                                      onPreviewEnd()
-                                      h.isLongPressed = false
-                                  }
-                                  true
-                              }
-                              else -> false
                           }
                       }
-                      h.saveBtn?.setOnClickListener { v -> val sp = h.adapterPosition; if (sp >= 0 && sp < items.size) { onSave?.invoke(items[sp]); (v as? TextView)?.apply { setTextColor(0xFF4FC3F7.toInt()); handler.postDelayed({ setTextColor(0xFF555555.toInt()) }, 800) } } }
-                      h.del.setOnClickListener { val sp = h.adapterPosition; if (sp >= 0) onDeleteRequest(sp, h.del) }
+                      h.del.setOnClickListener {
+                          val sp = h.adapterPosition
+                          if (sp >= 0) onDeleteRequest(sp, h.del)
+                      }
                   }
 
                   override fun getItemCount() = items.size
