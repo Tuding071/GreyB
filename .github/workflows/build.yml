@@ -46,6 +46,7 @@ jobs:
           mkdir -p app/src/main/res/xml
           mkdir -p app/src/main/res/layout
           mkdir -p app/src/main/res/drawable
+          mkdir -p app/src/main/res/color          # ← added for clip_text_color.xml
           mkdir -p app/src/main/res/values
           mkdir -p app/src/main/assets
           mkdir -p gradle/wrapper
@@ -159,7 +160,7 @@ jobs:
           </selector>
           ENDOFFILE
 
-          # NEW: color state list for clipboard row text (white normally, black when pressed)
+          # Color state list for clipboard row text (white normally, black when pressed)
           cat > app/src/main/res/color/clip_text_color.xml << 'ENDOFFILE'
           <?xml version="1.0" encoding="utf-8"?>
           <selector xmlns:android="http://schemas.android.com/apk/res/android">
@@ -546,7 +547,7 @@ jobs:
 
                       root.addView(tv); starBtn?.let { root.addView(it) }; delBtn?.let { root.addView(it) }
 
-                      // Long press → preview (built-in, no scroll interference)
+                      // Long press → preview
                       root.setOnLongClickListener {
                           previewText.text = text
                           previewOverlay.visibility = View.VISIBLE
@@ -555,7 +556,6 @@ jobs:
 
                       // Normal tap → paste
                       root.setOnClickListener {
-                          // If preview was showing from a previous long press, dismiss it first
                           if (previewOverlay.visibility == View.VISIBLE) {
                               previewOverlay.visibility = View.INVISIBLE
                           }
@@ -612,7 +612,6 @@ jobs:
                               onDelete = { anch ->
                                   showDeleteConfirm(anch) {
                                       savedItems.remove(txt); saveSavedItems()
-                                      // Rebuild the popup content
                                       clipboardPopup?.dismiss()
                                       showClipboardPopup(anchor)
                                   }
