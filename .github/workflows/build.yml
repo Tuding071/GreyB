@@ -159,37 +159,6 @@ jobs:
           </selector>
           ENDOFFILE
 
-          # New drawable for clipboard tab header
-          cat > app/src/main/res/drawable/clip_tab_bg.xml << 'ENDOFFILE'
-          <?xml version="1.0" encoding="utf-8"?>
-          <shape xmlns:android="http://schemas.android.com/apk/res/android">
-              <solid android:color="#2C2C2C"/>
-              <stroke android:width="1dp" android:color="#FFFFFF"/>
-              <corners
-                  android:topLeftRadius="8dp"
-                  android:topRightRadius="8dp"
-                  android:bottomLeftRadius="0dp"
-                  android:bottomRightRadius="0dp"/>
-          </shape>
-          ENDOFFILE
-
-          # New drawable for clipboard list body (no top border)
-          cat > app/src/main/res/drawable/clip_list_bg.xml << 'ENDOFFILE'
-          <?xml version="1.0" encoding="utf-8"?>
-          <shape xmlns:android="http://schemas.android.com/apk/res/android">
-              <solid android:color="#2C2C2C"/>
-              <stroke
-                  android:width="1dp"
-                  android:color="#FFFFFF"
-                  android:top="0dp" />
-              <corners
-                  android:topLeftRadius="0dp"
-                  android:topRightRadius="0dp"
-                  android:bottomLeftRadius="8dp"
-                  android:bottomRightRadius="8dp"/>
-          </shape>
-          ENDOFFILE
-
       - name: Generate values
         run: |
           cat > app/src/main/res/values/colors.xml << 'ENDOFFILE'
@@ -395,7 +364,6 @@ jobs:
               private val MAX_RECENT_EMOJI = 10
               private var clipAdapter: ClipboardAdapter? = null
               private var savedAdapter: ClipboardAdapter? = null
-              private var activeClipTab = "recent"
 
               private val recentEmojis = mutableListOf<String>()
               private val bsHandler = Handler(Looper.getMainLooper())
@@ -505,13 +473,11 @@ jobs:
                   }
               }
 
-              // ── Clipboard popup (tabs with border, list without top border) ──
+              // ── Simplified clipboard popup (groups: Recent / Saved) ──
               private fun showClipboardPopup(anchor: View) {
                   clipboardPopup?.dismiss()
                   val popupWidth = (resources.displayMetrics.widthPixels * 0.8).toInt()
                   val POPUP_HEIGHT = 280.dp
-                  val TAB_HEIGHT   = 40.dp
-                  val CONTENT_HEIGHT = POPUP_HEIGHT - TAB_HEIGHT - 1  // 1 = divider
 
                   val isLongPressActive = BooleanArray(1) { false }
 
@@ -537,52 +503,34 @@ jobs:
                       previewOverlay.visibility = View.INVISIBLE
                   }
 
-                  val listContainer = FrameLayout(this).apply {
-                      layoutParams = LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, CONTENT_HEIGHT)
-                  }
-
-                  var recentTabView: TextView? = null
-                  var savedTabView: TextView? = null
-                  var switchTabFn: ((String) -> Unit)? = null
-
-                  fun buildList(items: MutableList<String>, isRecent: Boolean): View {
-                      if (items.isEmpty()) {
-                          return TextView(this).apply {
-                              text = if (isRecent) "No recent items" else "No saved items"
-                              textSize = 16f; setTextColor(0xFF555555.toInt()); gravity = Gravity.CENTER
-                              layoutParams = ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT)
-                          }
+                  fun buildList(items: MutableList<String>, showSaveBtn: Boolean,
+                                onDelete: ((Int) -> Unit)? = null): View {
+                      if (items.isEmpty()) return View(this).apply {
+                          layoutParams = ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 0)
                       }
                       val adapter = ClipboardAdapter(
                           items = items,
-                          showSaveBtn = isRecent,
+                          showSaveBtn = showSaveBtn,
                           onPaste = { item ->
                               if (!isLongPressActive[0]) { commitText(item); clipboardPopup?.dismiss() }
                           },
-                          onSave = { item ->
-                              if (!savedItems.contains(item)) {
-                                  savedItems.add(0, item)
-                                  if (savedItems.size > MAX_SAVED) savedItems.removeAt(savedItems.size - 1)
-                                  saveSavedItems()
-                              }
-                          },
-                          onDeleteRequest = { pos, view ->
-                              showDeleteConfirm(view) {
-                                  if (pos < items.size) {
-                                      items.removeAt(pos)
-                                      if (isRecent) { clipAdapter?.notifyItemRemoved(pos); saveClipboard() }
-                                      else { savedAdapter?.notifyItemRemoved(pos); saveSavedItems() }
-                                      if (items.isEmpty()) switchTabFn?.invoke(if (isRecent) "recent" else "saved")
+                          onSave = if (showSaveBtn) {
+                              { item ->
+                                  if (!savedItems.contains(item)) {
+                                      savedItems.add(0, item)
+                                      if (savedItems.size > MAX_SAVED) savedItems.removeAt(savedItems.size - 1)
+                                      saveSavedItems()
                                   }
                               }
-                          }
+                          } else null,
+                          onDeleteRequest = onDelete
                       )
-                      if (isRecent) clipAdapter = adapter else savedAdapter = adapter
+                      if (showSaveBtn) clipAdapter = adapter else savedAdapter = adapter
 
                       val rv = RecyclerView(this).apply {
                           layoutManager = LinearLayoutManager(this@Keyboard)
                           this.adapter = adapter
-                          layoutParams = ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT)
+                          layoutParams = ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT)
                       }
 
                       val lpHandler = Handler(Looper.getMainLooper())
@@ -636,84 +584,56 @@ jobs:
                       return rv
                   }
 
-                  fun switchTab(tab: String) {
-                      activeClipTab = tab
-                      onPreviewEnd()
-                      listContainer.removeAllViews()
-                      listContainer.addView(buildList(if (tab == "recent") clipboardItems else savedItems, tab == "recent"))
-                      recentTabView?.apply {
-                          setBackgroundColor(if (tab == "recent") 0xFFFFFFFF.toInt() else 0xFF2C2C2C.toInt())
-                          setTextColor(if (tab == "recent") 0xFF000000.toInt() else 0xFFFFFFFF.toInt())
-                      }
-                      savedTabView?.apply {
-                          setBackgroundColor(if (tab == "saved") 0xFFFFFFFF.toInt() else 0xFF2C2C2C.toInt())
-                          setTextColor(if (tab == "saved") 0xFF000000.toInt() else 0xFFFFFFFF.toInt())
-                      }
-                  }
-                  switchTabFn = ::switchTab
-
-                  // Tab row with new background (rounded top corners, border on top/left/right)
-                  val tabRow = LinearLayout(this).apply {
-                      orientation = LinearLayout.HORIZONTAL
-                      setBackgroundResource(R.drawable.clip_tab_bg)
-                      layoutParams = LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, TAB_HEIGHT)
-                  }
-                  recentTabView = TextView(this).apply {
-                      text = "Recent"; textSize = 13f; gravity = Gravity.CENTER
-                      layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.MATCH_PARENT, 1f)
-                      setOnTouchListener { v, event ->
-                          when (event.actionMasked) {
-                              MotionEvent.ACTION_DOWN -> { (v as? TextView)?.apply { setBackgroundColor(0xFFFFFFFF.toInt()); setTextColor(0xFF000000.toInt()) }; true }
-                              MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
-                                  switchTab("recent"); true
-                              }
-                              else -> true
-                          }
-                      }
-                  }
-                  savedTabView = TextView(this).apply {
-                      text = "Saved"; textSize = 13f; gravity = Gravity.CENTER
-                      layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.MATCH_PARENT, 1f)
-                      setOnTouchListener { v, event ->
-                          when (event.actionMasked) {
-                              MotionEvent.ACTION_DOWN -> { (v as? TextView)?.apply { setBackgroundColor(0xFFFFFFFF.toInt()); setTextColor(0xFF000000.toInt()) }; true }
-                              MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
-                                  switchTab("saved"); true
-                              }
-                              else -> true
-                          }
-                      }
-                  }
-                  tabRow.addView(recentTabView); tabRow.addView(savedTabView)
-
-                  // Thin white divider
-                  val tabDivider = View(this).apply {
-                      setBackgroundColor(0xFFFFFFFF.toInt())
-                      layoutParams = LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 1)
-                  }
-
-                  // List area with its own background (no top border, rounded bottom corners)
-                  val listArea = FrameLayout(this).apply {
-                      setBackgroundResource(R.drawable.clip_list_bg)
-                      layoutParams = LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, CONTENT_HEIGHT)
-                  }
-                  listArea.addView(listContainer)
-
-                  val outerContainer = LinearLayout(this).apply {
+                  // Build the content
+                  val content = LinearLayout(this).apply {
                       orientation = LinearLayout.VERTICAL
-                      layoutParams = ViewGroup.LayoutParams(popupWidth, POPUP_HEIGHT)
                   }
-                  outerContainer.addView(tabRow)
-                  outerContainer.addView(tabDivider)
-                  outerContainer.addView(listArea)
+
+                  // Recent group
+                  val recentLabel = TextView(this).apply {
+                      text = "Recent"
+                      textSize = 14f; setTextColor(0xFF4FC3F7.toInt())
+                      gravity = Gravity.START; setPadding(4.dp, 10.dp, 0, 4.dp)
+                  }
+                  content.addView(recentLabel)
+                  val recentItems = clipboardItems.take(3).toMutableList()
+                  content.addView(buildList(recentItems, showSaveBtn = true))
+
+                  // Saved group
+                  val savedLabel = TextView(this).apply {
+                      text = "Saved"
+                      textSize = 14f; setTextColor(0xFF4FC3F7.toInt())
+                      gravity = Gravity.START; setPadding(4.dp, 10.dp, 0, 4.dp)
+                  }
+                  content.addView(savedLabel)
+                  content.addView(buildList(savedItems, showSaveBtn = false,
+                      onDelete = { pos ->
+                          if (pos < savedItems.size) {
+                              savedItems.removeAt(pos)
+                              savedAdapter?.notifyItemRemoved(pos)
+                              saveSavedItems()
+                          }
+                      }
+                  ))
+
+                  // Wrap in scroll view
+                  val scroll = ScrollView(this).apply {
+                      addView(content)
+                      layoutParams = ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT)
+                  }
+
+                  val wrapper = LinearLayout(this).apply {
+                      orientation = LinearLayout.VERTICAL
+                      setBackgroundResource(R.drawable.popup_border)
+                      setPadding(8.dp, 0, 8.dp, 8.dp)
+                  }
+                  wrapper.addView(scroll)
 
                   val outer = FrameLayout(this).apply {
                       layoutParams = ViewGroup.LayoutParams(popupWidth, POPUP_HEIGHT)
                   }
-                  outer.addView(outerContainer)
+                  outer.addView(wrapper)
                   outer.addView(previewOverlay)
-
-                  switchTab(activeClipTab)
 
                   clipboardPopup = PopupWindow(outer, popupWidth, POPUP_HEIGHT, true).apply {
                       setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
@@ -918,10 +838,10 @@ jobs:
                   private val showSaveBtn: Boolean,
                   private val onPaste: (String) -> Unit,
                   private val onSave: ((String) -> Unit)?,
-                  private val onDeleteRequest: (Int, View) -> Unit
+                  private val onDeleteRequest: ((Int, View) -> Unit)?
               ) : RecyclerView.Adapter<ClipboardAdapter.VH>() {
 
-                  inner class VH(val root: LinearLayout, val tv: TextView, val saveBtn: TextView?, val del: TextView) : RecyclerView.ViewHolder(root)
+                  inner class VH(val root: LinearLayout, val tv: TextView, val saveBtn: TextView?, val del: TextView?) : RecyclerView.ViewHolder(root)
 
                   override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): VH {
                       val ctx = parent.context; val d = ctx.resources.displayMetrics.density
@@ -936,8 +856,8 @@ jobs:
                           setTextColor(0xFFCCCCCC.toInt()); textSize = 16f; maxLines = 1; ellipsize = android.text.TextUtils.TruncateAt.END
                       }
                       val saveBtn = if (showSaveBtn) TextView(ctx).apply { text = "★"; setTextColor(0xFF555555.toInt()); textSize = 16f; setPadding(dp8, 0, dp4, 0) } else null
-                      val del = TextView(ctx).apply { text = "✕"; setTextColor(0xFF555555.toInt()); textSize = 16f; setPadding(dp8, 0, dp8, 0) }
-                      root.addView(tv); saveBtn?.let { root.addView(it) }; root.addView(del)
+                      val del = if (onDeleteRequest != null) TextView(ctx).apply { text = "✕"; setTextColor(0xFF555555.toInt()); textSize = 16f; setPadding(dp8, 0, dp8, 0) } else null
+                      root.addView(tv); saveBtn?.let { root.addView(it) }; del?.let { root.addView(it) }
                       return VH(root, tv, saveBtn, del)
                   }
 
@@ -950,7 +870,7 @@ jobs:
                               MotionEvent.ACTION_DOWN -> {
                                   (v as? View)?.setBackgroundColor(0xFFFFFFFF.toInt())
                                   h.tv.setTextColor(0xFF000000.toInt())
-                                  false  // let the click listener still work
+                                  false
                               }
                               MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
                                   (v as? View)?.setBackgroundColor(0x00000000.toInt())
@@ -960,7 +880,6 @@ jobs:
                               else -> false
                           }
                       }
-                      // Click listener for paste (only if not long-pressed — handled at RV level)
                       h.root.setOnClickListener {
                           val sp = h.adapterPosition
                           if (sp >= 0 && sp < items.size) onPaste(items[sp])
@@ -975,9 +894,9 @@ jobs:
                               }
                           }
                       }
-                      h.del.setOnClickListener {
+                      h.del?.setOnClickListener {
                           val sp = h.adapterPosition
-                          if (sp >= 0) onDeleteRequest(sp, h.del)
+                          if (sp >= 0) onDeleteRequest?.invoke(sp, h.del)
                       }
                   }
 
