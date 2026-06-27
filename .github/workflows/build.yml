@@ -347,6 +347,7 @@ jobs:
           import android.view.*
           import android.view.inputmethod.*
           import android.widget.*
+          import androidx.recyclerview.widget.*
           import android.inputmethodservice.InputMethodService
           import kotlin.math.abs
 
@@ -478,14 +479,14 @@ jobs:
                   }
               }
 
-              // ── Clipboard popup (preview dismisses on UP, tap on overlay also dismisses) ──
+              // ── Clipboard popup using RecyclerView (long‑press works, tap dismisses) ──
               private fun showClipboardPopup(anchor: View) {
                   clipboardPopup?.dismiss()
                   val popupWidth = (resources.displayMetrics.widthPixels * 0.8).toInt()
                   val POPUP_HEIGHT = 280.dp
                   val wp = 8.dp
 
-                  // Preview overlay – tap to dismiss
+                  // Preview overlay (tap to dismiss)
                   val previewText = TextView(this).apply {
                       textSize = 16f; setTextColor(0xFFCCCCCC.toInt())
                       setPadding(14.dp, 14.dp, 14.dp, 14.dp)
@@ -496,13 +497,10 @@ jobs:
                       setBackgroundResource(R.drawable.popup_border)
                       layoutParams = FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT)
                       addView(previewText)
-                      isClickable = true
-                      isFocusable = true
-                      setOnClickListener { visibility = View.INVISIBLE }
+                      setOnTouchListener { _, _ -> visibility = View.INVISIBLE; true }
                   }
 
                   val contentContainer = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
-                  val lph = Handler(Looper.getMainLooper())
 
                   fun catLabel(t: String) = TextView(this).apply {
                       text = t; textSize = 14f; setTextColor(0xFF4FC3F7.toInt())
@@ -515,147 +513,135 @@ jobs:
                       layoutParams = LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT)
                   }
 
-                  fun makeRow(
-                      text: String,
-                      showStar: Boolean,
-                      showDel: Boolean,
-                      onPaste: () -> Unit,
-                      onSave: (() -> Unit)?,
-                      onDelete: ((View) -> Unit)?
+                  val isLongPressActive = booleanArrayOf(false)
+
+                  fun buildList(
+                      items: MutableList<String>,
+                      showSaveBtn: Boolean,
+                      onPaste: (String) -> Unit,
+                      onSave: ((String) -> Unit)?,
+                      onDelete: ((Int) -> Unit)?
                   ): View {
-                      val root = LinearLayout(this).apply {
-                          orientation = LinearLayout.HORIZONTAL
-                          setPadding(12.dp, 9.dp, 8.dp, 9.dp)
-                          layoutParams = LinearLayout.LayoutParams(
-                              ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT
-                          ).apply { bottomMargin = 2.dp }
-                          background = resources.getDrawable(R.drawable.key_bg_dark, null)
-                      }
-                      val tv = TextView(this).apply {
-                          this.text = text; textSize = 16f; setTextColor(0xFFCCCCCC.toInt())
-                          maxLines = 1; ellipsize = android.text.TextUtils.TruncateAt.END
-                          layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
-                      }
-                      val starBtn = if (showStar) TextView(this).apply {
-                          this.text = "★"; textSize = 16f; setTextColor(0xFF555555.toInt()); setPadding(8.dp, 0, 4.dp, 0)
-                      } else null
-                      val delBtn = if (showDel) TextView(this).apply {
-                          this.text = "✕"; textSize = 16f; setTextColor(0xFF555555.toInt()); setPadding(8.dp, 0, 8.dp, 0)
-                      } else null
-
-                      root.addView(tv); starBtn?.let { root.addView(it) }; delBtn?.let { root.addView(it) }
-
-                      var isLong = false
-                      var longPressRunnable: Runnable? = null
-                      var downX = 0f; var downY = 0f
-                      val slop = 10.dp.toFloat()
-
-                      root.setOnTouchListener { _, event ->
-                          when (event.actionMasked) {
-                              MotionEvent.ACTION_DOWN -> {
-                                  root.setBackgroundResource(R.drawable.key_bg_pressed)
-                                  tv.setTextColor(0xFF000000.toInt())
-                                  downX = event.x; downY = event.y; isLong = false
-                                  longPressRunnable?.let { lph.removeCallbacks(it) }
-                                  longPressRunnable = Runnable {
-                                      isLong = true
-                                      previewText.text = text
-                                      previewOverlay.visibility = View.VISIBLE
-                                  }
-                                  lph.postDelayed(longPressRunnable!!, 500)
-                                  false
+                      if (items.isEmpty()) return emptyLabel(if (showSaveBtn) "No recent clips" else "No saved items")
+                      val adapter = ClipboardAdapter(
+                          items = items,
+                          showSaveBtn = showSaveBtn,
+                          onPaste = { item ->
+                              if (!isLongPressActive[0]) {
+                                  commitText(item); clipboardPopup?.dismiss()
                               }
-                              MotionEvent.ACTION_MOVE -> {
-                                  if (abs(event.x - downX) > slop || abs(event.y - downY) > slop) {
-                                      longPressRunnable?.let { lph.removeCallbacks(it) }
-                                      longPressRunnable = null
-                                  }
-                                  false
+                          },
+                          onSave = { item ->
+                              if (!savedItems.contains(item)) {
+                                  savedItems.add(0, item)
+                                  if (savedItems.size > MAX_SAVED) savedItems.removeAt(savedItems.size - 1)
+                                  saveSavedItems()
                               }
-                              MotionEvent.ACTION_UP -> {
-                                  longPressRunnable?.let { lph.removeCallbacks(it) }
-                                  longPressRunnable = null
-                                  root.setBackgroundResource(R.drawable.key_bg_dark)
-                                  tv.setTextColor(0xFFCCCCCC.toInt())
-                                  if (isLong) {
-                                      previewOverlay.visibility = View.INVISIBLE
-                                      isLong = false
-                                  } else {
-                                      onPaste()
-                                  }
-                                  false
-                              }
-                              MotionEvent.ACTION_CANCEL -> {
-                                  longPressRunnable?.let { lph.removeCallbacks(it) }
-                                  root.setBackgroundResource(R.drawable.key_bg_dark)
-                                  tv.setTextColor(0xFFCCCCCC.toInt())
-                                  if (isLong) {
-                                      previewOverlay.visibility = View.INVISIBLE
-                                      isLong = false
-                                  }
-                                  false
-                              }
-                              else -> false
-                          }
-                      }
-
-                      starBtn?.setOnClickListener { v ->
-                          onSave?.invoke()
-                          (v as? TextView)?.apply {
-                              setTextColor(0xFF4FC3F7.toInt())
-                              Handler(Looper.getMainLooper()).postDelayed({ setTextColor(0xFF555555.toInt()) }, 800)
-                          }
-                      }
-                      delBtn?.setOnClickListener { v -> onDelete?.invoke(v) }
-
-                      return root
-                  }
-
-                  // Build content
-                  contentContainer.addView(catLabel("🕒 Recent"))
-                  val recent = clipboardItems.take(3)
-                  if (recent.isEmpty()) {
-                      contentContainer.addView(emptyLabel("No recent clips"))
-                  } else {
-                      recent.forEach { txt ->
-                          contentContainer.addView(makeRow(
-                              text = txt,
-                              showStar = true,
-                              showDel = false,
-                              onPaste = { commitText(txt); clipboardPopup?.dismiss() },
-                              onSave = {
-                                  if (!savedItems.contains(txt)) {
-                                      savedItems.add(0, txt)
-                                      if (savedItems.size > MAX_SAVED) savedItems.removeAt(savedItems.size - 1)
-                                      saveSavedItems()
-                                  }
-                              },
-                              onDelete = null
-                          ))
-                      }
-                  }
-
-                  contentContainer.addView(catLabel("★ Saved"))
-                  if (savedItems.isEmpty()) {
-                      contentContainer.addView(emptyLabel("No saved items"))
-                  } else {
-                      savedItems.toList().forEach { txt ->
-                          contentContainer.addView(makeRow(
-                              text = txt,
-                              showStar = false,
-                              showDel = true,
-                              onPaste = { commitText(txt); clipboardPopup?.dismiss() },
-                              onSave = null,
-                              onDelete = { anch ->
-                                  showDeleteConfirm(anch) {
-                                      savedItems.remove(txt); saveSavedItems()
+                          },
+                          onDeleteRequest = { pos, view ->
+                              showDeleteConfirm(view) {
+                                  if (pos < items.size) {
+                                      items.removeAt(pos)
+                                      if (showSaveBtn) saveClipboard() else saveSavedItems()
+                                      // rebuild popup
                                       clipboardPopup?.dismiss()
                                       showClipboardPopup(anchor)
                                   }
                               }
-                          ))
+                          }
+                      )
+                      val rv = RecyclerView(this).apply {
+                          layoutManager = LinearLayoutManager(this@Keyboard)
+                          this.adapter = adapter
+                          layoutParams = ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT)
                       }
+
+                      // Long‑press detection via OnItemTouchListener
+                      val lpHandler = Handler(Looper.getMainLooper())
+                      var lpRunnable: Runnable? = null
+                      var downX = 0f; var downY = 0f
+                      var downPos = -1
+                      val slop = 10.dp.toFloat()
+
+                      rv.addOnItemTouchListener(object : RecyclerView.SimpleOnItemTouchListener() {
+                          override fun onInterceptTouchEvent(rv2: RecyclerView, e: MotionEvent): Boolean {
+                              return when (e.actionMasked) {
+                                  MotionEvent.ACTION_DOWN -> {
+                                      downX = e.x; downY = e.y
+                                      val child = rv2.findChildViewUnder(e.x, e.y)
+                                      downPos = if (child != null) rv2.getChildAdapterPosition(child) else -1
+                                      if (downPos >= 0 && downPos < items.size) {
+                                          lpRunnable?.let { lpHandler.removeCallbacks(it) }
+                                          lpRunnable = Runnable {
+                                              isLongPressActive[0] = true
+                                              previewText.text = items[downPos]
+                                              previewOverlay.visibility = View.VISIBLE
+                                          }
+                                          lpHandler.postDelayed(lpRunnable!!, 500)
+                                      }
+                                      false
+                                  }
+                                  MotionEvent.ACTION_MOVE -> {
+                                      if (abs(e.x - downX) > slop || abs(e.y - downY) > slop) {
+                                          lpRunnable?.let { lpHandler.removeCallbacks(it) }
+                                          lpRunnable = null
+                                      }
+                                      false
+                                  }
+                                  MotionEvent.ACTION_UP -> {
+                                      lpRunnable?.let { lpHandler.removeCallbacks(it) }
+                                      lpRunnable = null
+                                      if (isLongPressActive[0]) {
+                                          previewOverlay.visibility = View.INVISIBLE
+                                          isLongPressActive[0] = false
+                                          true   // consume UP so no click
+                                      } else false
+                                  }
+                                  MotionEvent.ACTION_CANCEL -> {
+                                      lpRunnable?.let { lpHandler.removeCallbacks(it) }
+                                      lpRunnable = null
+                                      if (isLongPressActive[0]) {
+                                          previewOverlay.visibility = View.INVISIBLE
+                                          isLongPressActive[0] = false
+                                      }
+                                      false
+                                  }
+                                  else -> false
+                              }
+                          }
+                      })
+                      return rv
                   }
+
+                  // Build content
+                  contentContainer.addView(catLabel("🕒 Recent"))
+                  contentContainer.addView(buildList(
+                      items = clipboardItems.take(3).toMutableList(),
+                      showSaveBtn = true,
+                      onPaste = { txt -> commitText(txt); clipboardPopup?.dismiss() },
+                      onSave = { txt ->
+                          if (!savedItems.contains(txt)) {
+                              savedItems.add(0, txt)
+                              if (savedItems.size > MAX_SAVED) savedItems.removeAt(savedItems.size - 1)
+                              saveSavedItems()
+                          }
+                      },
+                      onDelete = null
+                  ))
+
+                  contentContainer.addView(catLabel("★ Saved"))
+                  contentContainer.addView(buildList(
+                      items = savedItems,
+                      showSaveBtn = false,
+                      onPaste = { txt -> commitText(txt); clipboardPopup?.dismiss() },
+                      onSave = null,
+                      onDelete = { pos ->
+                          savedItems.removeAt(pos)
+                          saveSavedItems()
+                          clipboardPopup?.dismiss()
+                          showClipboardPopup(anchor)
+                      }
+                  ))
 
                   val topLabel = TextView(this).apply {
                       text = "Clipboard"; textSize = 16f; setTextColor(0xFFFFFFFF.toInt())
@@ -872,6 +858,61 @@ jobs:
                   val result = if (raw.isNotEmpty() && raw[0].isUpperCase()) word.replaceFirstChar { it.uppercase() } else word
                   ic.deleteSurroundingText(raw.length, 0); ic.commitText("$result ", 1); clearSugs()
                   if (shiftState == ShiftState.ONCE) { shiftState = ShiftState.OFF; qwertyView.post { updateShiftKeyAppearance(qwertyView.findViewById(R.id.btn_shift)); updateLetterKeys(qwertyView) } }
+              }
+
+              // ── ClipboardAdapter ──
+              class ClipboardAdapter(
+                  private val items: MutableList<String>,
+                  private val showSaveBtn: Boolean,
+                  private val onPaste: (String) -> Unit,
+                  private val onSave: ((String) -> Unit)?,
+                  private val onDeleteRequest: ((Int, View) -> Unit)?
+              ) : RecyclerView.Adapter<ClipboardAdapter.VH>() {
+
+                  inner class VH(val root: LinearLayout, val tv: TextView, val saveBtn: TextView?, val del: TextView?) : RecyclerView.ViewHolder(root)
+
+                  override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): VH {
+                      val ctx = parent.context; val d = ctx.resources.displayMetrics.density
+                      val dp3 = (3 * d).toInt(); val dp4 = (4 * d).toInt(); val dp8 = (8 * d).toInt(); val dp12 = (12 * d).toInt()
+                      val root = LinearLayout(ctx).apply {
+                          orientation = LinearLayout.HORIZONTAL; setPadding(dp12, dp8, dp8, dp8)
+                          layoutParams = RecyclerView.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT).apply { bottomMargin = dp3 }
+                          background = resources.getDrawable(R.drawable.key_bg_selector, null)
+                          isClickable = true; isFocusable = true
+                      }
+                      val tv = TextView(ctx).apply {
+                          layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
+                          setTextColor(0xFFCCCCCC.toInt()); textSize = 16f; maxLines = 1; ellipsize = android.text.TextUtils.TruncateAt.END
+                      }
+                      val saveBtn = if (showSaveBtn) TextView(ctx).apply { text = "★"; setTextColor(0xFF555555.toInt()); textSize = 16f; setPadding(dp8, 0, dp4, 0) } else null
+                      val del = if (onDeleteRequest != null) TextView(ctx).apply { text = "✕"; setTextColor(0xFF555555.toInt()); textSize = 16f; setPadding(dp8, 0, dp8, 0) } else null
+                      root.addView(tv); saveBtn?.let { root.addView(it) }; del?.let { root.addView(it) }
+                      return VH(root, tv, saveBtn, del)
+                  }
+
+                  override fun onBindViewHolder(h: VH, pos: Int) {
+                      h.tv.text = items[pos]
+                      h.root.setOnClickListener {
+                          val sp = h.adapterPosition
+                          if (sp >= 0 && sp < items.size) onPaste(items[sp])
+                      }
+                      h.saveBtn?.setOnClickListener { v ->
+                          val sp = h.adapterPosition
+                          if (sp >= 0 && sp < items.size) {
+                              onSave?.invoke(items[sp])
+                              (v as? TextView)?.apply {
+                                  setTextColor(0xFF4FC3F7.toInt())
+                                  Handler(Looper.getMainLooper()).postDelayed({ setTextColor(0xFF555555.toInt()) }, 800)
+                              }
+                          }
+                      }
+                      h.del?.setOnClickListener { v ->
+                          val sp = h.adapterPosition
+                          if (sp >= 0) onDeleteRequest?.invoke(sp, v)
+                      }
+                  }
+
+                  override fun getItemCount() = items.size
               }
 
               private fun addToClipboard(text: String) {
