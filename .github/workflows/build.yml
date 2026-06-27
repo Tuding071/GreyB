@@ -479,13 +479,14 @@ jobs:
                   }
               }
 
-              // ── Single‑list clipboard popup with correct press feedback ──
+              // ── Single‑list clipboard popup (tapping pastes, long‑press previews) ──
               private fun showClipboardPopup(anchor: View) {
                   clipboardPopup?.dismiss()
                   val popupWidth = (resources.displayMetrics.widthPixels * 0.8).toInt()
                   val POPUP_HEIGHT = 280.dp
                   val wp = 8.dp
 
+                  // Preview overlay
                   val previewText = TextView(this).apply {
                       textSize = 16f; setTextColor(0xFFCCCCCC.toInt())
                       setPadding(14.dp, 14.dp, 14.dp, 14.dp)
@@ -501,7 +502,7 @@ jobs:
 
                   val isLongPressActive = booleanArrayOf(false)
 
-                  // Build data
+                  // Build combined list with headers
                   val items = mutableListOf<ClipItem>()
                   val recentList = clipboardItems.take(3)
                   if (recentList.isNotEmpty()) {
@@ -551,10 +552,18 @@ jobs:
                               is ClipItem.Header -> (holder.itemView as TextView).text = item.title
                               is ClipItem.Clip -> {
                                   val root = holder.itemView as LinearLayout
-                                  // remove previous buttons (if any)
+                                  // remove old buttons
                                   while (root.childCount > 1) root.removeViewAt(root.childCount - 1)
                                   val tv = root.getChildAt(0) as TextView
                                   tv.text = item.text
+
+                                  // Add paste click listener
+                                  root.setOnClickListener {
+                                      if (!isLongPressActive[0]) {
+                                          commitText(item.text)
+                                          clipboardPopup?.dismiss()
+                                      }
+                                  }
 
                                   if (item.isRecent) {
                                       val star = TextView(root.context).apply {
