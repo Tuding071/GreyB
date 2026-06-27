@@ -479,14 +479,14 @@ jobs:
                   }
               }
 
-              // ── Clipboard popup using RecyclerView (Recent: save only, no delete) ──
+              // ── Single‑list clipboard popup ──
               private fun showClipboardPopup(anchor: View) {
                   clipboardPopup?.dismiss()
                   val popupWidth = (resources.displayMetrics.widthPixels * 0.8).toInt()
                   val POPUP_HEIGHT = 280.dp
                   val wp = 8.dp
 
-                  // Preview overlay (tap to dismiss)
+                  // Preview overlay
                   val previewText = TextView(this).apply {
                       textSize = 16f; setTextColor(0xFFCCCCCC.toInt())
                       setPadding(14.dp, 14.dp, 14.dp, 14.dp)
@@ -500,163 +500,128 @@ jobs:
                       setOnTouchListener { _, _ -> visibility = View.INVISIBLE; true }
                   }
 
-                  val contentContainer = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
-
-                  fun catLabel(t: String) = TextView(this).apply {
-                      text = t; textSize = 14f; setTextColor(0xFF4FC3F7.toInt())
-                      gravity = Gravity.START; setPadding(4.dp, 10.dp, 0, 6.dp)
+                  // Build item list with headers
+                  val items = mutableListOf<ClipItem>()
+                  // Recent header
+                  val recentList = clipboardItems.take(3)
+                  if (recentList.isNotEmpty()) {
+                      items.add(ClipItem.Header("🕒 Recent"))
+                      recentList.forEach { text ->
+                          items.add(ClipItem.Clip(text, isRecent = true))
+                      }
                   }
-
-                  fun emptyLabel(t: String) = TextView(this).apply {
-                      text = t; textSize = 14f; setTextColor(0xFF555555.toInt())
-                      gravity = Gravity.CENTER; setPadding(12.dp, 6.dp, 12.dp, 6.dp)
-                      layoutParams = LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT)
+                  // Saved header
+                  if (savedItems.isNotEmpty()) {
+                      items.add(ClipItem.Header("★ Saved"))
+                      savedItems.forEach { text ->
+                          items.add(ClipItem.Clip(text, isRecent = false))
+                      }
+                  }
+                  if (items.isEmpty()) {
+                      items.add(ClipItem.Header("Clipboard is empty"))
                   }
 
                   val isLongPressActive = booleanArrayOf(false)
 
-                  fun buildList(
-                      items: MutableList<String>,
-                      showSaveBtn: Boolean,
-                      onPaste: (String) -> Unit,
-                      onSave: ((String) -> Unit)?,
-                      onDelete: ((Int) -> Unit)?
-                  ): View {
-                      if (items.isEmpty()) return emptyLabel(if (showSaveBtn) "No recent clips" else "No saved items")
-                      val adapter = ClipboardAdapter(
-                          items = items,
-                          showSaveBtn = showSaveBtn,
-                          onPaste = { item ->
-                              if (!isLongPressActive[0]) {
-                                  commitText(item); clipboardPopup?.dismiss()
-                              }
-                          },
-                          onSave = if (showSaveBtn) {
-                              { item ->
-                                  if (!savedItems.contains(item)) {
-                                      savedItems.add(0, item)
-                                      if (savedItems.size > MAX_SAVED) savedItems.removeAt(savedItems.size - 1)
-                                      saveSavedItems()
-                                  }
-                              }
-                          } else null,
-                          onDeleteRequest = if (onDelete != null) {
-                              { pos, view ->
-                                  showDeleteConfirm(view) {
-                                      if (pos < items.size) {
-                                          onDelete(pos)
-                                      }
-                                  }
-                              }
-                          } else null
-                      )
-                      val rv = RecyclerView(this).apply {
-                          layoutManager = LinearLayoutManager(this@Keyboard)
-                          this.adapter = adapter
-                          layoutParams = ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT)
-                      }
-
-                      // Long‑press detection via OnItemTouchListener
-                      val lpHandler = Handler(Looper.getMainLooper())
-                      var lpRunnable: Runnable? = null
-                      var downX = 0f; var downY = 0f
-                      var downPos = -1
-                      val slop = 10.dp.toFloat()
-
-                      rv.addOnItemTouchListener(object : RecyclerView.SimpleOnItemTouchListener() {
-                          override fun onInterceptTouchEvent(rv2: RecyclerView, e: MotionEvent): Boolean {
-                              return when (e.actionMasked) {
-                                  MotionEvent.ACTION_DOWN -> {
-                                      downX = e.x; downY = e.y
-                                      val child = rv2.findChildViewUnder(e.x, e.y)
-                                      downPos = if (child != null) rv2.getChildAdapterPosition(child) else -1
-                                      if (downPos >= 0 && downPos < items.size) {
-                                          lpRunnable?.let { lpHandler.removeCallbacks(it) }
-                                          lpRunnable = Runnable {
-                                              isLongPressActive[0] = true
-                                              previewText.text = items[downPos]
-                                              previewOverlay.visibility = View.VISIBLE
-                                          }
-                                          lpHandler.postDelayed(lpRunnable!!, 500)
-                                      }
-                                      false
-                                  }
-                                  MotionEvent.ACTION_MOVE -> {
-                                      if (abs(e.x - downX) > slop || abs(e.y - downY) > slop) {
-                                          lpRunnable?.let { lpHandler.removeCallbacks(it) }
-                                          lpRunnable = null
-                                      }
-                                      false
-                                  }
-                                  MotionEvent.ACTION_UP -> {
-                                      lpRunnable?.let { lpHandler.removeCallbacks(it) }
-                                      lpRunnable = null
-                                      if (isLongPressActive[0]) {
-                                          previewOverlay.visibility = View.INVISIBLE
-                                          isLongPressActive[0] = false
-                                          true   // consume UP so no click
-                                      } else false
-                                  }
-                                  MotionEvent.ACTION_CANCEL -> {
-                                      lpRunnable?.let { lpHandler.removeCallbacks(it) }
-                                      lpRunnable = null
-                                      if (isLongPressActive[0]) {
-                                          previewOverlay.visibility = View.INVISIBLE
-                                          isLongPressActive[0] = false
-                                      }
-                                      false
-                                  }
-                                  else -> false
-                              }
+                  val adapter = ClipSectionAdapter(
+                      items = items,
+                      onPaste = { text ->
+                          if (!isLongPressActive[0]) {
+                              commitText(text); clipboardPopup?.dismiss()
                           }
-                      })
-                      return rv
-                  }
-
-                  // Build content
-                  contentContainer.addView(catLabel("🕒 Recent"))
-                  contentContainer.addView(buildList(
-                      items = clipboardItems.take(3).toMutableList(),
-                      showSaveBtn = true,
-                      onPaste = { txt -> commitText(txt); clipboardPopup?.dismiss() },
-                      onSave = { txt ->
-                          if (!savedItems.contains(txt)) {
-                              savedItems.add(0, txt)
+                      },
+                      onSave = { text ->
+                          if (!savedItems.contains(text)) {
+                              savedItems.add(0, text)
                               if (savedItems.size > MAX_SAVED) savedItems.removeAt(savedItems.size - 1)
                               saveSavedItems()
                           }
                       },
-                      onDelete = null
-                  ))
-
-                  contentContainer.addView(catLabel("★ Saved"))
-                  contentContainer.addView(buildList(
-                      items = savedItems,
-                      showSaveBtn = false,
-                      onPaste = { txt -> commitText(txt); clipboardPopup?.dismiss() },
-                      onSave = null,
-                      onDelete = { pos ->
-                          savedItems.removeAt(pos)
-                          saveSavedItems()
-                          clipboardPopup?.dismiss()
-                          showClipboardPopup(anchor)
+                      onDelete = { text, isRecent ->
+                          showDeleteConfirm(text) {
+                              if (isRecent) {
+                                  clipboardItems.remove(text); saveClipboard()
+                              } else {
+                                  savedItems.remove(text); saveSavedItems()
+                              }
+                              // Rebuild popup
+                              clipboardPopup?.dismiss()
+                              showClipboardPopup(anchor)
+                          }
                       }
-                  ))
+                  )
+
+                  val rv = RecyclerView(this).apply {
+                      layoutManager = LinearLayoutManager(this@Keyboard)
+                      this.adapter = adapter
+                      layoutParams = ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT)
+                  }
+
+                  // Long‑press detection
+                  val lpHandler = Handler(Looper.getMainLooper())
+                  var lpRunnable: Runnable? = null
+                  var downX = 0f; var downY = 0f
+                  var downPos = -1
+                  val slop = 10.dp.toFloat()
+
+                  rv.addOnItemTouchListener(object : RecyclerView.SimpleOnItemTouchListener() {
+                      override fun onInterceptTouchEvent(rv2: RecyclerView, e: MotionEvent): Boolean {
+                          return when (e.actionMasked) {
+                              MotionEvent.ACTION_DOWN -> {
+                                  downX = e.x; downY = e.y
+                                  val child = rv2.findChildViewUnder(e.x, e.y)
+                                  downPos = if (child != null) rv2.getChildAdapterPosition(child) else -1
+                                  if (downPos >= 0 && downPos < items.size && items[downPos] is ClipItem.Clip) {
+                                      lpRunnable?.let { lpHandler.removeCallbacks(it) }
+                                      lpRunnable = Runnable {
+                                          isLongPressActive[0] = true
+                                          previewText.text = (items[downPos] as ClipItem.Clip).text
+                                          previewOverlay.visibility = View.VISIBLE
+                                      }
+                                      lpHandler.postDelayed(lpRunnable!!, 500)
+                                  }
+                                  false
+                              }
+                              MotionEvent.ACTION_MOVE -> {
+                                  if (abs(e.x - downX) > slop || abs(e.y - downY) > slop) {
+                                      lpRunnable?.let { lpHandler.removeCallbacks(it) }
+                                      lpRunnable = null
+                                  }
+                                  false
+                              }
+                              MotionEvent.ACTION_UP -> {
+                                  lpRunnable?.let { lpHandler.removeCallbacks(it) }
+                                  lpRunnable = null
+                                  if (isLongPressActive[0]) {
+                                      previewOverlay.visibility = View.INVISIBLE
+                                      isLongPressActive[0] = false
+                                      true   // consume UP so no click
+                                  } else false
+                              }
+                              MotionEvent.ACTION_CANCEL -> {
+                                  lpRunnable?.let { lpHandler.removeCallbacks(it) }
+                                  lpRunnable = null
+                                  if (isLongPressActive[0]) {
+                                      previewOverlay.visibility = View.INVISIBLE
+                                      isLongPressActive[0] = false
+                                  }
+                                  false
+                              }
+                              else -> false
+                          }
+                      }
+                  })
 
                   val topLabel = TextView(this).apply {
                       text = "Clipboard"; textSize = 16f; setTextColor(0xFFFFFFFF.toInt())
                       gravity = Gravity.CENTER; setPadding(0, 8.dp, 0, 8.dp)
-                  }
-                  val scroll = ScrollView(this).apply {
-                      addView(contentContainer)
-                      layoutParams = ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT)
                   }
                   val wrapper = LinearLayout(this).apply {
                       orientation = LinearLayout.VERTICAL
                       setBackgroundResource(R.drawable.popup_border)
                       setPadding(wp, 0, wp, 8.dp)
                   }
-                  wrapper.addView(topLabel); wrapper.addView(scroll)
+                  wrapper.addView(topLabel); wrapper.addView(rv)
 
                   val outer = FrameLayout(this).apply {
                       layoutParams = ViewGroup.LayoutParams(popupWidth, POPUP_HEIGHT)
@@ -860,59 +825,104 @@ jobs:
                   if (shiftState == ShiftState.ONCE) { shiftState = ShiftState.OFF; qwertyView.post { updateShiftKeyAppearance(qwertyView.findViewById(R.id.btn_shift)); updateLetterKeys(qwertyView) } }
               }
 
-              // ── ClipboardAdapter ──
-              class ClipboardAdapter(
-                  private val items: MutableList<String>,
-                  private val showSaveBtn: Boolean,
+              // ── ClipItem & Adapter ──
+              sealed class ClipItem {
+                  data class Header(val title: String) : ClipItem()
+                  data class Clip(val text: String, val isRecent: Boolean) : ClipItem()
+              }
+
+              inner class ClipSectionAdapter(
+                  private val items: MutableList<ClipItem>,
                   private val onPaste: (String) -> Unit,
-                  private val onSave: ((String) -> Unit)?,
-                  private val onDeleteRequest: ((Int, View) -> Unit)?
-              ) : RecyclerView.Adapter<ClipboardAdapter.VH>() {
+                  private val onSave: (String) -> Unit,
+                  private val onDelete: (String, Boolean) -> Unit
+              ) : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
 
-                  inner class VH(val root: LinearLayout, val tv: TextView, val saveBtn: TextView?, val del: TextView?) : RecyclerView.ViewHolder(root)
-
-                  override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): VH {
-                      val ctx = parent.context; val d = ctx.resources.displayMetrics.density
-                      val dp3 = (3 * d).toInt(); val dp4 = (4 * d).toInt(); val dp8 = (8 * d).toInt(); val dp12 = (12 * d).toInt()
-                      val root = LinearLayout(ctx).apply {
-                          orientation = LinearLayout.HORIZONTAL; setPadding(dp12, dp8, dp8, dp8)
-                          layoutParams = RecyclerView.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT).apply { bottomMargin = dp3 }
-                          background = resources.getDrawable(R.drawable.key_bg_selector, null)
-                          isClickable = true; isFocusable = true
-                      }
-                      val tv = TextView(ctx).apply {
-                          layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
-                          setTextColor(0xFFCCCCCC.toInt()); textSize = 16f; maxLines = 1; ellipsize = android.text.TextUtils.TruncateAt.END
-                      }
-                      val saveBtn = if (showSaveBtn) TextView(ctx).apply { text = "★"; setTextColor(0xFF555555.toInt()); textSize = 16f; setPadding(dp8, 0, dp4, 0) } else null
-                      val del = if (onDeleteRequest != null) TextView(ctx).apply { text = "✕"; setTextColor(0xFF555555.toInt()); textSize = 16f; setPadding(dp8, 0, dp8, 0) } else null
-                      root.addView(tv); saveBtn?.let { root.addView(it) }; del?.let { root.addView(it) }
-                      return VH(root, tv, saveBtn, del)
+                  companion object {
+                      const val TYPE_HEADER = 0
+                      const val TYPE_CLIP = 1
                   }
 
-                  override fun onBindViewHolder(h: VH, pos: Int) {
-                      h.tv.text = items[pos]
-                      h.root.setOnClickListener {
-                          val sp = h.adapterPosition
-                          if (sp >= 0 && sp < items.size) onPaste(items[sp])
+                  override fun getItemViewType(position: Int): Int {
+                      return when (items[position]) {
+                          is ClipItem.Header -> TYPE_HEADER
+                          is ClipItem.Clip -> TYPE_CLIP
                       }
-                      h.saveBtn?.setOnClickListener { v ->
-                          val sp = h.adapterPosition
-                          if (sp >= 0 && sp < items.size) {
-                              onSave?.invoke(items[sp])
-                              (v as? TextView)?.apply {
-                                  setTextColor(0xFF4FC3F7.toInt())
-                                  Handler(Looper.getMainLooper()).postDelayed({ setTextColor(0xFF555555.toInt()) }, 800)
+                  }
+
+                  override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
+                      val ctx = parent.context
+                      return if (viewType == TYPE_HEADER) {
+                          val tv = TextView(ctx).apply {
+                              textSize = 14f; setTextColor(0xFF4FC3F7.toInt())
+                              gravity = Gravity.START; setPadding(4.dp, 10.dp, 0, 4.dp)
+                              layoutParams = RecyclerView.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT)
+                          }
+                          object : RecyclerView.ViewHolder(tv) {}
+                      } else {
+                          val root = LinearLayout(ctx).apply {
+                              orientation = LinearLayout.HORIZONTAL; setPadding(12.dp, 9.dp, 8.dp, 9.dp)
+                              layoutParams = RecyclerView.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT).apply { bottomMargin = 2.dp }
+                              background = resources.getDrawable(R.drawable.key_bg_selector, null)
+                              isClickable = true; isFocusable = true
+                          }
+                          val tv = TextView(ctx).apply {
+                              layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
+                              setTextColor(resources.getColorStateList(R.color.clip_text_color, null))
+                              textSize = 16f; maxLines = 1; ellipsize = android.text.TextUtils.TruncateAt.END
+                          }
+                          root.addView(tv)
+                          object : RecyclerView.ViewHolder(root) {
+                              val textView = tv
+                              lateinit var saveBtn: TextView?
+                              lateinit var delBtn: TextView?
+                          }.also { vh ->
+                              vh.textView = tv
+                          }
+                      }
+                  }
+
+                  override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
+                      val item = items[position]
+                      when (item) {
+                          is ClipItem.Header -> {
+                              (holder.itemView as TextView).text = item.title
+                          }
+                          is ClipItem.Clip -> {
+                              val vh = holder
+                              val root = vh.itemView as LinearLayout
+                              // remove any previous buttons
+                              if (root.childCount > 1) {
+                                  root.removeViews(1, root.childCount - 1)
+                              }
+                              val tv = root.getChildAt(0) as TextView
+                              tv.text = item.text
+                              if (item.isRecent) {
+                                  // add star button
+                                  val star = TextView(root.context).apply {
+                                      this.text = "★"; textSize = 16f; setTextColor(0xFF555555.toInt()); setPadding(8.dp, 0, 4.dp, 0)
+                                      setOnClickListener { v ->
+                                          onSave(item.text)
+                                          (v as? TextView)?.apply {
+                                              setTextColor(0xFF4FC3F7.toInt())
+                                              Handler(Looper.getMainLooper()).postDelayed({ setTextColor(0xFF555555.toInt()) }, 800)
+                                          }
+                                      }
+                                  }
+                                  root.addView(star)
+                              } else {
+                                  // add delete button
+                                  val del = TextView(root.context).apply {
+                                      this.text = "✕"; textSize = 16f; setTextColor(0xFF555555.toInt()); setPadding(8.dp, 0, 8.dp, 0)
+                                      setOnClickListener { v -> onDelete(item.text, false) }
+                                  }
+                                  root.addView(del)
                               }
                           }
                       }
-                      h.del?.setOnClickListener { v ->
-                          val sp = h.adapterPosition
-                          if (sp >= 0) onDeleteRequest?.invoke(sp, v)
-                      }
                   }
 
-                  override fun getItemCount() = items.size
+                  override fun getItemCount(): Int = items.size
               }
 
               private fun addToClipboard(text: String) {
