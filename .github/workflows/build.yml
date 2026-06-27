@@ -419,7 +419,6 @@ jobs:
                   } else sendKey(if (right) KeyEvent.KEYCODE_DPAD_RIGHT else KeyEvent.KEYCODE_DPAD_LEFT)
               }
 
-              // ── Symbols popup ──
               private fun showSymbolsPopup(anchor: View) {
                   symbolsPopup?.dismiss()
                   val symbols = listOf(".",",","!","?","@","#","$","%","&","*","(",")","-","+","=","/",":",";","'","\"","~","_","\\","|","^","`","°","•","…","«","»","¿","¡","§","¶","©","®","™","‰","µ","[","]","{","}","<",">","×","÷","√","∞","≈","≠","≤","≥","±","∑","∏","π","∆","€","£","¥","₱","¢","₹","₩","₽","₿","→","←","↑","↓","↔","⇒","⇐")
@@ -443,7 +442,6 @@ jobs:
                   }
               }
 
-              // ── Emoji popup ──
               private fun showEmojiPopup(anchor: View) {
                   emojiPopup?.dismiss()
                   val categories = mutableListOf<Pair<String, List<String>>>()
@@ -480,14 +478,14 @@ jobs:
                   }
               }
 
-              // ── Clipboard popup (preview dismisses on UP, press feedback, no accidental paste) ──
+              // ── Clipboard popup (preview dismisses on UP, tap on overlay also dismisses) ──
               private fun showClipboardPopup(anchor: View) {
                   clipboardPopup?.dismiss()
                   val popupWidth = (resources.displayMetrics.widthPixels * 0.8).toInt()
                   val POPUP_HEIGHT = 280.dp
                   val wp = 8.dp
 
-                  // Preview overlay
+                  // Preview overlay – tap to dismiss
                   val previewText = TextView(this).apply {
                       textSize = 16f; setTextColor(0xFFCCCCCC.toInt())
                       setPadding(14.dp, 14.dp, 14.dp, 14.dp)
@@ -498,6 +496,9 @@ jobs:
                       setBackgroundResource(R.drawable.popup_border)
                       layoutParams = FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT)
                       addView(previewText)
+                      isClickable = true
+                      isFocusable = true
+                      setOnClickListener { visibility = View.INVISIBLE }
                   }
 
                   val contentContainer = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
