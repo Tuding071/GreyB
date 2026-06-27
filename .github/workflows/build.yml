@@ -479,14 +479,13 @@ jobs:
                   }
               }
 
-              // ── Single‑list clipboard popup ──
+              // ── Single‑list clipboard popup with correct press feedback ──
               private fun showClipboardPopup(anchor: View) {
                   clipboardPopup?.dismiss()
                   val popupWidth = (resources.displayMetrics.widthPixels * 0.8).toInt()
                   val POPUP_HEIGHT = 280.dp
                   val wp = 8.dp
 
-                  // Preview overlay
                   val previewText = TextView(this).apply {
                       textSize = 16f; setTextColor(0xFFCCCCCC.toInt())
                       setPadding(14.dp, 14.dp, 14.dp, 14.dp)
@@ -500,56 +499,98 @@ jobs:
                       setOnTouchListener { _, _ -> visibility = View.INVISIBLE; true }
                   }
 
-                  // Build item list with headers
+                  val isLongPressActive = booleanArrayOf(false)
+
+                  // Build data
                   val items = mutableListOf<ClipItem>()
-                  // Recent header
                   val recentList = clipboardItems.take(3)
                   if (recentList.isNotEmpty()) {
                       items.add(ClipItem.Header("🕒 Recent"))
-                      recentList.forEach { text ->
-                          items.add(ClipItem.Clip(text, isRecent = true))
-                      }
+                      recentList.forEach { text -> items.add(ClipItem.Clip(text, true)) }
                   }
-                  // Saved header
                   if (savedItems.isNotEmpty()) {
                       items.add(ClipItem.Header("★ Saved"))
-                      savedItems.forEach { text ->
-                          items.add(ClipItem.Clip(text, isRecent = false))
-                      }
+                      savedItems.forEach { text -> items.add(ClipItem.Clip(text, false)) }
                   }
                   if (items.isEmpty()) {
                       items.add(ClipItem.Header("Clipboard is empty"))
                   }
 
-                  val isLongPressActive = booleanArrayOf(false)
-
-                  val adapter = ClipSectionAdapter(
-                      items = items,
-                      onPaste = { text ->
-                          if (!isLongPressActive[0]) {
-                              commitText(text); clipboardPopup?.dismiss()
-                          }
-                      },
-                      onSave = { text ->
-                          if (!savedItems.contains(text)) {
-                              savedItems.add(0, text)
-                              if (savedItems.size > MAX_SAVED) savedItems.removeAt(savedItems.size - 1)
-                              saveSavedItems()
-                          }
-                      },
-                      onDelete = { text, isRecent ->
-                          showDeleteConfirm(text) {
-                              if (isRecent) {
-                                  clipboardItems.remove(text); saveClipboard()
-                              } else {
-                                  savedItems.remove(text); saveSavedItems()
+                  val adapter = object : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
+                      override fun getItemViewType(position: Int): Int {
+                          return if (items[position] is ClipItem.Header) 0 else 1
+                      }
+                      override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
+                          val ctx = parent.context
+                          return if (viewType == 0) {
+                              val tv = TextView(ctx).apply {
+                                  textSize = 14f; setTextColor(0xFF4FC3F7.toInt())
+                                  gravity = Gravity.START; setPadding(4.dp, 10.dp, 0, 4.dp)
+                                  layoutParams = RecyclerView.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT)
                               }
-                              // Rebuild popup
-                              clipboardPopup?.dismiss()
-                              showClipboardPopup(anchor)
+                              object : RecyclerView.ViewHolder(tv) {}
+                          } else {
+                              val root = LinearLayout(ctx).apply {
+                                  orientation = LinearLayout.HORIZONTAL; setPadding(12.dp, 9.dp, 8.dp, 9.dp)
+                                  layoutParams = RecyclerView.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT).apply { bottomMargin = 2.dp }
+                                  background = resources.getDrawable(R.drawable.key_bg_selector, null)
+                                  isClickable = true; isFocusable = true
+                              }
+                              val tv = TextView(ctx).apply {
+                                  layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
+                                  setTextColor(resources.getColorStateList(R.color.clip_text_color, null))
+                                  textSize = 16f; maxLines = 1; ellipsize = android.text.TextUtils.TruncateAt.END
+                              }
+                              root.addView(tv)
+                              object : RecyclerView.ViewHolder(root) {}
                           }
                       }
-                  )
+                      override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
+                          val item = items[position]
+                          when (item) {
+                              is ClipItem.Header -> (holder.itemView as TextView).text = item.title
+                              is ClipItem.Clip -> {
+                                  val root = holder.itemView as LinearLayout
+                                  // remove previous buttons (if any)
+                                  while (root.childCount > 1) root.removeViewAt(root.childCount - 1)
+                                  val tv = root.getChildAt(0) as TextView
+                                  tv.text = item.text
+
+                                  if (item.isRecent) {
+                                      val star = TextView(root.context).apply {
+                                          text = "★"; textSize = 16f; setTextColor(0xFF555555.toInt()); setPadding(8.dp, 0, 4.dp, 0)
+                                          setOnClickListener { v ->
+                                              if (!savedItems.contains(item.text)) {
+                                                  savedItems.add(0, item.text)
+                                                  if (savedItems.size > MAX_SAVED) savedItems.removeAt(savedItems.size - 1)
+                                                  saveSavedItems()
+                                              }
+                                              (v as? TextView)?.apply {
+                                                  setTextColor(0xFF4FC3F7.toInt())
+                                                  Handler(Looper.getMainLooper()).postDelayed({ setTextColor(0xFF555555.toInt()) }, 800)
+                                              }
+                                          }
+                                      }
+                                      root.addView(star)
+                                  } else {
+                                      val del = TextView(root.context).apply {
+                                          text = "✕"; textSize = 16f; setTextColor(0xFF555555.toInt()); setPadding(8.dp, 0, 8.dp, 0)
+                                          setOnClickListener { v ->
+                                              showDeleteConfirm(v) {
+                                                  savedItems.remove(item.text)
+                                                  saveSavedItems()
+                                                  clipboardPopup?.dismiss()
+                                                  showClipboardPopup(anchor)
+                                              }
+                                          }
+                                      }
+                                      root.addView(del)
+                                  }
+                              }
+                          }
+                      }
+                      override fun getItemCount(): Int = items.size
+                  }
 
                   val rv = RecyclerView(this).apply {
                       layoutManager = LinearLayoutManager(this@Keyboard)
@@ -825,104 +866,9 @@ jobs:
                   if (shiftState == ShiftState.ONCE) { shiftState = ShiftState.OFF; qwertyView.post { updateShiftKeyAppearance(qwertyView.findViewById(R.id.btn_shift)); updateLetterKeys(qwertyView) } }
               }
 
-              // ── ClipItem & Adapter ──
-              sealed class ClipItem {
+              private sealed class ClipItem {
                   data class Header(val title: String) : ClipItem()
                   data class Clip(val text: String, val isRecent: Boolean) : ClipItem()
-              }
-
-              inner class ClipSectionAdapter(
-                  private val items: MutableList<ClipItem>,
-                  private val onPaste: (String) -> Unit,
-                  private val onSave: (String) -> Unit,
-                  private val onDelete: (String, Boolean) -> Unit
-              ) : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
-
-                  companion object {
-                      const val TYPE_HEADER = 0
-                      const val TYPE_CLIP = 1
-                  }
-
-                  override fun getItemViewType(position: Int): Int {
-                      return when (items[position]) {
-                          is ClipItem.Header -> TYPE_HEADER
-                          is ClipItem.Clip -> TYPE_CLIP
-                      }
-                  }
-
-                  override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
-                      val ctx = parent.context
-                      return if (viewType == TYPE_HEADER) {
-                          val tv = TextView(ctx).apply {
-                              textSize = 14f; setTextColor(0xFF4FC3F7.toInt())
-                              gravity = Gravity.START; setPadding(4.dp, 10.dp, 0, 4.dp)
-                              layoutParams = RecyclerView.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT)
-                          }
-                          object : RecyclerView.ViewHolder(tv) {}
-                      } else {
-                          val root = LinearLayout(ctx).apply {
-                              orientation = LinearLayout.HORIZONTAL; setPadding(12.dp, 9.dp, 8.dp, 9.dp)
-                              layoutParams = RecyclerView.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT).apply { bottomMargin = 2.dp }
-                              background = resources.getDrawable(R.drawable.key_bg_selector, null)
-                              isClickable = true; isFocusable = true
-                          }
-                          val tv = TextView(ctx).apply {
-                              layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
-                              setTextColor(resources.getColorStateList(R.color.clip_text_color, null))
-                              textSize = 16f; maxLines = 1; ellipsize = android.text.TextUtils.TruncateAt.END
-                          }
-                          root.addView(tv)
-                          object : RecyclerView.ViewHolder(root) {
-                              val textView = tv
-                              lateinit var saveBtn: TextView?
-                              lateinit var delBtn: TextView?
-                          }.also { vh ->
-                              vh.textView = tv
-                          }
-                      }
-                  }
-
-                  override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
-                      val item = items[position]
-                      when (item) {
-                          is ClipItem.Header -> {
-                              (holder.itemView as TextView).text = item.title
-                          }
-                          is ClipItem.Clip -> {
-                              val vh = holder
-                              val root = vh.itemView as LinearLayout
-                              // remove any previous buttons
-                              if (root.childCount > 1) {
-                                  root.removeViews(1, root.childCount - 1)
-                              }
-                              val tv = root.getChildAt(0) as TextView
-                              tv.text = item.text
-                              if (item.isRecent) {
-                                  // add star button
-                                  val star = TextView(root.context).apply {
-                                      this.text = "★"; textSize = 16f; setTextColor(0xFF555555.toInt()); setPadding(8.dp, 0, 4.dp, 0)
-                                      setOnClickListener { v ->
-                                          onSave(item.text)
-                                          (v as? TextView)?.apply {
-                                              setTextColor(0xFF4FC3F7.toInt())
-                                              Handler(Looper.getMainLooper()).postDelayed({ setTextColor(0xFF555555.toInt()) }, 800)
-                                          }
-                                      }
-                                  }
-                                  root.addView(star)
-                              } else {
-                                  // add delete button
-                                  val del = TextView(root.context).apply {
-                                      this.text = "✕"; textSize = 16f; setTextColor(0xFF555555.toInt()); setPadding(8.dp, 0, 8.dp, 0)
-                                      setOnClickListener { v -> onDelete(item.text, false) }
-                                  }
-                                  root.addView(del)
-                              }
-                          }
-                      }
-                  }
-
-                  override fun getItemCount(): Int = items.size
               }
 
               private fun addToClipboard(text: String) {
