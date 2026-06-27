@@ -479,7 +479,7 @@ jobs:
                   }
               }
 
-              // ── Clipboard popup using RecyclerView (long‑press works, tap dismisses) ──
+              // ── Clipboard popup using RecyclerView (Recent: save only, no delete) ──
               private fun showClipboardPopup(anchor: View) {
                   clipboardPopup?.dismiss()
                   val popupWidth = (resources.displayMetrics.widthPixels * 0.8).toInt()
@@ -531,24 +531,24 @@ jobs:
                                   commitText(item); clipboardPopup?.dismiss()
                               }
                           },
-                          onSave = { item ->
-                              if (!savedItems.contains(item)) {
-                                  savedItems.add(0, item)
-                                  if (savedItems.size > MAX_SAVED) savedItems.removeAt(savedItems.size - 1)
-                                  saveSavedItems()
-                              }
-                          },
-                          onDeleteRequest = { pos, view ->
-                              showDeleteConfirm(view) {
-                                  if (pos < items.size) {
-                                      items.removeAt(pos)
-                                      if (showSaveBtn) saveClipboard() else saveSavedItems()
-                                      // rebuild popup
-                                      clipboardPopup?.dismiss()
-                                      showClipboardPopup(anchor)
+                          onSave = if (showSaveBtn) {
+                              { item ->
+                                  if (!savedItems.contains(item)) {
+                                      savedItems.add(0, item)
+                                      if (savedItems.size > MAX_SAVED) savedItems.removeAt(savedItems.size - 1)
+                                      saveSavedItems()
                                   }
                               }
-                          }
+                          } else null,
+                          onDeleteRequest = if (onDelete != null) {
+                              { pos, view ->
+                                  showDeleteConfirm(view) {
+                                      if (pos < items.size) {
+                                          onDelete(pos)
+                                      }
+                                  }
+                              }
+                          } else null
                       )
                       val rv = RecyclerView(this).apply {
                           layoutManager = LinearLayoutManager(this@Keyboard)
