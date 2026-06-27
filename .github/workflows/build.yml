@@ -46,7 +46,7 @@ jobs:
           mkdir -p app/src/main/res/xml
           mkdir -p app/src/main/res/layout
           mkdir -p app/src/main/res/drawable
-          mkdir -p app/src/main/res/color          # ← added for clip_text_color.xml
+          mkdir -p app/src/main/res/color
           mkdir -p app/src/main/res/values
           mkdir -p app/src/main/assets
           mkdir -p gradle/wrapper
@@ -160,7 +160,6 @@ jobs:
           </selector>
           ENDOFFILE
 
-          # Color state list for clipboard row text (white normally, black when pressed)
           cat > app/src/main/res/color/clip_text_color.xml << 'ENDOFFILE'
           <?xml version="1.0" encoding="utf-8"?>
           <selector xmlns:android="http://schemas.android.com/apk/res/android">
@@ -481,7 +480,7 @@ jobs:
                   }
               }
 
-              // ── Clipboard popup: grouped, press feedback, no delete on recent ──
+              // ── Clipboard popup (preview dismisses on UP, press feedback, no accidental paste) ──
               private fun showClipboardPopup(anchor: View) {
                   clipboardPopup?.dismiss()
                   val popupWidth = (resources.displayMetrics.widthPixels * 0.8).toInt()
@@ -502,6 +501,7 @@ jobs:
                   }
 
                   val contentContainer = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
+                  val lph = Handler(Looper.getMainLooper())
 
                   fun catLabel(t: String) = TextView(this).apply {
                       text = t; textSize = 14f; setTextColor(0xFF4FC3F7.toInt())
@@ -528,13 +528,10 @@ jobs:
                           layoutParams = LinearLayout.LayoutParams(
                               ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT
                           ).apply { bottomMargin = 2.dp }
-                          background = resources.getDrawable(R.drawable.key_bg_selector, null)
-                          isClickable = true
-                          isFocusable = true
+                          background = resources.getDrawable(R.drawable.key_bg_dark, null)
                       }
                       val tv = TextView(this).apply {
-                          this.text = text; textSize = 16f
-                          setTextColor(resources.getColorStateList(R.color.clip_text_color, null))
+                          this.text = text; textSize = 16f; setTextColor(0xFFCCCCCC.toInt())
                           maxLines = 1; ellipsize = android.text.TextUtils.TruncateAt.END
                           layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
                       }
@@ -547,19 +544,58 @@ jobs:
 
                       root.addView(tv); starBtn?.let { root.addView(it) }; delBtn?.let { root.addView(it) }
 
-                      // Long press → preview
-                      root.setOnLongClickListener {
-                          previewText.text = text
-                          previewOverlay.visibility = View.VISIBLE
-                          true
-                      }
+                      var isLong = false
+                      var longPressRunnable: Runnable? = null
+                      var downX = 0f; var downY = 0f
+                      val slop = 10.dp.toFloat()
 
-                      // Normal tap → paste
-                      root.setOnClickListener {
-                          if (previewOverlay.visibility == View.VISIBLE) {
-                              previewOverlay.visibility = View.INVISIBLE
+                      root.setOnTouchListener { _, event ->
+                          when (event.actionMasked) {
+                              MotionEvent.ACTION_DOWN -> {
+                                  root.setBackgroundResource(R.drawable.key_bg_pressed)
+                                  tv.setTextColor(0xFF000000.toInt())
+                                  downX = event.x; downY = event.y; isLong = false
+                                  longPressRunnable?.let { lph.removeCallbacks(it) }
+                                  longPressRunnable = Runnable {
+                                      isLong = true
+                                      previewText.text = text
+                                      previewOverlay.visibility = View.VISIBLE
+                                  }
+                                  lph.postDelayed(longPressRunnable!!, 500)
+                                  false
+                              }
+                              MotionEvent.ACTION_MOVE -> {
+                                  if (abs(event.x - downX) > slop || abs(event.y - downY) > slop) {
+                                      longPressRunnable?.let { lph.removeCallbacks(it) }
+                                      longPressRunnable = null
+                                  }
+                                  false
+                              }
+                              MotionEvent.ACTION_UP -> {
+                                  longPressRunnable?.let { lph.removeCallbacks(it) }
+                                  longPressRunnable = null
+                                  root.setBackgroundResource(R.drawable.key_bg_dark)
+                                  tv.setTextColor(0xFFCCCCCC.toInt())
+                                  if (isLong) {
+                                      previewOverlay.visibility = View.INVISIBLE
+                                      isLong = false
+                                  } else {
+                                      onPaste()
+                                  }
+                                  false
+                              }
+                              MotionEvent.ACTION_CANCEL -> {
+                                  longPressRunnable?.let { lph.removeCallbacks(it) }
+                                  root.setBackgroundResource(R.drawable.key_bg_dark)
+                                  tv.setTextColor(0xFFCCCCCC.toInt())
+                                  if (isLong) {
+                                      previewOverlay.visibility = View.INVISIBLE
+                                      isLong = false
+                                  }
+                                  false
+                              }
+                              else -> false
                           }
-                          onPaste()
                       }
 
                       starBtn?.setOnClickListener { v ->
