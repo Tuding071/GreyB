@@ -147,8 +147,8 @@ jobs:
           <?xml version="1.0" encoding="utf-8"?>
           <shape xmlns:android="http://schemas.android.com/apk/res/android">
               <solid android:color="#2C2C2C"/>
-              <stroke android:width="1dp" android:color="#444444"/>
-              <corners android:radius="8dp"/>
+              <stroke android:width="1dp" android:color="#555555"/>
+              <corners android:radius="10dp"/>
           </shape>
           ENDOFFILE
 
@@ -352,13 +352,18 @@ jobs:
 
               private lateinit var rootFrame: FrameLayout
               private lateinit var qwertyView: View
-              private lateinit var clipboardPanel: LinearLayout
-              private lateinit var emojiPanel: LinearLayout
-              private lateinit var symbolsPanel: LinearLayout
-              private lateinit var toolsPanel: LinearLayout
 
+              // ── Overlay system fields ─────────────────────────────────────────
+              private lateinit var overlayFrame: FrameLayout
+              private lateinit var overlayTitle: TextView
+              private lateinit var overlayContent: FrameLayout
+              private var overlayCardWidth = 0
+              private var clipboardContainer: LinearLayout? = null
+
+              // ── Data ──────────────────────────────────────────────────────────
               private val clipboardItems = mutableListOf<String>()
               private val savedItems = mutableListOf<String>()
+              private val recentEmojis = mutableListOf<String>()
               private val PREFS_NAME = "greyb_kb"
               private val PREFS_CLIP = "clipboard"
               private val PREFS_SAVED = "saved_items"
@@ -367,7 +372,6 @@ jobs:
               private val MAX_SAVED = 50
               private val MAX_RECENT_EMOJI = 12
 
-              private val recentEmojis = mutableListOf<String>()
               private val bsHandler = Handler(Looper.getMainLooper())
               private var bsRunnable: Runnable? = null
               private var shiftState = ShiftState.OFF
@@ -387,76 +391,102 @@ jobs:
                   rootFrame = FrameLayout(this).apply {
                       layoutParams = ViewGroup.LayoutParams(
                           ViewGroup.LayoutParams.MATCH_PARENT,
-                          ViewGroup.LayoutParams.WRAP_CONTENT
-                      )
+                          ViewGroup.LayoutParams.WRAP_CONTENT)
                   }
-                  qwertyView    = buildQwerty()
-                  clipboardPanel = buildClipboardPanel()
-                  emojiPanel     = buildEmojiPanel()
-                  symbolsPanel   = buildSymbolsPanel()
-                  toolsPanel     = buildToolsPanel()
-
+                  qwertyView = buildQwerty()
+                  buildOverlay()
                   rootFrame.addView(qwertyView)
-                  rootFrame.addView(clipboardPanel)
-                  rootFrame.addView(emojiPanel)
-                  rootFrame.addView(symbolsPanel)
-                  rootFrame.addView(toolsPanel)
-
-                  clipboardPanel.visibility = View.GONE
-                  emojiPanel.visibility     = View.GONE
-                  symbolsPanel.visibility   = View.GONE
-                  toolsPanel.visibility     = View.GONE
-
+                  rootFrame.addView(overlayFrame)
                   return rootFrame
               }
 
-              // ── Panel navigation ─────────────────────────────────────────────
+              // ── Overlay builder ───────────────────────────────────────────────
+              // Everything lives inside rootFrame — same IME canvas, no z-order issues.
+              // Structure: overlayFrame (FrameLayout 330dp)
+              //              ├── dim (full cover, tap to dismiss)
+              //              └── card (rounded card, centered)
+              //                    ├── header (title + ✕)
+              //                    └── overlayContent (swapped per popup)
 
-              private fun showPanel(panel: View, onShow: (() -> Unit)? = null) {
-                  qwertyView.visibility    = View.GONE
-                  clipboardPanel.visibility = View.GONE
-                  emojiPanel.visibility    = View.GONE
-                  symbolsPanel.visibility  = View.GONE
-                  toolsPanel.visibility    = View.GONE
-                  panel.visibility = View.VISIBLE
-                  onShow?.invoke()
-              }
+              private fun buildOverlay() {
+                  overlayCardWidth = (resources.displayMetrics.widthPixels * 0.92).toInt()
+                  val cardHeight = 286.dp
 
-              private fun showQwerty() {
-                  clipboardPanel.visibility = View.GONE
-                  emojiPanel.visibility    = View.GONE
-                  symbolsPanel.visibility  = View.GONE
-                  toolsPanel.visibility    = View.GONE
-                  qwertyView.visibility    = View.VISIBLE
-              }
-
-              // Shared header row: [✕ close] [title] [spacer]
-              private fun panelHeader(title: String): LinearLayout {
-                  return LinearLayout(this).apply {
-                      orientation = LinearLayout.HORIZONTAL
-                      layoutParams = LinearLayout.LayoutParams(
-                          ViewGroup.LayoutParams.MATCH_PARENT, 55.dp)
-                      setBackgroundColor(0xFF252525.toInt())
-                      gravity = Gravity.CENTER_VERTICAL
-                      setPadding(6.dp, 0, 6.dp, 0)
-                      addView(TextView(this@Keyboard).apply {
-                          text = "✕"; textSize = 20f; setTextColor(0xFFAAAAAA.toInt())
-                          gravity = Gravity.CENTER
-                          layoutParams = LinearLayout.LayoutParams(44.dp, ViewGroup.LayoutParams.MATCH_PARENT)
-                          setOnClickListener { showQwerty() }
-                      })
-                      addView(TextView(this@Keyboard).apply {
-                          text = title; textSize = 17f; setTextColor(0xFFFFFFFF.toInt())
-                          gravity = Gravity.CENTER
-                          layoutParams = LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.MATCH_PARENT, 1f)
-                      })
-                      addView(View(this@Keyboard).apply {
-                          layoutParams = LinearLayout.LayoutParams(44.dp, ViewGroup.LayoutParams.MATCH_PARENT)
-                      })
+                  overlayFrame = FrameLayout(this).apply {
+                      layoutParams = FrameLayout.LayoutParams(
+                          ViewGroup.LayoutParams.MATCH_PARENT, 330.dp)
+                      visibility = View.GONE
+                      isClickable = true
                   }
+
+                  // Dim — covers full frame, tap anywhere outside card to dismiss
+                  val dim = View(this).apply {
+                      layoutParams = FrameLayout.LayoutParams(
+                          ViewGroup.LayoutParams.MATCH_PARENT,
+                          ViewGroup.LayoutParams.MATCH_PARENT)
+                      setBackgroundColor(0xBB000000.toInt())
+                      setOnClickListener { dismissOverlay() }
+                  }
+
+                  // Card
+                  val card = LinearLayout(this).apply {
+                      orientation = LinearLayout.VERTICAL
+                      setBackgroundResource(R.drawable.popup_border)
+                      elevation = 12f
+                      layoutParams = FrameLayout.LayoutParams(overlayCardWidth, cardHeight).apply {
+                          gravity = Gravity.CENTER
+                      }
+                  }
+
+                  // Header row: [spacer 44dp] [title flex] [✕ 44dp]
+                  val header = LinearLayout(this).apply {
+                      orientation = LinearLayout.HORIZONTAL
+                      gravity = Gravity.CENTER_VERTICAL
+                      setBackgroundColor(0xFF222222.toInt())
+                      layoutParams = LinearLayout.LayoutParams(
+                          ViewGroup.LayoutParams.MATCH_PARENT, 48.dp)
+                      setPadding(0, 0, 0, 0)
+                  }
+                  header.addView(View(this).apply {
+                      layoutParams = LinearLayout.LayoutParams(44.dp, ViewGroup.LayoutParams.MATCH_PARENT)
+                  })
+                  overlayTitle = TextView(this).apply {
+                      textSize = 16f; setTextColor(0xFFFFFFFF.toInt())
+                      gravity = Gravity.CENTER
+                      layoutParams = LinearLayout.LayoutParams(
+                          0, ViewGroup.LayoutParams.MATCH_PARENT, 1f)
+                  }
+                  header.addView(overlayTitle)
+                  header.addView(TextView(this).apply {
+                      text = "✕"; textSize = 20f; setTextColor(0xFFAAAAAA.toInt())
+                      gravity = Gravity.CENTER
+                      layoutParams = LinearLayout.LayoutParams(44.dp, ViewGroup.LayoutParams.MATCH_PARENT)
+                      setOnClickListener { dismissOverlay() }
+                  })
+
+                  overlayContent = FrameLayout(this).apply {
+                      layoutParams = LinearLayout.LayoutParams(
+                          ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f)
+                  }
+
+                  card.addView(header)
+                  card.addView(overlayContent)
+                  overlayFrame.addView(dim)
+                  overlayFrame.addView(card)
               }
 
-              // ── Key input helpers ─────────────────────────────────────────────
+              private fun showOverlay(title: String, content: View) {
+                  overlayTitle.text = title
+                  overlayContent.removeAllViews()
+                  overlayContent.addView(content)
+                  overlayFrame.visibility = View.VISIBLE
+              }
+
+              private fun dismissOverlay() {
+                  overlayFrame.visibility = View.GONE
+              }
+
+              // ── Key helpers ───────────────────────────────────────────────────
 
               private fun sendKey(keyCode: Int, meta: Int = 0) {
                   val ic = currentInputConnection ?: return
@@ -465,35 +495,23 @@ jobs:
                   ic.sendKeyEvent(KeyEvent(t, SystemClock.uptimeMillis(), KeyEvent.ACTION_UP, keyCode, 0, meta))
               }
 
-              private fun pressKey(view: TextView) {
-                  view.setBackgroundResource(R.drawable.key_bg_pressed)
-                  view.setTextColor(0xFF000000.toInt())
-              }
-
-              private fun releaseKey(view: TextView) {
-                  val r = view.getTag(R.id.original_bg_tag) as? Int ?: return
-                  view.setBackgroundResource(r)
-                  view.setTextColor(0xFFFFFFFF.toInt())
-              }
+              private fun pressKey(v: TextView) { v.setBackgroundResource(R.drawable.key_bg_pressed); v.setTextColor(0xFF000000.toInt()) }
+              private fun releaseKey(v: TextView) { val r = v.getTag(R.id.original_bg_tag) as? Int ?: return; v.setBackgroundResource(r); v.setTextColor(0xFFFFFFFF.toInt()) }
 
               private fun moveCursor(right: Boolean) {
                   val ic = currentInputConnection ?: return
-                  val req = ExtractedTextRequest().apply { token = 0; flags = 0 }
-                  val ext = ic.getExtractedText(req, 0)
+                  val ext = ic.getExtractedText(ExtractedTextRequest().apply { token = 0; flags = 0 }, 0)
                   if (ext != null) {
-                      val pos = ext.selectionStart; val len = ext.text?.length ?: 0
-                      val np = if (right) minOf(pos + 1, len) else maxOf(pos - 1, 0)
+                      val np = if (right) minOf(ext.selectionStart + 1, ext.text?.length ?: 0) else maxOf(ext.selectionStart - 1, 0)
                       ic.setSelection(np, np)
-                  } else {
-                      sendKey(if (right) KeyEvent.KEYCODE_DPAD_RIGHT else KeyEvent.KEYCODE_DPAD_LEFT)
-                  }
+                  } else sendKey(if (right) KeyEvent.KEYCODE_DPAD_RIGHT else KeyEvent.KEYCODE_DPAD_LEFT)
               }
 
-              // Fires on ACTION_DOWN — for regular typing keys
+              // Fires on ACTION_DOWN — regular typing keys
               private fun setupKey(view: View, bgRes: Int, action: () -> Unit) {
                   if (view is TextView) view.setTag(R.id.original_bg_tag, bgRes)
-                  view.setOnTouchListener { v, event ->
-                      when (event.actionMasked) {
+                  view.setOnTouchListener { v, e ->
+                      when (e.actionMasked) {
                           MotionEvent.ACTION_DOWN -> { if (v is TextView) pressKey(v); action(); true }
                           MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> { if (v is TextView) releaseKey(v); true }
                           else -> true
@@ -501,11 +519,11 @@ jobs:
                   }
               }
 
-              // Fires on ACTION_UP — for panel-switch buttons to avoid stuck pressed state
+              // Fires on ACTION_UP — panel/overlay buttons to avoid stuck-pressed bug
               private fun setupPanelKey(view: TextView, bgRes: Int, action: () -> Unit) {
                   view.setTag(R.id.original_bg_tag, bgRes)
-                  view.setOnTouchListener { v, event ->
-                      when (event.actionMasked) {
+                  view.setOnTouchListener { v, e ->
+                      when (e.actionMasked) {
                           MotionEvent.ACTION_DOWN -> { pressKey(v as TextView); true }
                           MotionEvent.ACTION_UP -> { releaseKey(v as TextView); action(); true }
                           MotionEvent.ACTION_CANCEL -> { releaseKey(v as TextView); true }
@@ -514,51 +532,43 @@ jobs:
                   }
               }
 
-              // ── CLIPBOARD PANEL ───────────────────────────────────────────────
+              // ── CLIPBOARD overlay ─────────────────────────────────────────────
 
-              private fun buildClipboardPanel(): LinearLayout {
-                  val panel = LinearLayout(this).apply {
-                      orientation = LinearLayout.VERTICAL
-                      layoutParams = ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 330.dp)
-                      setBackgroundColor(0xFF1e1e1e.toInt())
-                  }
-                  panel.addView(panelHeader("Clipboard"))
-                  val contentContainer = LinearLayout(this).apply {
+              private fun showClipboardOverlay() {
+                  val clip = (getSystemService(Context.CLIPBOARD_SERVICE) as? ClipboardManager)
+                      ?.primaryClip?.getItemAt(0)?.text?.toString()
+                  if (!clip.isNullOrEmpty()) addToClipboard(clip)
+                  val container = LinearLayout(this).apply {
                       orientation = LinearLayout.VERTICAL
                       layoutParams = LinearLayout.LayoutParams(
                           ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT)
                   }
-                  panel.addView(ScrollView(this).apply {
-                      layoutParams = LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f)
-                      addView(contentContainer)
-                  })
-                  panel.tag = contentContainer
-                  return panel
+                  clipboardContainer = container
+                  val sv = ScrollView(this).apply {
+                      layoutParams = ViewGroup.LayoutParams(
+                          ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT)
+                      addView(container)
+                  }
+                  refreshClipboardContent()
+                  showOverlay("Clipboard", sv)
               }
 
               private fun refreshClipboardContent() {
-                  val container = clipboardPanel.tag as LinearLayout
+                  val container = clipboardContainer ?: return
                   container.removeAllViews()
 
-                  fun sectionHeader(title: String) {
-                      container.addView(TextView(this).apply {
-                          text = title; textSize = 13f; setTextColor(0xFF4FC3F7.toInt())
-                          setPadding(12.dp, 10.dp, 12.dp, 4.dp)
-                          layoutParams = LinearLayout.LayoutParams(
-                              ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT)
-                      })
-                  }
+                  fun sectionLabel(title: String) = container.addView(TextView(this).apply {
+                      text = title; textSize = 13f; setTextColor(0xFF4FC3F7.toInt())
+                      setPadding(12.dp, 10.dp, 12.dp, 4.dp)
+                      layoutParams = LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT)
+                  })
 
                   fun clipRow(text: String, isRecent: Boolean) {
                       val row = LinearLayout(this).apply {
-                          orientation = LinearLayout.HORIZONTAL
-                          setPadding(12.dp, 10.dp, 8.dp, 10.dp)
-                          layoutParams = LinearLayout.LayoutParams(
-                              ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT
-                          ).apply { bottomMargin = 2.dp }
-                          setBackgroundResource(R.drawable.key_bg_selector)
-                          isClickable = true; isFocusable = true
-                          setOnClickListener { commitText(text); showQwerty() }
+                          orientation = LinearLayout.HORIZONTAL; setPadding(12.dp, 10.dp, 8.dp, 10.dp)
+                          layoutParams = LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT).apply { bottomMargin = 2.dp }
+                          setBackgroundResource(R.drawable.key_bg_selector); isClickable = true; isFocusable = true
+                          setOnClickListener { commitText(text); dismissOverlay() }
                       }
                       row.addView(TextView(this).apply {
                           this.text = text; textSize = 16f; setTextColor(0xFFCCCCCC.toInt())
@@ -567,49 +577,34 @@ jobs:
                       })
                       if (isRecent) {
                           row.addView(TextView(this).apply {
-                              this.text = "★"; textSize = 16f; setTextColor(0xFF666666.toInt())
-                              setPadding(8.dp, 0, 4.dp, 0)
+                              this.text = "★"; textSize = 16f; setTextColor(0xFF666666.toInt()); setPadding(8.dp, 0, 4.dp, 0)
                               setOnClickListener {
-                                  if (!savedItems.contains(text)) {
-                                      savedItems.add(0, text)
-                                      if (savedItems.size > MAX_SAVED) savedItems.removeAt(savedItems.size - 1)
-                                      saveSavedItems()
-                                  }
-                                  setTextColor(0xFF4FC3F7.toInt())
-                                  bsHandler.postDelayed({ setTextColor(0xFF666666.toInt()) }, 800)
+                                  if (!savedItems.contains(text)) { savedItems.add(0, text); if (savedItems.size > MAX_SAVED) savedItems.removeAt(savedItems.size - 1); saveSavedItems() }
+                                  setTextColor(0xFF4FC3F7.toInt()); bsHandler.postDelayed({ setTextColor(0xFF666666.toInt()) }, 800)
                               }
                           })
                       } else {
                           row.addView(TextView(this).apply {
-                              this.text = "✕"; textSize = 16f; setTextColor(0xFF666666.toInt())
-                              setPadding(8.dp, 0, 8.dp, 0)
+                              this.text = "✕"; textSize = 16f; setTextColor(0xFF666666.toInt()); setPadding(8.dp, 0, 8.dp, 0)
                               setOnClickListener {
-                                  val existingBar = container.findViewWithTag<View>("confirm_bar")
-                                  existingBar?.let { container.removeView(it) }
+                                  container.findViewWithTag<View>("confirm_bar")?.let { container.removeView(it) }
                                   val rowIdx = container.indexOfChild(row)
                                   val bar = LinearLayout(this@Keyboard).apply {
-                                      tag = "confirm_bar"
-                                      orientation = LinearLayout.HORIZONTAL
-                                      setBackgroundColor(0xFF2C2C2C.toInt())
-                                      setPadding(12.dp, 8.dp, 12.dp, 8.dp)
+                                      tag = "confirm_bar"; orientation = LinearLayout.HORIZONTAL
+                                      setBackgroundColor(0xFF2A2A2A.toInt()); setPadding(12.dp, 8.dp, 12.dp, 8.dp)
                                       gravity = Gravity.CENTER_VERTICAL
-                                      layoutParams = LinearLayout.LayoutParams(
-                                          ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT)
+                                      layoutParams = LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT)
                                   }
                                   bar.addView(TextView(this@Keyboard).apply {
                                       this.text = "Delete?"; textSize = 14f; setTextColor(0xFFCCCCCC.toInt())
                                       layoutParams = LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f)
                                   })
                                   bar.addView(TextView(this@Keyboard).apply {
-                                      this.text = "Yes"; textSize = 14f; setTextColor(0xFFFF5252.toInt())
-                                      setPadding(12.dp, 6.dp, 12.dp, 6.dp)
-                                      setOnClickListener {
-                                          savedItems.remove(text); saveSavedItems(); refreshClipboardContent()
-                                      }
+                                      this.text = "Yes"; textSize = 14f; setTextColor(0xFFFF5252.toInt()); setPadding(12.dp, 6.dp, 12.dp, 6.dp)
+                                      setOnClickListener { savedItems.remove(text); saveSavedItems(); refreshClipboardContent() }
                                   })
                                   bar.addView(TextView(this@Keyboard).apply {
-                                      this.text = "No"; textSize = 14f; setTextColor(0xFF888888.toInt())
-                                      setPadding(12.dp, 6.dp, 8.dp, 6.dp)
+                                      this.text = "No"; textSize = 14f; setTextColor(0xFF888888.toInt()); setPadding(12.dp, 6.dp, 8.dp, 6.dp)
                                       setOnClickListener { container.removeView(bar) }
                                   })
                                   container.addView(bar, rowIdx + 1)
@@ -620,45 +615,26 @@ jobs:
                   }
 
                   val recentList = clipboardItems.take(3)
-                  if (recentList.isNotEmpty()) { sectionHeader("🕒 Recent"); recentList.forEach { clipRow(it, true) } }
-                  if (savedItems.isNotEmpty()) { sectionHeader("★ Saved"); savedItems.forEach { clipRow(it, false) } }
+                  if (recentList.isNotEmpty()) { sectionLabel("🕒 Recent"); recentList.forEach { clipRow(it, true) } }
+                  if (savedItems.isNotEmpty()) { sectionLabel("★ Saved"); savedItems.forEach { clipRow(it, false) } }
                   if (recentList.isEmpty() && savedItems.isEmpty()) {
                       container.addView(TextView(this).apply {
                           text = "Clipboard is empty"; textSize = 15f; setTextColor(0xFF888888.toInt())
                           gravity = Gravity.CENTER; setPadding(0, 40.dp, 0, 0)
-                          layoutParams = LinearLayout.LayoutParams(
-                              ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT)
+                          layoutParams = LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT)
                       })
                   }
               }
 
-              // ── EMOJI PANEL ───────────────────────────────────────────────────
+              // ── EMOJI overlay ─────────────────────────────────────────────────
 
-              private fun buildEmojiPanel(): LinearLayout {
-                  val panel = LinearLayout(this).apply {
-                      orientation = LinearLayout.VERTICAL
-                      layoutParams = ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 330.dp)
-                      setBackgroundColor(0xFF1e1e1e.toInt())
-                  }
-                  panel.addView(panelHeader("Emojis"))
-                  val contentContainer = LinearLayout(this).apply {
-                      orientation = LinearLayout.VERTICAL
-                      layoutParams = LinearLayout.LayoutParams(
-                          ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT)
-                  }
-                  panel.addView(ScrollView(this).apply {
-                      layoutParams = LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f)
-                      addView(contentContainer)
-                  })
-                  panel.tag = contentContainer
-                  return panel
-              }
-
-              private fun refreshEmojiContent() {
-                  val container = emojiPanel.tag as LinearLayout
-                  container.removeAllViews()
+              private fun showEmojiOverlay() {
                   val cols = 8
-                  val cellSize = resources.displayMetrics.widthPixels / cols
+                  val cellSize = overlayCardWidth / cols
+                  val container = LinearLayout(this).apply {
+                      orientation = LinearLayout.VERTICAL
+                      layoutParams = LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT)
+                  }
                   val categories = mutableListOf<Pair<String, List<String>>>()
                   if (recentEmojis.isNotEmpty()) categories.add("🕒 Recently Used" to recentEmojis.toList())
                   categories.addAll(listOf(
@@ -675,13 +651,11 @@ jobs:
                       container.addView(TextView(this).apply {
                           text = catLabel; textSize = 13f; setTextColor(0xFF4FC3F7.toInt())
                           setPadding(8.dp, 10.dp, 8.dp, 4.dp)
-                          layoutParams = LinearLayout.LayoutParams(
-                              ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT)
+                          layoutParams = LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT)
                       })
                       val grid = GridLayout(this).apply {
                           columnCount = cols
-                          layoutParams = LinearLayout.LayoutParams(
-                              ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT)
+                          layoutParams = LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT)
                       }
                       emojis.forEach { emoji ->
                           grid.addView(TextView(this).apply {
@@ -692,213 +666,123 @@ jobs:
                       }
                       container.addView(grid)
                   }
+                  showOverlay("Emojis", ScrollView(this).apply {
+                      layoutParams = ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT)
+                      addView(container)
+                  })
               }
 
-              // ── SYMBOLS PANEL ─────────────────────────────────────────────────
+              // ── SYMBOLS overlay ───────────────────────────────────────────────
 
-              private fun buildSymbolsPanel(): LinearLayout {
-                  val panel = LinearLayout(this).apply {
-                      orientation = LinearLayout.VERTICAL
-                      layoutParams = ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 330.dp)
-                      setBackgroundColor(0xFF1e1e1e.toInt())
-                  }
-                  panel.addView(panelHeader("Symbols"))
+              private fun showSymbolsOverlay() {
                   val symbols = listOf(
-                      ".",",","!","?","@","#","\$","%","&","*","(",")","-","+","=",
+                      ".",",","!","?","@","#","$","%","&","*","(",")","-","+","=",
                       "/",":",";","'","\"","~","_","\\","|","^","`","°","•","…","«",
                       "»","¿","¡","§","¶","©","®","™","‰","µ","[","]","{","}","<",
                       ">","×","÷","√","∞","≈","≠","≤","≥","±","∑","∏","π","∆","€",
                       "£","¥","₱","¢","₹","₩","₽","₿","→","←","↑","↓","↔","⇒","⇐"
                   )
                   val cols = 8
-                  val cellSize = resources.displayMetrics.widthPixels / cols
+                  val cellSize = overlayCardWidth / cols
                   val grid = GridLayout(this).apply {
                       columnCount = cols
-                      layoutParams = LinearLayout.LayoutParams(
-                          ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT)
+                      layoutParams = LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT)
                   }
                   symbols.forEach { sym ->
                       grid.addView(TextView(this).apply {
-                          text = sym; textSize = 20f; gravity = Gravity.CENTER
-                          setTextColor(0xFFFFFFFF.toInt())
+                          text = sym; textSize = 20f; gravity = Gravity.CENTER; setTextColor(0xFFFFFFFF.toInt())
                           background = resources.getDrawable(R.drawable.key_bg_selector, null)
                           setOnClickListener { commitText(sym) }
                       }, GridLayout.LayoutParams().apply { width = cellSize; height = cellSize })
                   }
-                  panel.addView(ScrollView(this).apply {
-                      layoutParams = LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f)
+                  showOverlay("Symbols", ScrollView(this).apply {
+                      layoutParams = ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT)
                       addView(grid)
                   })
-                  return panel
               }
 
-              // ── TOOLS PANEL ───────────────────────────────────────────────────
+              // ── TOOLS overlay ─────────────────────────────────────────────────
 
-              private fun buildToolsPanel(): LinearLayout {
-                  val panel = LinearLayout(this).apply {
-                      orientation = LinearLayout.VERTICAL
-                      layoutParams = ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 330.dp)
-                      setBackgroundColor(0xFF1e1e1e.toInt())
-                  }
-                  panel.addView(panelHeader("Edit Tools"))
+              private fun showToolsOverlay() {
                   val actions = listOf(
-                      "Select" to {
-                          currentInputConnection?.performContextMenuAction(android.R.id.startSelectingText); Unit
-                      },
-                      "Select All" to {
-                          currentInputConnection?.performContextMenuAction(android.R.id.selectAll); Unit
-                      },
-                      "Cut" to {
-                          currentInputConnection?.performContextMenuAction(android.R.id.cut); Unit
-                      },
-                      "Copy" to {
-                          currentInputConnection?.performContextMenuAction(android.R.id.copy); Unit
-                      },
-                      "Paste" to {
+                      "Select"     to { currentInputConnection?.performContextMenuAction(android.R.id.startSelectingText); Unit },
+                      "Select All" to { currentInputConnection?.performContextMenuAction(android.R.id.selectAll); Unit },
+                      "Cut"        to { currentInputConnection?.performContextMenuAction(android.R.id.cut); Unit },
+                      "Copy"       to { currentInputConnection?.performContextMenuAction(android.R.id.copy); Unit },
+                      "Paste"      to {
                           val clip = (getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager)
                               .primaryClip?.getItemAt(0)?.coerceToText(this)?.toString()
-                          if (!clip.isNullOrEmpty()) { commitText(clip); addToClipboard(clip) }
-                          Unit
+                          if (!clip.isNullOrEmpty()) { commitText(clip); addToClipboard(clip) }; Unit
                       },
-                      "Undo" to {
-                          sendKey(KeyEvent.KEYCODE_Z, KeyEvent.META_CTRL_ON); Unit
-                      },
-                      "Redo" to {
-                          sendKey(KeyEvent.KEYCODE_Z, KeyEvent.META_CTRL_ON or KeyEvent.META_SHIFT_ON); Unit
-                      }
+                      "Undo"       to { sendKey(KeyEvent.KEYCODE_Z, KeyEvent.META_CTRL_ON); Unit },
+                      "Redo"       to { sendKey(KeyEvent.KEYCODE_Z, KeyEvent.META_CTRL_ON or KeyEvent.META_SHIFT_ON); Unit }
                   )
                   val container = LinearLayout(this).apply {
-                      orientation = LinearLayout.VERTICAL
-                      layoutParams = LinearLayout.LayoutParams(
-                          ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT)
-                      setPadding(8.dp, 4.dp, 8.dp, 4.dp)
+                      orientation = LinearLayout.VERTICAL; setPadding(8.dp, 6.dp, 8.dp, 6.dp)
+                      layoutParams = LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT)
                   }
                   actions.forEach { (label, action) ->
                       container.addView(TextView(this).apply {
                           text = label; textSize = 20f; setTextColor(0xFFFFFFFF.toInt())
                           gravity = Gravity.CENTER_VERTICAL; setPadding(20.dp, 0, 20.dp, 0)
-                          layoutParams = LinearLayout.LayoutParams(
-                              ViewGroup.LayoutParams.MATCH_PARENT, 52.dp).apply { bottomMargin = 4.dp }
+                          layoutParams = LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 50.dp).apply { bottomMargin = 4.dp }
                           setBackgroundResource(R.drawable.key_bg_selector)
                           setOnTouchListener { v, e ->
                               when (e.actionMasked) {
-                                  MotionEvent.ACTION_DOWN -> {
-                                      (v as? TextView)?.apply {
-                                          setBackgroundColor(0xFFFFFFFF.toInt())
-                                          setTextColor(0xFF000000.toInt())
-                                      }; true
-                                  }
-                                  MotionEvent.ACTION_UP -> {
-                                      (v as? TextView)?.apply {
-                                          setBackgroundResource(R.drawable.key_bg_selector)
-                                          setTextColor(0xFFFFFFFF.toInt())
-                                      }
-                                      action(); showQwerty(); true
-                                  }
-                                  MotionEvent.ACTION_CANCEL -> {
-                                      (v as? TextView)?.apply {
-                                          setBackgroundResource(R.drawable.key_bg_selector)
-                                          setTextColor(0xFFFFFFFF.toInt())
-                                      }; true
-                                  }
+                                  MotionEvent.ACTION_DOWN -> { (v as? TextView)?.apply { setBackgroundColor(0xFFFFFFFF.toInt()); setTextColor(0xFF000000.toInt()) }; true }
+                                  MotionEvent.ACTION_UP -> { (v as? TextView)?.apply { setBackgroundResource(R.drawable.key_bg_selector); setTextColor(0xFFFFFFFF.toInt()) }; action(); dismissOverlay(); true }
+                                  MotionEvent.ACTION_CANCEL -> { (v as? TextView)?.apply { setBackgroundResource(R.drawable.key_bg_selector); setTextColor(0xFFFFFFFF.toInt()) }; true }
                                   else -> false
                               }
                           }
                       })
                   }
-                  panel.addView(ScrollView(this).apply {
-                      layoutParams = LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f)
+                  showOverlay("Edit Tools", ScrollView(this).apply {
+                      layoutParams = ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT)
                       addView(container)
                   })
-                  return panel
               }
 
               // ── QWERTY ────────────────────────────────────────────────────────
 
               private fun buildQwerty(): View {
                   val v = layoutInflater.inflate(R.layout.qwerty, null)
-                  sugView1 = v.findViewById(R.id.sug1)
-                  sugView2 = v.findViewById(R.id.sug2)
-                  sugView3 = v.findViewById(R.id.sug3)
+                  sugView1 = v.findViewById(R.id.sug1); sugView2 = v.findViewById(R.id.sug2); sugView3 = v.findViewById(R.id.sug3)
                   listOf(sugView1, sugView2, sugView3).forEach { sv ->
                       if (sv == null) return@forEach
                       sv.setTag(R.id.original_bg_tag, R.drawable.key_bg_dark)
                       sv.setOnTouchListener { view, event ->
                           when (event.actionMasked) {
-                              MotionEvent.ACTION_DOWN -> {
-                                  (view as? TextView)?.apply {
-                                      setBackgroundResource(R.drawable.key_bg_pressed)
-                                      setTextColor(0xFF000000.toInt())
-                                  }; true
-                              }
-                              MotionEvent.ACTION_UP -> {
-                                  (view as? TextView)?.let { tv ->
-                                      val word = tv.text?.toString()?.trim() ?: ""
-                                      if (word.isNotEmpty()) commitSuggestion(word)
-                                      tv.setBackgroundResource(tv.getTag(R.id.original_bg_tag) as? Int ?: R.drawable.key_bg_dark)
-                                      tv.setTextColor(0xFFFFFFFF.toInt())
-                                  }; true
-                              }
-                              MotionEvent.ACTION_CANCEL -> {
-                                  (view as? TextView)?.let { tv ->
-                                      tv.setBackgroundResource(tv.getTag(R.id.original_bg_tag) as? Int ?: R.drawable.key_bg_dark)
-                                      tv.setTextColor(0xFFFFFFFF.toInt())
-                                  }; true
-                              }
+                              MotionEvent.ACTION_DOWN -> { (view as? TextView)?.apply { setBackgroundResource(R.drawable.key_bg_pressed); setTextColor(0xFF000000.toInt()) }; true }
+                              MotionEvent.ACTION_UP -> { (view as? TextView)?.let { tv -> val word = tv.text?.toString()?.trim() ?: ""; if (word.isNotEmpty()) commitSuggestion(word); tv.setBackgroundResource(tv.getTag(R.id.original_bg_tag) as? Int ?: R.drawable.key_bg_dark); tv.setTextColor(0xFFFFFFFF.toInt()) }; true }
+                              MotionEvent.ACTION_CANCEL -> { (view as? TextView)?.let { tv -> tv.setBackgroundResource(tv.getTag(R.id.original_bg_tag) as? Int ?: R.drawable.key_bg_dark); tv.setTextColor(0xFFFFFFFF.toInt()) }; true }
                               else -> true
                           }
                       }
                   }
-
                   val letters = "qwertyuiopasdfghjklzxcvbnm"
-                  val ids = listOf(
-                      R.id.kq,R.id.kw,R.id.ke,R.id.kr,R.id.kt,R.id.ky,R.id.ku,R.id.ki,R.id.ko,R.id.kp,
-                      R.id.ka,R.id.ks,R.id.kd,R.id.kf,R.id.kg,R.id.kh,R.id.kj,R.id.kk,R.id.kl,
-                      R.id.kz,R.id.kx,R.id.kc,R.id.kv,R.id.kb,R.id.kn,R.id.km
-                  )
-                  ids.forEachIndexed { i, id ->
-                      setupKey(v.findViewById<TextView>(id), R.drawable.key_bg) { typeChar(letters[i]) }
-                  }
-                  val numIds = listOf(
-                      R.id.k1,R.id.k2,R.id.k3,R.id.k4,R.id.k5,
-                      R.id.k6,R.id.k7,R.id.k8,R.id.k9,R.id.k0
-                  )
-                  "1234567890".forEachIndexed { i, c ->
-                      val kc = KeyEvent.KEYCODE_0 + (c - '0')
-                      setupKey(v.findViewById<TextView>(numIds[i]), R.drawable.key_bg) { sendKey(kc); clearSugs() }
-                  }
-
+                  val ids = listOf(R.id.kq,R.id.kw,R.id.ke,R.id.kr,R.id.kt,R.id.ky,R.id.ku,R.id.ki,R.id.ko,R.id.kp,R.id.ka,R.id.ks,R.id.kd,R.id.kf,R.id.kg,R.id.kh,R.id.kj,R.id.kk,R.id.kl,R.id.kz,R.id.kx,R.id.kc,R.id.kv,R.id.kb,R.id.kn,R.id.km)
+                  ids.forEachIndexed { i, id -> setupKey(v.findViewById<TextView>(id), R.drawable.key_bg) { typeChar(letters[i]) } }
+                  val numIds = listOf(R.id.k1,R.id.k2,R.id.k3,R.id.k4,R.id.k5,R.id.k6,R.id.k7,R.id.k8,R.id.k9,R.id.k0)
+                  "1234567890".forEachIndexed { i, c -> val kc = KeyEvent.KEYCODE_0 + (c - '0'); setupKey(v.findViewById<TextView>(numIds[i]), R.drawable.key_bg) { sendKey(kc); clearSugs() } }
                   val shiftKey = v.findViewById<TextView>(R.id.btn_shift)
                   shiftKey.setTag(R.id.original_bg_tag, R.drawable.key_bg_dark)
                   shiftKey.setOnTouchListener { _, e ->
                       when (e.actionMasked) {
                           MotionEvent.ACTION_DOWN -> { pressKey(shiftKey); toggleShiftState(); true }
-                          MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
-                              releaseKey(shiftKey); updateShiftKeyAppearance(shiftKey); true
-                          }
+                          MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> { releaseKey(shiftKey); updateShiftKeyAppearance(shiftKey); true }
                           else -> true
                       }
                   }
-
                   val backspace = v.findViewById<TextView>(R.id.btn_backspace)
                   backspace.setTag(R.id.original_bg_tag, R.drawable.key_bg_dark)
                   backspace.setOnTouchListener { _, e ->
                       when (e.actionMasked) {
-                          MotionEvent.ACTION_DOWN -> {
-                              pressKey(backspace); sendKey(KeyEvent.KEYCODE_DEL)
-                              bsRunnable = object : Runnable {
-                                  override fun run() { sendKey(KeyEvent.KEYCODE_DEL); bsHandler.postDelayed(this, 50) }
-                              }
-                              bsHandler.postDelayed(bsRunnable!!, 300); true
-                          }
-                          MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
-                              releaseKey(backspace); stopBackspaceRepeat()
-                              bsHandler.postDelayed({ updateSuggestions() }, 80); true
-                          }
+                          MotionEvent.ACTION_DOWN -> { pressKey(backspace); sendKey(KeyEvent.KEYCODE_DEL); bsRunnable = object : Runnable { override fun run() { sendKey(KeyEvent.KEYCODE_DEL); bsHandler.postDelayed(this, 50) } }; bsHandler.postDelayed(bsRunnable!!, 300); true }
+                          MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> { releaseKey(backspace); stopBackspaceRepeat(); bsHandler.postDelayed({ updateSuggestions() }, 80); true }
                           else -> true
                       }
                   }
-
                   val spaceView = v.findViewById<TextView>(R.id.btn_space)
                   spaceView.setTag(R.id.original_bg_tag, R.drawable.key_bg_dark)
                   var sx = 0f; var drag = false; var lx = 0f
@@ -906,71 +790,31 @@ jobs:
                   spaceView.setOnTouchListener { _, e ->
                       when (e.actionMasked) {
                           MotionEvent.ACTION_DOWN -> { pressKey(spaceView); sx = e.x; drag = false; lx = sx; true }
-                          MotionEvent.ACTION_MOVE -> {
-                              val d = e.x - sx
-                              if (abs(d) >= DT && !drag) { drag = true; moveCursor(d > 0); lx = e.x }
-                              else if (drag) { val dd = e.x - lx; if (abs(dd) >= CI) { moveCursor(dd > 0); lx = e.x } }
-                              true
-                          }
-                          MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
-                              releaseKey(spaceView)
-                              if (!drag) { sendKey(KeyEvent.KEYCODE_SPACE); clearSugs() }
-                              drag = false; true
-                          }
+                          MotionEvent.ACTION_MOVE -> { val d = e.x - sx; if (abs(d) >= DT && !drag) { drag = true; moveCursor(d > 0); lx = e.x } else if (drag) { val dd = e.x - lx; if (abs(dd) >= CI) { moveCursor(dd > 0); lx = e.x } }; true }
+                          MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> { releaseKey(spaceView); if (!drag) { sendKey(KeyEvent.KEYCODE_SPACE); clearSugs() }; drag = false; true }
                           else -> true
                       }
                   }
-
                   setupKey(v.findViewById<TextView>(R.id.btn_comma),  R.drawable.key_bg)        { sendKey(KeyEvent.KEYCODE_COMMA);  clearSugs() }
                   setupKey(v.findViewById<TextView>(R.id.btn_period), R.drawable.key_bg)        { sendKey(KeyEvent.KEYCODE_PERIOD); clearSugs() }
                   setupKey(v.findViewById<TextView>(R.id.btn_enter),  R.drawable.key_bg_action) { sendKey(KeyEvent.KEYCODE_ENTER);  clearSugs() }
-
-                  setupPanelKey(v.findViewById(R.id.btn_symbols), R.drawable.key_bg_dark) {
-                      showPanel(symbolsPanel)
-                  }
-                  setupPanelKey(v.findViewById(R.id.btn_emoji), R.drawable.key_bg_dark) {
-                      showPanel(emojiPanel) { refreshEmojiContent() }
-                  }
-                  setupPanelKey(v.findViewById(R.id.btn_clipboard), R.drawable.key_bg_dark) {
-                      val clip = (getSystemService(Context.CLIPBOARD_SERVICE) as? ClipboardManager)
-                          ?.primaryClip?.getItemAt(0)?.text?.toString()
-                      if (!clip.isNullOrEmpty()) addToClipboard(clip)
-                      showPanel(clipboardPanel) { refreshClipboardContent() }
-                  }
-                  setupPanelKey(v.findViewById(R.id.btn_tools), R.drawable.key_bg_dark) {
-                      showPanel(toolsPanel)
-                  }
-
-                  val keyA = v.findViewById<TextView>(R.id.ka)
-                  val keyL = v.findViewById<TextView>(R.id.kl)
-                  v.findViewById<View>(R.id.asdf_spacer_left)?.setOnTouchListener { _, e ->
-                      when (e.actionMasked) {
-                          MotionEvent.ACTION_DOWN -> { keyA?.let { pressKey(it) }; typeChar('a'); true }
-                          MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> { keyA?.let { releaseKey(it) }; true }
-                          else -> true
-                      }
-                  }
-                  v.findViewById<View>(R.id.asdf_spacer_right)?.setOnTouchListener { _, e ->
-                      when (e.actionMasked) {
-                          MotionEvent.ACTION_DOWN -> { keyL?.let { pressKey(it) }; typeChar('l'); true }
-                          MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> { keyL?.let { releaseKey(it) }; true }
-                          else -> true
-                      }
-                  }
+                  setupPanelKey(v.findViewById(R.id.btn_clipboard), R.drawable.key_bg_dark) { showClipboardOverlay() }
+                  setupPanelKey(v.findViewById(R.id.btn_tools),     R.drawable.key_bg_dark) { showToolsOverlay() }
+                  setupPanelKey(v.findViewById(R.id.btn_emoji),     R.drawable.key_bg_dark) { showEmojiOverlay() }
+                  setupPanelKey(v.findViewById(R.id.btn_symbols),   R.drawable.key_bg_dark) { showSymbolsOverlay() }
+                  val keyA = v.findViewById<TextView>(R.id.ka); val keyL = v.findViewById<TextView>(R.id.kl)
+                  v.findViewById<View>(R.id.asdf_spacer_left)?.setOnTouchListener { _, e -> when (e.actionMasked) { MotionEvent.ACTION_DOWN -> { keyA?.let { pressKey(it) }; typeChar('a'); true }; MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> { keyA?.let { releaseKey(it) }; true }; else -> true } }
+                  v.findViewById<View>(R.id.asdf_spacer_right)?.setOnTouchListener { _, e -> when (e.actionMasked) { MotionEvent.ACTION_DOWN -> { keyL?.let { pressKey(it) }; typeChar('l'); true }; MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> { keyL?.let { releaseKey(it) }; true }; else -> true } }
                   return v
               }
 
-              // ── Typing logic ──────────────────────────────────────────────────
+              // ── Typing ────────────────────────────────────────────────────────
 
               private fun typeChar(c: Char) {
                   val kc = KeyEvent.KEYCODE_A + (c.lowercaseChar() - 'a')
                   val meta = if (shiftState != ShiftState.OFF) KeyEvent.META_SHIFT_ON else 0
                   sendKey(kc, meta)
-                  if (shiftState == ShiftState.ONCE) {
-                      shiftState = ShiftState.OFF
-                      updateShiftKeyAppearance(qwertyView.findViewById(R.id.btn_shift))
-                      updateLetterKeys(qwertyView)
-                  }
+                  if (shiftState == ShiftState.ONCE) { shiftState = ShiftState.OFF; updateShiftKeyAppearance(qwertyView.findViewById(R.id.btn_shift)); updateLetterKeys(qwertyView) }
                   bsHandler.postDelayed({ updateSuggestions() }, 80)
               }
 
@@ -980,12 +824,7 @@ jobs:
 
               private fun toggleShiftState() {
                   val now = System.currentTimeMillis()
-                  shiftState = when {
-                      shiftState == ShiftState.LOCKED -> ShiftState.OFF
-                      now - lastShiftTap < 300 -> ShiftState.LOCKED
-                      shiftState == ShiftState.OFF -> ShiftState.ONCE
-                      else -> ShiftState.OFF
-                  }
+                  shiftState = when { shiftState == ShiftState.LOCKED -> ShiftState.OFF; now - lastShiftTap < 300 -> ShiftState.LOCKED; shiftState == ShiftState.OFF -> ShiftState.ONCE; else -> ShiftState.OFF }
                   lastShiftTap = now; updateLetterKeys(qwertyView)
               }
 
@@ -995,58 +834,41 @@ jobs:
               }
 
               private fun updateLetterKeys(v: View) {
-                  val upper = shiftState != ShiftState.OFF
-                  val letters = "qwertyuiopasdfghjklzxcvbnm"
-                  listOf(
-                      R.id.kq,R.id.kw,R.id.ke,R.id.kr,R.id.kt,R.id.ky,R.id.ku,R.id.ki,R.id.ko,R.id.kp,
-                      R.id.ka,R.id.ks,R.id.kd,R.id.kf,R.id.kg,R.id.kh,R.id.kj,R.id.kk,R.id.kl,
-                      R.id.kz,R.id.kx,R.id.kc,R.id.kv,R.id.kb,R.id.kn,R.id.km
-                  ).forEachIndexed { i, id ->
-                      v.findViewById<TextView>(id)?.text =
-                          if (upper) letters[i].uppercaseChar().toString() else letters[i].toString()
+                  val upper = shiftState != ShiftState.OFF; val letters = "qwertyuiopasdfghjklzxcvbnm"
+                  listOf(R.id.kq,R.id.kw,R.id.ke,R.id.kr,R.id.kt,R.id.ky,R.id.ku,R.id.ki,R.id.ko,R.id.kp,R.id.ka,R.id.ks,R.id.kd,R.id.kf,R.id.kg,R.id.kh,R.id.kj,R.id.kk,R.id.kl,R.id.kz,R.id.kx,R.id.kc,R.id.kv,R.id.kb,R.id.kn,R.id.km).forEachIndexed { i, id ->
+                      v.findViewById<TextView>(id)?.text = if (upper) letters[i].uppercaseChar().toString() else letters[i].toString()
                   }
               }
 
               // ── Suggestions ───────────────────────────────────────────────────
 
               private fun extractCurrentWordRaw(before: String): String {
-                  val s = before.trimEnd(' ')
-                  val idx = s.indexOfLast { !it.isLetter() }
+                  val s = before.trimEnd(' '); val idx = s.indexOfLast { !it.isLetter() }
                   return if (idx < 0) s else s.substring(idx + 1)
               }
 
               private fun updateSuggestions() {
                   val ic = currentInputConnection ?: run { clearSugs(); return }
                   val before = ic.getTextBeforeCursor(50, 0)?.toString() ?: run { clearSugs(); return }
-                  val rawWord = extractCurrentWordRaw(before)
-                  val word = rawWord.lowercase()
+                  val rawWord = extractCurrentWordRaw(before); val word = rawWord.lowercase()
                   if (word.isEmpty()) { clearSugs(); return }
                   Thread {
-                      val matches = try {
-                          assets.open("words.txt").bufferedReader().useLines { lines ->
-                              lines.map { it.trim().lowercase() }
-                                  .filter { it.isNotEmpty() && it.startsWith(word) }
-                                  .take(3).toList()
-                          }
-                      } catch (e: Exception) { emptyList() }
+                      val matches = try { assets.open("words.txt").bufferedReader().useLines { lines -> lines.map { it.trim().lowercase() }.filter { it.isNotEmpty() && it.startsWith(word) }.take(3).toList() } } catch (e: Exception) { emptyList() }
                       bsHandler.post { applySuggestions(rawWord, matches) }
                   }.start()
               }
 
               private fun applySuggestions(rawWord: String, matches: List<String>) {
                   if (matches.isEmpty()) {
-                      val span = SpannableString(rawWord)
-                      span.setSpan(ForegroundColorSpan(0xFFFF6B6B.toInt()), 0, rawWord.length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
+                      val span = SpannableString(rawWord); span.setSpan(ForegroundColorSpan(0xFFFF6B6B.toInt()), 0, rawWord.length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
                       sugView1?.text = span; sugView2?.text = ""; sugView3?.text = ""; return
                   }
                   val best = matches[0]
-                  val display = if (rawWord.isNotEmpty() && rawWord[0].isUpperCase())
-                      best.replaceFirstChar { it.uppercase() } else best
+                  val display = if (rawWord.isNotEmpty() && rawWord[0].isUpperCase()) best.replaceFirstChar { it.uppercase() } else best
                   val prefixLen = minOf(rawWord.length, display.length)
                   val span = SpannableString(display)
                   span.setSpan(ForegroundColorSpan(0xFF4FC3F7.toInt()), 0, prefixLen, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
-                  if (prefixLen < display.length)
-                      span.setSpan(ForegroundColorSpan(0xFFFFFFFF.toInt()), prefixLen, display.length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
+                  if (prefixLen < display.length) span.setSpan(ForegroundColorSpan(0xFFFFFFFF.toInt()), prefixLen, display.length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
                   sugView1?.text = span
                   sugView2?.text = matches.getOrNull(1) ?: ""; sugView2?.setTextColor(0xFFFFFFFF.toInt())
                   sugView3?.text = matches.getOrNull(2) ?: ""; sugView3?.setTextColor(0xFFFFFFFF.toInt())
@@ -1059,63 +881,25 @@ jobs:
                   val ic = currentInputConnection ?: return
                   val before = ic.getTextBeforeCursor(50, 0)?.toString() ?: return
                   val raw = extractCurrentWordRaw(before)
-                  val result = if (raw.isNotEmpty() && raw[0].isUpperCase())
-                      word.replaceFirstChar { it.uppercase() } else word
-                  ic.deleteSurroundingText(raw.length, 0)
-                  ic.commitText("$result ", 1)
-                  clearSugs()
-                  if (shiftState == ShiftState.ONCE) {
-                      shiftState = ShiftState.OFF
-                      qwertyView.post {
-                          updateShiftKeyAppearance(qwertyView.findViewById(R.id.btn_shift))
-                          updateLetterKeys(qwertyView)
-                      }
-                  }
+                  val result = if (raw.isNotEmpty() && raw[0].isUpperCase()) word.replaceFirstChar { it.uppercase() } else word
+                  ic.deleteSurroundingText(raw.length, 0); ic.commitText("$result ", 1); clearSugs()
+                  if (shiftState == ShiftState.ONCE) { shiftState = ShiftState.OFF; qwertyView.post { updateShiftKeyAppearance(qwertyView.findViewById(R.id.btn_shift)); updateLetterKeys(qwertyView) } }
               }
 
               // ── Persistence ───────────────────────────────────────────────────
 
-              private fun addToClipboard(text: String) {
-                  clipboardItems.remove(text); clipboardItems.add(0, text)
-                  if (clipboardItems.size > MAX_CLIP) clipboardItems.removeAt(clipboardItems.size - 1)
-                  saveClipboard()
-              }
-
-              private fun saveClipboard() {
-                  getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE).edit()
-                      .putString(PREFS_CLIP, clipboardItems.take(MAX_CLIP).joinToString("\u001F")).apply()
-              }
-              private fun loadClipboard() {
-                  val s = getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE).getString(PREFS_CLIP, "") ?: ""
-                  clipboardItems.clear(); if (s.isNotEmpty()) clipboardItems.addAll(s.split("\u001F"))
-              }
-              private fun saveSavedItems() {
-                  getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE).edit()
-                      .putString(PREFS_SAVED, savedItems.take(MAX_SAVED).joinToString("\u001F")).apply()
-              }
-              private fun loadSavedItems() {
-                  val s = getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE).getString(PREFS_SAVED, "") ?: ""
-                  savedItems.clear(); if (s.isNotEmpty()) savedItems.addAll(s.split("\u001F"))
-              }
-              private fun addToRecentEmoji(emoji: String) {
-                  recentEmojis.remove(emoji); recentEmojis.add(0, emoji)
-                  if (recentEmojis.size > MAX_RECENT_EMOJI) recentEmojis.removeAt(recentEmojis.size - 1)
-                  saveRecentEmojis()
-              }
-              private fun saveRecentEmojis() {
-                  getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE).edit()
-                      .putString(PREFS_RECENT_EMOJI, recentEmojis.take(MAX_RECENT_EMOJI).joinToString("\u001F")).apply()
-              }
-              private fun loadRecentEmojis() {
-                  val s = getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE).getString(PREFS_RECENT_EMOJI, "") ?: ""
-                  recentEmojis.clear(); if (s.isNotEmpty()) recentEmojis.addAll(s.split("\u001F"))
-              }
+              private fun addToClipboard(text: String) { clipboardItems.remove(text); clipboardItems.add(0, text); if (clipboardItems.size > MAX_CLIP) clipboardItems.removeAt(clipboardItems.size - 1); saveClipboard() }
+              private fun saveClipboard() { getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE).edit().putString(PREFS_CLIP, clipboardItems.take(MAX_CLIP).joinToString("\u001F")).apply() }
+              private fun loadClipboard() { val s = getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE).getString(PREFS_CLIP, "") ?: ""; clipboardItems.clear(); if (s.isNotEmpty()) clipboardItems.addAll(s.split("\u001F")) }
+              private fun saveSavedItems() { getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE).edit().putString(PREFS_SAVED, savedItems.take(MAX_SAVED).joinToString("\u001F")).apply() }
+              private fun loadSavedItems() { val s = getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE).getString(PREFS_SAVED, "") ?: ""; savedItems.clear(); if (s.isNotEmpty()) savedItems.addAll(s.split("\u001F")) }
+              private fun addToRecentEmoji(emoji: String) { recentEmojis.remove(emoji); recentEmojis.add(0, emoji); if (recentEmojis.size > MAX_RECENT_EMOJI) recentEmojis.removeAt(recentEmojis.size - 1); saveRecentEmojis() }
+              private fun saveRecentEmojis() { getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE).edit().putString(PREFS_RECENT_EMOJI, recentEmojis.take(MAX_RECENT_EMOJI).joinToString("\u001F")).apply() }
+              private fun loadRecentEmojis() { val s = getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE).getString(PREFS_RECENT_EMOJI, "") ?: ""; recentEmojis.clear(); if (s.isNotEmpty()) recentEmojis.addAll(s.split("\u001F")) }
 
               private val Int.dp get() = (this * resources.displayMetrics.density).toInt()
 
-              override fun onDestroy() {
-                  super.onDestroy(); stopBackspaceRepeat()
-              }
+              override fun onDestroy() { super.onDestroy(); stopBackspaceRepeat() }
           }
           ENDOFFILE
 
