@@ -147,7 +147,7 @@ jobs:
           <?xml version="1.0" encoding="utf-8"?>
           <shape xmlns:android="http://schemas.android.com/apk/res/android">
               <solid android:color="#2C2C2C"/>
-              <stroke android:width="1dp" android:color="#555555"/>
+              <stroke android:width="1dp" android:color="#666666"/>
               <corners android:radius="10dp"/>
           </shape>
           ENDOFFILE
@@ -353,10 +353,11 @@ jobs:
               private lateinit var rootFrame: FrameLayout
               private lateinit var qwertyView: View
 
-              // ── Overlay system fields ─────────────────────────────────────────
+              // ── Overlay fields ────────────────────────────────────────────────
               private lateinit var overlayFrame: FrameLayout
+              private lateinit var overlayCard: LinearLayout
               private lateinit var overlayTitle: TextView
-              private lateinit var overlayContent: FrameLayout
+              private lateinit var overlayContentFrame: FrameLayout
               private var overlayCardWidth = 0
               private var clipboardContainer: LinearLayout? = null
 
@@ -368,9 +369,7 @@ jobs:
               private val PREFS_CLIP = "clipboard"
               private val PREFS_SAVED = "saved_items"
               private val PREFS_RECENT_EMOJI = "recent_emoji"
-              private val MAX_CLIP = 20
-              private val MAX_SAVED = 50
-              private val MAX_RECENT_EMOJI = 12
+              private val MAX_CLIP = 20; private val MAX_SAVED = 50; private val MAX_RECENT_EMOJI = 12
 
               private val bsHandler = Handler(Looper.getMainLooper())
               private var bsRunnable: Runnable? = null
@@ -381,17 +380,12 @@ jobs:
               private var sugView2: TextView? = null
               private var sugView3: TextView? = null
 
-              override fun onCreate() {
-                  super.onCreate()
-                  loadClipboard(); loadSavedItems(); loadRecentEmojis()
-              }
+              override fun onCreate() { super.onCreate(); loadClipboard(); loadSavedItems(); loadRecentEmojis() }
 
               override fun onCreateInputView(): View {
                   window?.window?.navigationBarColor = 0xFF1e1e1e.toInt()
                   rootFrame = FrameLayout(this).apply {
-                      layoutParams = ViewGroup.LayoutParams(
-                          ViewGroup.LayoutParams.MATCH_PARENT,
-                          ViewGroup.LayoutParams.WRAP_CONTENT)
+                      layoutParams = ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT)
                   }
                   qwertyView = buildQwerty()
                   buildOverlay()
@@ -400,26 +394,24 @@ jobs:
                   return rootFrame
               }
 
-              // ── Overlay builder ───────────────────────────────────────────────
-              // Everything lives inside rootFrame — same IME canvas, no z-order issues.
-              // Structure: overlayFrame (FrameLayout 330dp)
-              //              ├── dim (full cover, tap to dismiss)
-              //              └── card (rounded card, centered)
-              //                    ├── header (title + ✕)
-              //                    └── overlayContent (swapped per popup)
+              // ── Overlay ───────────────────────────────────────────────────────
+              // overlayFrame sits on top of qwertyView inside rootFrame (same IME canvas).
+              // dim layer catches outside-card taps; card floats above dimmed keyboard.
+              // Header has NO background — popup_border bg + rounded corners show fully.
+              // clipToOutline = true prevents any child from overflowing the rounded corners.
 
               private fun buildOverlay() {
                   overlayCardWidth = (resources.displayMetrics.widthPixels * 0.92).toInt()
-                  val cardHeight = 286.dp
 
                   overlayFrame = FrameLayout(this).apply {
                       layoutParams = FrameLayout.LayoutParams(
-                          ViewGroup.LayoutParams.MATCH_PARENT, 330.dp)
+                          ViewGroup.LayoutParams.MATCH_PARENT,
+                          ViewGroup.LayoutParams.MATCH_PARENT)
                       visibility = View.GONE
                       isClickable = true
                   }
 
-                  // Dim — covers full frame, tap anywhere outside card to dismiss
+                  // Semi-transparent dim — tap anywhere outside card to dismiss
                   val dim = View(this).apply {
                       layoutParams = FrameLayout.LayoutParams(
                           ViewGroup.LayoutParams.MATCH_PARENT,
@@ -428,69 +420,89 @@ jobs:
                       setOnClickListener { dismissOverlay() }
                   }
 
-                  // Card
-                  val card = LinearLayout(this).apply {
+                  // Card — popup_border provides the full rounded border all around
+                  overlayCard = LinearLayout(this).apply {
                       orientation = LinearLayout.VERTICAL
                       setBackgroundResource(R.drawable.popup_border)
-                      elevation = 12f
-                      layoutParams = FrameLayout.LayoutParams(overlayCardWidth, cardHeight).apply {
+                      clipToOutline = true   // clips children to rounded corners — border stays complete
+                      elevation = 14f
+                      layoutParams = FrameLayout.LayoutParams(overlayCardWidth, 286.dp).apply {
                           gravity = Gravity.CENTER
                       }
                   }
 
-                  // Header row: [spacer 44dp] [title flex] [✕ 44dp]
+                  // Header — NO setBackgroundColor so card's popup_border bg shows through the header
+                  // This keeps the top rounded corners intact and the border complete all the way around
                   val header = LinearLayout(this).apply {
                       orientation = LinearLayout.HORIZONTAL
                       gravity = Gravity.CENTER_VERTICAL
-                      setBackgroundColor(0xFF222222.toInt())
-                      layoutParams = LinearLayout.LayoutParams(
-                          ViewGroup.LayoutParams.MATCH_PARENT, 48.dp)
-                      setPadding(0, 0, 0, 0)
+                      layoutParams = LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 44.dp)
                   }
+                  // Left spacer balances the ✕ on the right so title stays centered
                   header.addView(View(this).apply {
                       layoutParams = LinearLayout.LayoutParams(44.dp, ViewGroup.LayoutParams.MATCH_PARENT)
                   })
                   overlayTitle = TextView(this).apply {
-                      textSize = 16f; setTextColor(0xFFFFFFFF.toInt())
-                      gravity = Gravity.CENTER
-                      layoutParams = LinearLayout.LayoutParams(
-                          0, ViewGroup.LayoutParams.MATCH_PARENT, 1f)
+                      textSize = 15f; setTextColor(0xFFCCCCCC.toInt()); gravity = Gravity.CENTER
+                      layoutParams = LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.MATCH_PARENT, 1f)
                   }
                   header.addView(overlayTitle)
+                  // ✕ close button
                   header.addView(TextView(this).apply {
-                      text = "✕"; textSize = 20f; setTextColor(0xFFAAAAAA.toInt())
-                      gravity = Gravity.CENTER
+                      text = "✕"; textSize = 20f; setTextColor(0xFFAAAAAA.toInt()); gravity = Gravity.CENTER
                       layoutParams = LinearLayout.LayoutParams(44.dp, ViewGroup.LayoutParams.MATCH_PARENT)
                       setOnClickListener { dismissOverlay() }
                   })
 
-                  overlayContent = FrameLayout(this).apply {
-                      layoutParams = LinearLayout.LayoutParams(
-                          ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f)
+                  // Thin separator between header and content
+                  val sep = View(this).apply {
+                      layoutParams = LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 1)
+                      setBackgroundColor(0xFF3D3D3D.toInt())
                   }
 
-                  card.addView(header)
-                  card.addView(overlayContent)
+                  overlayContentFrame = FrameLayout(this).apply {
+                      layoutParams = LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f)
+                  }
+
+                  overlayCard.addView(header)
+                  overlayCard.addView(sep)
+                  overlayCard.addView(overlayContentFrame)
                   overlayFrame.addView(dim)
-                  overlayFrame.addView(card)
+                  overlayFrame.addView(overlayCard)
               }
 
-              private fun showOverlay(title: String, content: View) {
+              // showOverlay — swaps content and repositions/resizes card dynamically
+              // cardHeight = WRAP_CONTENT (-2) switches content frame to WRAP_CONTENT (used by tools)
+              private fun showOverlay(
+                  title: String,
+                  content: View,
+                  cardWidth: Int = overlayCardWidth,
+                  cardHeight: Int = 286.dp,
+                  cardGravity: Int = Gravity.CENTER,
+                  marginEnd: Int = 0
+              ) {
                   overlayTitle.text = title
-                  overlayContent.removeAllViews()
-                  overlayContent.addView(content)
+                  overlayContentFrame.removeAllViews()
+                  val isWrap = (cardHeight == ViewGroup.LayoutParams.WRAP_CONTENT)
+                  overlayContentFrame.layoutParams = (overlayContentFrame.layoutParams as LinearLayout.LayoutParams).apply {
+                      height = if (isWrap) ViewGroup.LayoutParams.WRAP_CONTENT else 0
+                      weight = if (isWrap) 0f else 1f
+                  }
+                  overlayContentFrame.addView(content)
+                  overlayCard.layoutParams = (overlayCard.layoutParams as FrameLayout.LayoutParams).apply {
+                      width = cardWidth; height = cardHeight; gravity = cardGravity
+                      setMarginEnd(marginEnd)
+                  }
+                  overlayCard.requestLayout()
                   overlayFrame.visibility = View.VISIBLE
               }
 
-              private fun dismissOverlay() {
-                  overlayFrame.visibility = View.GONE
-              }
+              private fun dismissOverlay() { overlayFrame.visibility = View.GONE }
 
               // ── Key helpers ───────────────────────────────────────────────────
 
               private fun sendKey(keyCode: Int, meta: Int = 0) {
-                  val ic = currentInputConnection ?: return
-                  val t = SystemClock.uptimeMillis()
+                  val ic = currentInputConnection ?: return; val t = SystemClock.uptimeMillis()
                   ic.sendKeyEvent(KeyEvent(t, t, KeyEvent.ACTION_DOWN, keyCode, 0, meta))
                   ic.sendKeyEvent(KeyEvent(t, SystemClock.uptimeMillis(), KeyEvent.ACTION_UP, keyCode, 0, meta))
               }
@@ -507,7 +519,6 @@ jobs:
                   } else sendKey(if (right) KeyEvent.KEYCODE_DPAD_RIGHT else KeyEvent.KEYCODE_DPAD_LEFT)
               }
 
-              // Fires on ACTION_DOWN — regular typing keys
               private fun setupKey(view: View, bgRes: Int, action: () -> Unit) {
                   if (view is TextView) view.setTag(R.id.original_bg_tag, bgRes)
                   view.setOnTouchListener { v, e ->
@@ -519,7 +530,6 @@ jobs:
                   }
               }
 
-              // Fires on ACTION_UP — panel/overlay buttons to avoid stuck-pressed bug
               private fun setupPanelKey(view: TextView, bgRes: Int, action: () -> Unit) {
                   view.setTag(R.id.original_bg_tag, bgRes)
                   view.setOnTouchListener { v, e ->
@@ -544,30 +554,33 @@ jobs:
                           ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT)
                   }
                   clipboardContainer = container
-                  val sv = ScrollView(this).apply {
+                  refreshClipboardContent()
+                  showOverlay("Clipboard", ScrollView(this).apply {
                       layoutParams = ViewGroup.LayoutParams(
                           ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT)
                       addView(container)
-                  }
-                  refreshClipboardContent()
-                  showOverlay("Clipboard", sv)
+                  })
               }
 
               private fun refreshClipboardContent() {
                   val container = clipboardContainer ?: return
                   container.removeAllViews()
 
-                  fun sectionLabel(title: String) = container.addView(TextView(this).apply {
-                      text = title; textSize = 13f; setTextColor(0xFF4FC3F7.toInt())
+                  fun sectionLabel(t: String) = container.addView(TextView(this).apply {
+                      text = t; textSize = 13f; setTextColor(0xFF4FC3F7.toInt())
                       setPadding(12.dp, 10.dp, 12.dp, 4.dp)
-                      layoutParams = LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT)
+                      layoutParams = LinearLayout.LayoutParams(
+                          ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT)
                   })
 
                   fun clipRow(text: String, isRecent: Boolean) {
                       val row = LinearLayout(this).apply {
                           orientation = LinearLayout.HORIZONTAL; setPadding(12.dp, 10.dp, 8.dp, 10.dp)
-                          layoutParams = LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT).apply { bottomMargin = 2.dp }
-                          setBackgroundResource(R.drawable.key_bg_selector); isClickable = true; isFocusable = true
+                          layoutParams = LinearLayout.LayoutParams(
+                              ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT
+                          ).apply { bottomMargin = 2.dp }
+                          setBackgroundResource(R.drawable.key_bg_selector)
+                          isClickable = true; isFocusable = true
                           setOnClickListener { commitText(text); dismissOverlay() }
                       }
                       row.addView(TextView(this).apply {
@@ -579,8 +592,13 @@ jobs:
                           row.addView(TextView(this).apply {
                               this.text = "★"; textSize = 16f; setTextColor(0xFF666666.toInt()); setPadding(8.dp, 0, 4.dp, 0)
                               setOnClickListener {
-                                  if (!savedItems.contains(text)) { savedItems.add(0, text); if (savedItems.size > MAX_SAVED) savedItems.removeAt(savedItems.size - 1); saveSavedItems() }
-                                  setTextColor(0xFF4FC3F7.toInt()); bsHandler.postDelayed({ setTextColor(0xFF666666.toInt()) }, 800)
+                                  if (!savedItems.contains(text)) {
+                                      savedItems.add(0, text)
+                                      if (savedItems.size > MAX_SAVED) savedItems.removeAt(savedItems.size - 1)
+                                      saveSavedItems()
+                                  }
+                                  setTextColor(0xFF4FC3F7.toInt())
+                                  bsHandler.postDelayed({ setTextColor(0xFF666666.toInt()) }, 800)
                               }
                           })
                       } else {
@@ -591,9 +609,10 @@ jobs:
                                   val rowIdx = container.indexOfChild(row)
                                   val bar = LinearLayout(this@Keyboard).apply {
                                       tag = "confirm_bar"; orientation = LinearLayout.HORIZONTAL
-                                      setBackgroundColor(0xFF2A2A2A.toInt()); setPadding(12.dp, 8.dp, 12.dp, 8.dp)
+                                      setBackgroundColor(0xFF252525.toInt()); setPadding(12.dp, 8.dp, 12.dp, 8.dp)
                                       gravity = Gravity.CENTER_VERTICAL
-                                      layoutParams = LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT)
+                                      layoutParams = LinearLayout.LayoutParams(
+                                          ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT)
                                   }
                                   bar.addView(TextView(this@Keyboard).apply {
                                       this.text = "Delete?"; textSize = 14f; setTextColor(0xFFCCCCCC.toInt())
@@ -621,7 +640,8 @@ jobs:
                       container.addView(TextView(this).apply {
                           text = "Clipboard is empty"; textSize = 15f; setTextColor(0xFF888888.toInt())
                           gravity = Gravity.CENTER; setPadding(0, 40.dp, 0, 0)
-                          layoutParams = LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT)
+                          layoutParams = LinearLayout.LayoutParams(
+                              ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT)
                       })
                   }
               }
@@ -629,11 +649,11 @@ jobs:
               // ── EMOJI overlay ─────────────────────────────────────────────────
 
               private fun showEmojiOverlay() {
-                  val cols = 8
-                  val cellSize = overlayCardWidth / cols
+                  val cols = 8; val cellSize = overlayCardWidth / cols
                   val container = LinearLayout(this).apply {
                       orientation = LinearLayout.VERTICAL
-                      layoutParams = LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT)
+                      layoutParams = LinearLayout.LayoutParams(
+                          ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT)
                   }
                   val categories = mutableListOf<Pair<String, List<String>>>()
                   if (recentEmojis.isNotEmpty()) categories.add("🕒 Recently Used" to recentEmojis.toList())
@@ -651,11 +671,13 @@ jobs:
                       container.addView(TextView(this).apply {
                           text = catLabel; textSize = 13f; setTextColor(0xFF4FC3F7.toInt())
                           setPadding(8.dp, 10.dp, 8.dp, 4.dp)
-                          layoutParams = LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT)
+                          layoutParams = LinearLayout.LayoutParams(
+                              ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT)
                       })
                       val grid = GridLayout(this).apply {
                           columnCount = cols
-                          layoutParams = LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT)
+                          layoutParams = LinearLayout.LayoutParams(
+                              ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT)
                       }
                       emojis.forEach { emoji ->
                           grid.addView(TextView(this).apply {
@@ -667,7 +689,8 @@ jobs:
                       container.addView(grid)
                   }
                   showOverlay("Emojis", ScrollView(this).apply {
-                      layoutParams = ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT)
+                      layoutParams = ViewGroup.LayoutParams(
+                          ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT)
                       addView(container)
                   })
               }
@@ -675,18 +698,12 @@ jobs:
               // ── SYMBOLS overlay ───────────────────────────────────────────────
 
               private fun showSymbolsOverlay() {
-                  val symbols = listOf(
-                      ".",",","!","?","@","#","$","%","&","*","(",")","-","+","=",
-                      "/",":",";","'","\"","~","_","\\","|","^","`","°","•","…","«",
-                      "»","¿","¡","§","¶","©","®","™","‰","µ","[","]","{","}","<",
-                      ">","×","÷","√","∞","≈","≠","≤","≥","±","∑","∏","π","∆","€",
-                      "£","¥","₱","¢","₹","₩","₽","₿","→","←","↑","↓","↔","⇒","⇐"
-                  )
-                  val cols = 8
-                  val cellSize = overlayCardWidth / cols
+                  val symbols = listOf(".",",","!","?","@","#","$","%","&","*","(",")","-","+","=","/",":",";","'","\"","~","_","\\","|","^","`","°","•","…","«","»","¿","¡","§","¶","©","®","™","‰","µ","[","]","{","}","<",">","×","÷","√","∞","≈","≠","≤","≥","±","∑","∏","π","∆","€","£","¥","₱","¢","₹","₩","₽","₿","→","←","↑","↓","↔","⇒","⇐")
+                  val cols = 8; val cellSize = overlayCardWidth / cols
                   val grid = GridLayout(this).apply {
                       columnCount = cols
-                      layoutParams = LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT)
+                      layoutParams = LinearLayout.LayoutParams(
+                          ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT)
                   }
                   symbols.forEach { sym ->
                       grid.addView(TextView(this).apply {
@@ -696,51 +713,77 @@ jobs:
                       }, GridLayout.LayoutParams().apply { width = cellSize; height = cellSize })
                   }
                   showOverlay("Symbols", ScrollView(this).apply {
-                      layoutParams = ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT)
+                      layoutParams = ViewGroup.LayoutParams(
+                          ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT)
                       addView(grid)
                   })
               }
 
               // ── TOOLS overlay ─────────────────────────────────────────────────
+              // Right-side, < half screen width, WRAP_CONTENT height — all 6 items visible at once.
+              // Actions do NOT dismiss the overlay so user can perform multiple operations.
 
               private fun showToolsOverlay() {
+                  val toolsWidth = (resources.displayMetrics.widthPixels * 0.46).toInt()
+                  val itemH = 37.dp
+                  val itemGap = 3.dp
+
                   val actions = listOf(
-                      "Select"     to { currentInputConnection?.performContextMenuAction(android.R.id.startSelectingText); Unit },
                       "Select All" to { currentInputConnection?.performContextMenuAction(android.R.id.selectAll); Unit },
                       "Cut"        to { currentInputConnection?.performContextMenuAction(android.R.id.cut); Unit },
                       "Copy"       to { currentInputConnection?.performContextMenuAction(android.R.id.copy); Unit },
                       "Paste"      to {
+                          currentInputConnection?.performContextMenuAction(android.R.id.paste)
                           val clip = (getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager)
                               .primaryClip?.getItemAt(0)?.coerceToText(this)?.toString()
-                          if (!clip.isNullOrEmpty()) { commitText(clip); addToClipboard(clip) }; Unit
+                          if (!clip.isNullOrEmpty()) addToClipboard(clip); Unit
                       },
                       "Undo"       to { sendKey(KeyEvent.KEYCODE_Z, KeyEvent.META_CTRL_ON); Unit },
                       "Redo"       to { sendKey(KeyEvent.KEYCODE_Z, KeyEvent.META_CTRL_ON or KeyEvent.META_SHIFT_ON); Unit }
                   )
+
                   val container = LinearLayout(this).apply {
-                      orientation = LinearLayout.VERTICAL; setPadding(8.dp, 6.dp, 8.dp, 6.dp)
-                      layoutParams = LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT)
+                      orientation = LinearLayout.VERTICAL
+                      setPadding(5.dp, 5.dp, 5.dp, 5.dp)
+                      layoutParams = LinearLayout.LayoutParams(
+                          ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT)
                   }
-                  actions.forEach { (label, action) ->
+
+                  actions.forEachIndexed { idx, (label, action) ->
                       container.addView(TextView(this).apply {
-                          text = label; textSize = 20f; setTextColor(0xFFFFFFFF.toInt())
-                          gravity = Gravity.CENTER_VERTICAL; setPadding(20.dp, 0, 20.dp, 0)
-                          layoutParams = LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 50.dp).apply { bottomMargin = 4.dp }
+                          text = label; textSize = 16f; setTextColor(0xFFFFFFFF.toInt())
+                          gravity = Gravity.CENTER_VERTICAL; setPadding(14.dp, 0, 14.dp, 0)
+                          layoutParams = LinearLayout.LayoutParams(
+                              ViewGroup.LayoutParams.MATCH_PARENT, itemH
+                          ).apply { if (idx < actions.size - 1) bottomMargin = itemGap }
                           setBackgroundResource(R.drawable.key_bg_selector)
                           setOnTouchListener { v, e ->
                               when (e.actionMasked) {
-                                  MotionEvent.ACTION_DOWN -> { (v as? TextView)?.apply { setBackgroundColor(0xFFFFFFFF.toInt()); setTextColor(0xFF000000.toInt()) }; true }
-                                  MotionEvent.ACTION_UP -> { (v as? TextView)?.apply { setBackgroundResource(R.drawable.key_bg_selector); setTextColor(0xFFFFFFFF.toInt()) }; action(); dismissOverlay(); true }
-                                  MotionEvent.ACTION_CANCEL -> { (v as? TextView)?.apply { setBackgroundResource(R.drawable.key_bg_selector); setTextColor(0xFFFFFFFF.toInt()) }; true }
+                                  MotionEvent.ACTION_DOWN -> {
+                                      (v as? TextView)?.apply { setBackgroundColor(0xFFFFFFFF.toInt()); setTextColor(0xFF000000.toInt()) }; true
+                                  }
+                                  MotionEvent.ACTION_UP -> {
+                                      (v as? TextView)?.apply { setBackgroundResource(R.drawable.key_bg_selector); setTextColor(0xFFFFFFFF.toInt()) }
+                                      action()   // stays open — no dismissOverlay()
+                                      true
+                                  }
+                                  MotionEvent.ACTION_CANCEL -> {
+                                      (v as? TextView)?.apply { setBackgroundResource(R.drawable.key_bg_selector); setTextColor(0xFFFFFFFF.toInt()) }; true
+                                  }
                                   else -> false
                               }
                           }
                       })
                   }
-                  showOverlay("Edit Tools", ScrollView(this).apply {
-                      layoutParams = ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT)
-                      addView(container)
-                  })
+
+                  showOverlay(
+                      title      = "Edit",
+                      content    = container,
+                      cardWidth  = toolsWidth,
+                      cardHeight = ViewGroup.LayoutParams.WRAP_CONTENT,
+                      cardGravity = Gravity.END or Gravity.CENTER_VERTICAL,
+                      marginEnd  = 4.dp
+                  )
               }
 
               // ── QWERTY ────────────────────────────────────────────────────────
@@ -860,7 +903,9 @@ jobs:
 
               private fun applySuggestions(rawWord: String, matches: List<String>) {
                   if (matches.isEmpty()) {
-                      val span = SpannableString(rawWord); span.setSpan(ForegroundColorSpan(0xFFFF6B6B.toInt()), 0, rawWord.length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
+                      // Red underline for words not found in words.txt
+                      val span = SpannableString(rawWord)
+                      span.setSpan(ForegroundColorSpan(0xFFFF4444.toInt()), 0, rawWord.length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
                       sugView1?.text = span; sugView2?.text = ""; sugView3?.text = ""; return
                   }
                   val best = matches[0]
