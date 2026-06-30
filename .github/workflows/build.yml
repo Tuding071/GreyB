@@ -384,8 +384,10 @@ jobs:
 
               override fun onCreateInputView(): View {
                   window?.window?.navigationBarColor = 0xFF1e1e1e.toInt()
+                  // rootFrame fixed at 330dp — the IME window height never changes
                   rootFrame = FrameLayout(this).apply {
-                      layoutParams = ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT)
+                      layoutParams = ViewGroup.LayoutParams(
+                          ViewGroup.LayoutParams.MATCH_PARENT, 330.dp)
                   }
                   qwertyView = buildQwerty()
                   buildOverlay()
@@ -395,23 +397,23 @@ jobs:
               }
 
               // ── Overlay ───────────────────────────────────────────────────────
-              // overlayFrame sits on top of qwertyView inside rootFrame (same IME canvas).
-              // dim layer catches outside-card taps; card floats above dimmed keyboard.
-              // Header has NO background — popup_border bg + rounded corners show fully.
-              // clipToOutline = true prevents any child from overflowing the rounded corners.
+              // KEY FIX: overlayFrame is exactly 330dp — same as rootFrame and qwertyView.
+              // MATCH_PARENT inside a WRAP_CONTENT parent caused Android to expand the IME
+              // window to fill the entire screen. Fixed height = fixed IME height.
 
               private fun buildOverlay() {
                   overlayCardWidth = (resources.displayMetrics.widthPixels * 0.92).toInt()
 
+                  // ← THE FIX: 330.dp not MATCH_PARENT
                   overlayFrame = FrameLayout(this).apply {
                       layoutParams = FrameLayout.LayoutParams(
                           ViewGroup.LayoutParams.MATCH_PARENT,
-                          ViewGroup.LayoutParams.MATCH_PARENT)
+                          330.dp)
                       visibility = View.GONE
                       isClickable = true
                   }
 
-                  // Semi-transparent dim — tap anywhere outside card to dismiss
+                  // Dim — covers entire 330dp keyboard area, tap outside card to dismiss
                   val dim = View(this).apply {
                       layoutParams = FrameLayout.LayoutParams(
                           ViewGroup.LayoutParams.MATCH_PARENT,
@@ -420,25 +422,24 @@ jobs:
                       setOnClickListener { dismissOverlay() }
                   }
 
-                  // Card — popup_border provides the full rounded border all around
+                  // Card — popup_border provides full rounded border
                   overlayCard = LinearLayout(this).apply {
                       orientation = LinearLayout.VERTICAL
                       setBackgroundResource(R.drawable.popup_border)
-                      clipToOutline = true   // clips children to rounded corners — border stays complete
+                      clipToOutline = true
                       elevation = 14f
                       layoutParams = FrameLayout.LayoutParams(overlayCardWidth, 286.dp).apply {
                           gravity = Gravity.CENTER
                       }
                   }
 
-                  // Header — NO setBackgroundColor so card's popup_border bg shows through the header
-                  // This keeps the top rounded corners intact and the border complete all the way around
+                  // Header — no background so popup_border bg shows through top rounded corners
                   val header = LinearLayout(this).apply {
                       orientation = LinearLayout.HORIZONTAL
                       gravity = Gravity.CENTER_VERTICAL
-                      layoutParams = LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 44.dp)
+                      layoutParams = LinearLayout.LayoutParams(
+                          ViewGroup.LayoutParams.MATCH_PARENT, 44.dp)
                   }
-                  // Left spacer balances the ✕ on the right so title stays centered
                   header.addView(View(this).apply {
                       layoutParams = LinearLayout.LayoutParams(44.dp, ViewGroup.LayoutParams.MATCH_PARENT)
                   })
@@ -447,7 +448,6 @@ jobs:
                       layoutParams = LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.MATCH_PARENT, 1f)
                   }
                   header.addView(overlayTitle)
-                  // ✕ close button
                   header.addView(TextView(this).apply {
                       text = "✕"; textSize = 20f; setTextColor(0xFFAAAAAA.toInt()); gravity = Gravity.CENTER
                       layoutParams = LinearLayout.LayoutParams(44.dp, ViewGroup.LayoutParams.MATCH_PARENT)
@@ -456,12 +456,14 @@ jobs:
 
                   // Thin separator between header and content
                   val sep = View(this).apply {
-                      layoutParams = LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 1)
+                      layoutParams = LinearLayout.LayoutParams(
+                          ViewGroup.LayoutParams.MATCH_PARENT, 1)
                       setBackgroundColor(0xFF3D3D3D.toInt())
                   }
 
                   overlayContentFrame = FrameLayout(this).apply {
-                      layoutParams = LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f)
+                      layoutParams = LinearLayout.LayoutParams(
+                          ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f)
                   }
 
                   overlayCard.addView(header)
@@ -471,8 +473,6 @@ jobs:
                   overlayFrame.addView(overlayCard)
               }
 
-              // showOverlay — swaps content and repositions/resizes card dynamically
-              // cardHeight = WRAP_CONTENT (-2) switches content frame to WRAP_CONTENT (used by tools)
               private fun showOverlay(
                   title: String,
                   content: View,
@@ -484,15 +484,17 @@ jobs:
                   overlayTitle.text = title
                   overlayContentFrame.removeAllViews()
                   val isWrap = (cardHeight == ViewGroup.LayoutParams.WRAP_CONTENT)
-                  overlayContentFrame.layoutParams = (overlayContentFrame.layoutParams as LinearLayout.LayoutParams).apply {
-                      height = if (isWrap) ViewGroup.LayoutParams.WRAP_CONTENT else 0
-                      weight = if (isWrap) 0f else 1f
-                  }
+                  overlayContentFrame.layoutParams =
+                      (overlayContentFrame.layoutParams as LinearLayout.LayoutParams).apply {
+                          height = if (isWrap) ViewGroup.LayoutParams.WRAP_CONTENT else 0
+                          weight = if (isWrap) 0f else 1f
+                      }
                   overlayContentFrame.addView(content)
-                  overlayCard.layoutParams = (overlayCard.layoutParams as FrameLayout.LayoutParams).apply {
-                      width = cardWidth; height = cardHeight; gravity = cardGravity
-                      setMarginEnd(marginEnd)
-                  }
+                  overlayCard.layoutParams =
+                      (overlayCard.layoutParams as FrameLayout.LayoutParams).apply {
+                          width = cardWidth; height = cardHeight
+                          gravity = cardGravity; setMarginEnd(marginEnd)
+                      }
                   overlayCard.requestLayout()
                   overlayFrame.visibility = View.VISIBLE
               }
@@ -720,14 +722,10 @@ jobs:
               }
 
               // ── TOOLS overlay ─────────────────────────────────────────────────
-              // Right-side, < half screen width, WRAP_CONTENT height — all 6 items visible at once.
-              // Actions do NOT dismiss the overlay so user can perform multiple operations.
 
               private fun showToolsOverlay() {
                   val toolsWidth = (resources.displayMetrics.widthPixels * 0.46).toInt()
-                  val itemH = 37.dp
-                  val itemGap = 3.dp
-
+                  val itemH = 37.dp; val itemGap = 3.dp
                   val actions = listOf(
                       "Select All" to { currentInputConnection?.performContextMenuAction(android.R.id.selectAll); Unit },
                       "Cut"        to { currentInputConnection?.performContextMenuAction(android.R.id.cut); Unit },
@@ -741,14 +739,11 @@ jobs:
                       "Undo"       to { sendKey(KeyEvent.KEYCODE_Z, KeyEvent.META_CTRL_ON); Unit },
                       "Redo"       to { sendKey(KeyEvent.KEYCODE_Z, KeyEvent.META_CTRL_ON or KeyEvent.META_SHIFT_ON); Unit }
                   )
-
                   val container = LinearLayout(this).apply {
-                      orientation = LinearLayout.VERTICAL
-                      setPadding(5.dp, 5.dp, 5.dp, 5.dp)
+                      orientation = LinearLayout.VERTICAL; setPadding(5.dp, 5.dp, 5.dp, 5.dp)
                       layoutParams = LinearLayout.LayoutParams(
                           ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT)
                   }
-
                   actions.forEachIndexed { idx, (label, action) ->
                       container.addView(TextView(this).apply {
                           text = label; textSize = 16f; setTextColor(0xFFFFFFFF.toInt())
@@ -759,30 +754,21 @@ jobs:
                           setBackgroundResource(R.drawable.key_bg_selector)
                           setOnTouchListener { v, e ->
                               when (e.actionMasked) {
-                                  MotionEvent.ACTION_DOWN -> {
-                                      (v as? TextView)?.apply { setBackgroundColor(0xFFFFFFFF.toInt()); setTextColor(0xFF000000.toInt()) }; true
-                                  }
-                                  MotionEvent.ACTION_UP -> {
-                                      (v as? TextView)?.apply { setBackgroundResource(R.drawable.key_bg_selector); setTextColor(0xFFFFFFFF.toInt()) }
-                                      action()   // stays open — no dismissOverlay()
-                                      true
-                                  }
-                                  MotionEvent.ACTION_CANCEL -> {
-                                      (v as? TextView)?.apply { setBackgroundResource(R.drawable.key_bg_selector); setTextColor(0xFFFFFFFF.toInt()) }; true
-                                  }
+                                  MotionEvent.ACTION_DOWN -> { (v as? TextView)?.apply { setBackgroundColor(0xFFFFFFFF.toInt()); setTextColor(0xFF000000.toInt()) }; true }
+                                  MotionEvent.ACTION_UP -> { (v as? TextView)?.apply { setBackgroundResource(R.drawable.key_bg_selector); setTextColor(0xFFFFFFFF.toInt()) }; action(); true }
+                                  MotionEvent.ACTION_CANCEL -> { (v as? TextView)?.apply { setBackgroundResource(R.drawable.key_bg_selector); setTextColor(0xFFFFFFFF.toInt()) }; true }
                                   else -> false
                               }
                           }
                       })
                   }
-
                   showOverlay(
-                      title      = "Edit",
-                      content    = container,
-                      cardWidth  = toolsWidth,
-                      cardHeight = ViewGroup.LayoutParams.WRAP_CONTENT,
+                      title       = "Edit",
+                      content     = container,
+                      cardWidth   = toolsWidth,
+                      cardHeight  = ViewGroup.LayoutParams.WRAP_CONTENT,
                       cardGravity = Gravity.END or Gravity.CENTER_VERTICAL,
-                      marginEnd  = 4.dp
+                      marginEnd   = 4.dp
                   )
               }
 
@@ -903,7 +889,6 @@ jobs:
 
               private fun applySuggestions(rawWord: String, matches: List<String>) {
                   if (matches.isEmpty()) {
-                      // Red underline for words not found in words.txt
                       val span = SpannableString(rawWord)
                       span.setSpan(ForegroundColorSpan(0xFFFF4444.toInt()), 0, rawWord.length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
                       sugView1?.text = span; sugView2?.text = ""; sugView3?.text = ""; return
