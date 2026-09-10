@@ -576,6 +576,7 @@ jobs:
                   })
 
                   fun clipRow(text: String, isRecent: Boolean) {
+                      val displayText = if (text.length > 80) text.take(80) + "…" else text
                       val row = LinearLayout(this).apply {
                           orientation = LinearLayout.HORIZONTAL; setPadding(12.dp, 10.dp, 8.dp, 10.dp)
                           layoutParams = LinearLayout.LayoutParams(
@@ -586,7 +587,7 @@ jobs:
                           setOnClickListener { commitText(text); dismissOverlay() }
                       }
                       row.addView(TextView(this).apply {
-                          this.text = text; textSize = 16f; setTextColor(0xFFCCCCCC.toInt())
+                          this.text = displayText; textSize = 16f; setTextColor(0xFFCCCCCC.toInt())
                           maxLines = 1; ellipsize = android.text.TextUtils.TruncateAt.END
                           layoutParams = LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f)
                       })
@@ -685,7 +686,7 @@ jobs:
                           grid.addView(TextView(this).apply {
                               text = emoji; textSize = 24f; gravity = Gravity.CENTER
                               background = resources.getDrawable(R.drawable.key_bg_selector, null)
-                              setOnClickListener { commitEmoji(emoji) }
+                              setOnClickListener { commitEmoji(emoji); dismissOverlay() }
                           }, GridLayout.LayoutParams().apply { width = cellSize; height = cellSize })
                       }
                       container.addView(grid)
@@ -711,7 +712,7 @@ jobs:
                       grid.addView(TextView(this).apply {
                           text = sym; textSize = 20f; gravity = Gravity.CENTER; setTextColor(0xFFFFFFFF.toInt())
                           background = resources.getDrawable(R.drawable.key_bg_selector, null)
-                          setOnClickListener { commitText(sym) }
+                          setOnClickListener { commitText(sym); dismissOverlay() }
                       }, GridLayout.LayoutParams().apply { width = cellSize; height = cellSize })
                   }
                   showOverlay("Symbols", ScrollView(this).apply {
@@ -755,7 +756,7 @@ jobs:
                           setOnTouchListener { v, e ->
                               when (e.actionMasked) {
                                   MotionEvent.ACTION_DOWN -> { (v as? TextView)?.apply { setBackgroundColor(0xFFFFFFFF.toInt()); setTextColor(0xFF000000.toInt()) }; true }
-                                  MotionEvent.ACTION_UP -> { (v as? TextView)?.apply { setBackgroundResource(R.drawable.key_bg_selector); setTextColor(0xFFFFFFFF.toInt()) }; action(); true }
+                                  MotionEvent.ACTION_UP -> { (v as? TextView)?.apply { setBackgroundResource(R.drawable.key_bg_selector); setTextColor(0xFFFFFFFF.toInt()) }; action(); dismissOverlay(); true }
                                   MotionEvent.ACTION_CANCEL -> { (v as? TextView)?.apply { setBackgroundResource(R.drawable.key_bg_selector); setTextColor(0xFFFFFFFF.toInt()) }; true }
                                   else -> false
                               }
