@@ -48,18 +48,7 @@ jobs:
           mkdir -p app/src/main/res/drawable
           mkdir -p app/src/main/res/color
           mkdir -p app/src/main/res/values
-          mkdir -p app/src/main/assets
           mkdir -p gradle/wrapper
-
-      - name: Copy words.txt to assets
-        run: |
-          if [ -f words.txt ]; then
-            cp words.txt app/src/main/assets/words.txt
-            echo "✅ words.txt copied ($(wc -l < words.txt) words)"
-          else
-            echo "⚠️ words.txt not found in repo root — suggestions disabled"
-            touch app/src/main/assets/words.txt
-          fi
 
       - name: Generate AndroidManifest.xml
         run: |
@@ -111,6 +100,13 @@ jobs:
                   <shape><solid android:color="#2c2c2c"/><corners android:radius="8dp"/></shape>
               </item>
           </layer-list>
+          ENDOFFILE
+
+          cat > app/src/main/res/drawable/sug_bg.xml << 'ENDOFFILE'
+          <?xml version="1.0" encoding="utf-8"?>
+          <shape xmlns:android="http://schemas.android.com/apk/res/android">
+              <solid android:color="@android:color/transparent"/>
+          </shape>
           ENDOFFILE
 
           cat > app/src/main/res/drawable/key_bg_action.xml << 'ENDOFFILE'
@@ -216,13 +212,13 @@ jobs:
                   <LinearLayout android:layout_width="0dp" android:layout_height="match_parent"
                       android:layout_weight="1" android:orientation="horizontal" android:gravity="center_vertical">
                       <TextView android:id="@+id/sug2" android:layout_width="0dp" android:layout_height="match_parent"
-                          android:layout_weight="1" android:gravity="center" android:background="@drawable/key_bg_dark"
+                          android:layout_weight="1" android:gravity="center" android:background="@drawable/sug_bg"
                           android:textColor="#ffffff" android:textSize="18sp" android:paddingStart="3dp" android:paddingEnd="3dp"/>
                       <TextView android:id="@+id/sug1" android:layout_width="0dp" android:layout_height="match_parent"
-                          android:layout_weight="1" android:gravity="center" android:background="@drawable/key_bg_dark"
+                          android:layout_weight="1" android:gravity="center" android:background="@drawable/sug_bg"
                           android:textColor="#ffffff" android:textSize="18sp" android:paddingStart="3dp" android:paddingEnd="3dp"/>
                       <TextView android:id="@+id/sug3" android:layout_width="0dp" android:layout_height="match_parent"
-                          android:layout_weight="1" android:gravity="center" android:background="@drawable/key_bg_dark"
+                          android:layout_weight="1" android:gravity="center" android:background="@drawable/sug_bg"
                           android:textColor="#ffffff" android:textSize="18sp" android:paddingStart="3dp" android:paddingEnd="3dp"/>
                   </LinearLayout>
                   <TextView android:id="@+id/btn_tools" android:layout_width="42dp"
@@ -780,12 +776,12 @@ jobs:
                   sugView1 = v.findViewById(R.id.sug1); sugView2 = v.findViewById(R.id.sug2); sugView3 = v.findViewById(R.id.sug3)
                   listOf(sugView1, sugView2, sugView3).forEach { sv ->
                       if (sv == null) return@forEach
-                      sv.setTag(R.id.original_bg_tag, R.drawable.key_bg_dark)
+                      sv.setTag(R.id.original_bg_tag, R.drawable.sug_bg)
                       sv.setOnTouchListener { view, event ->
                           when (event.actionMasked) {
                               MotionEvent.ACTION_DOWN -> { (view as? TextView)?.apply { setBackgroundResource(R.drawable.key_bg_pressed); setTextColor(0xFF000000.toInt()) }; true }
-                              MotionEvent.ACTION_UP -> { (view as? TextView)?.let { tv -> val word = tv.text?.toString()?.trim() ?: ""; if (word.isNotEmpty()) commitSuggestion(word); tv.setBackgroundResource(tv.getTag(R.id.original_bg_tag) as? Int ?: R.drawable.key_bg_dark); tv.setTextColor(0xFFFFFFFF.toInt()) }; true }
-                              MotionEvent.ACTION_CANCEL -> { (view as? TextView)?.let { tv -> tv.setBackgroundResource(tv.getTag(R.id.original_bg_tag) as? Int ?: R.drawable.key_bg_dark); tv.setTextColor(0xFFFFFFFF.toInt()) }; true }
+                              MotionEvent.ACTION_UP -> { (view as? TextView)?.let { tv -> val word = tv.text?.toString()?.trim() ?: ""; if (word.isNotEmpty()) commitSuggestion(word); tv.setBackgroundResource(tv.getTag(R.id.original_bg_tag) as? Int ?: R.drawable.sug_bg); tv.setTextColor(0xFFFFFFFF.toInt()) }; true }
+                              MotionEvent.ACTION_CANCEL -> { (view as? TextView)?.let { tv -> tv.setBackgroundResource(tv.getTag(R.id.original_bg_tag) as? Int ?: R.drawable.sug_bg); tv.setTextColor(0xFFFFFFFF.toInt()) }; true }
                               else -> true
                           }
                       }
