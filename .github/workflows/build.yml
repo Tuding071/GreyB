@@ -48,7 +48,18 @@ jobs:
           mkdir -p app/src/main/res/drawable
           mkdir -p app/src/main/res/color
           mkdir -p app/src/main/res/values
+          mkdir -p app/src/main/assets
           mkdir -p gradle/wrapper
+
+      - name: Copy words.txt to assets
+        run: |
+          if [ -f words.txt ]; then
+            cp words.txt app/src/main/assets/words.txt
+            echo "✅ words.txt copied ($(wc -l < words.txt) words)"
+          else
+            echo "⚠️ words.txt not found in repo root — suggestions disabled"
+            touch app/src/main/assets/words.txt
+          fi
 
       - name: Generate AndroidManifest.xml
         run: |
