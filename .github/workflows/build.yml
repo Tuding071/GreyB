@@ -416,11 +416,13 @@ jobs:
               }
 
               // ── Pull-down hint (dim + bubble) ─────────────────────────────────
+              // dimView is a FIXED 330dp tall (not MATCH_PARENT) — MATCH_PARENT height
+              // made Android stretch the IME window taller when the dim appeared.
 
               private fun buildPullHint() {
                   dimView = View(this).apply {
                       layoutParams = FrameLayout.LayoutParams(
-                          ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT)
+                          ViewGroup.LayoutParams.MATCH_PARENT, 330.dp)
                       setBackgroundColor(0x99000000.toInt())
                       visibility = View.GONE
                   }
@@ -658,7 +660,19 @@ jobs:
                   if (!c.isNullOrEmpty()) addToClipboard(c)
               }
               private fun doSelectAll() { currentInputConnection?.performContextMenuAction(android.R.id.selectAll) }
-              private fun doCopy() { currentInputConnection?.performContextMenuAction(android.R.id.copy); bsHandler.postDelayed({ syncClip() }, 50) }
+
+              // Copy, then drop the highlight: cursor goes to the end of the copied text
+              private fun doCopy() {
+                  val ic = currentInputConnection ?: return
+                  ic.performContextMenuAction(android.R.id.copy)
+                  val ext = ic.getExtractedText(ExtractedTextRequest().apply { token = 0; flags = 0 }, 0)
+                  if (ext != null && ext.selectionStart != ext.selectionEnd) {
+                      val end = ext.startOffset + maxOf(ext.selectionStart, ext.selectionEnd)
+                      ic.setSelection(end, end)
+                  }
+                  bsHandler.postDelayed({ syncClip() }, 50)
+              }
+
               private fun doPaste() { currentInputConnection?.performContextMenuAction(android.R.id.paste); syncClip(); clearSugs() }
 
               // ── CLIPBOARD overlay ─────────────────────────────────────────────
@@ -845,15 +859,10 @@ jobs:
                   val toolsWidth = (resources.displayMetrics.widthPixels * 0.46).toInt()
                   val itemH = 37.dp; val itemGap = 3.dp
                   val actions = listOf(
-                      "Select All" to { currentInputConnection?.performContextMenuAction(android.R.id.selectAll); Unit },
+                      "Select All" to { doSelectAll(); Unit },
                       "Cut"        to { currentInputConnection?.performContextMenuAction(android.R.id.cut); Unit },
-                      "Copy"       to { currentInputConnection?.performContextMenuAction(android.R.id.copy); Unit },
-                      "Paste"      to {
-                          currentInputConnection?.performContextMenuAction(android.R.id.paste)
-                          val clip = (getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager)
-                              .primaryClip?.getItemAt(0)?.coerceToText(this)?.toString()
-                          if (!clip.isNullOrEmpty()) addToClipboard(clip); Unit
-                      },
+                      "Copy"       to { doCopy(); Unit },
+                      "Paste"      to { doPaste(); Unit },
                       "Undo"       to { sendKey(KeyEvent.KEYCODE_Z, KeyEvent.META_CTRL_ON); Unit },
                       "Redo"       to { sendKey(KeyEvent.KEYCODE_Z, KeyEvent.META_CTRL_ON or KeyEvent.META_SHIFT_ON); Unit }
                   )
