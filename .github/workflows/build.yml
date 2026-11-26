@@ -295,7 +295,7 @@ jobs:
                   <TextView android:id="@+id/btn_backspace" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1.5" android:gravity="center" android:text="Del" android:textColor="#fff" android:textSize="14sp" android:background="@drawable/key_bg_dark"/>
               </LinearLayout>
 
-              <LinearLayout android:layout_width="match_parent" android:layout_height="55dp"
+              <LinearLayout android:id="@+id/row_bottom" android:layout_width="match_parent" android:layout_height="55dp"
                   android:orientation="horizontal" android:paddingStart="3dp" android:paddingEnd="3dp">
                   <TextView android:id="@+id/btn_symbols" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1.5" android:gravity="center" android:text="\?123" android:textColor="#fff" android:textSize="16sp" android:background="@drawable/key_bg_dark"/>
                   <TextView android:id="@+id/btn_emoji" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="Emj" android:textColor="#fff" android:textSize="13sp" android:background="@drawable/key_bg_dark"/>
@@ -347,6 +347,7 @@ jobs:
           package com.greyb.keyboard
 
           import android.content.*
+          import android.graphics.drawable.GradientDrawable
           import android.os.*
           import android.text.SpannableString
           import android.text.Spanned
@@ -361,6 +362,12 @@ jobs:
 
               private lateinit var rootFrame: FrameLayout
               private lateinit var qwertyView: View
+              private lateinit var bottomRow: View
+
+              // ── Pull-down hint fields ─────────────────────────────────────────
+              private lateinit var dimView: View
+              private lateinit var hintBubble: TextView
+              private var pullArmed = false
 
               // ── Overlay fields ────────────────────────────────────────────────
               private lateinit var overlayFrame: FrameLayout
@@ -399,10 +406,74 @@ jobs:
                           ViewGroup.LayoutParams.MATCH_PARENT, 330.dp)
                   }
                   qwertyView = buildQwerty()
+                  buildPullHint()
                   buildOverlay()
                   rootFrame.addView(qwertyView)
+                  rootFrame.addView(dimView)
+                  rootFrame.addView(hintBubble)
                   rootFrame.addView(overlayFrame)
                   return rootFrame
+              }
+
+              // ── Pull-down hint (dim + bubble) ─────────────────────────────────
+
+              private fun buildPullHint() {
+                  dimView = View(this).apply {
+                      layoutParams = FrameLayout.LayoutParams(
+                          ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT)
+                      setBackgroundColor(0x99000000.toInt())
+                      visibility = View.GONE
+                  }
+                  hintBubble = TextView(this).apply {
+                      textSize = 16f; setTextColor(0xFFFFFFFF.toInt()); gravity = Gravity.CENTER
+                      setPadding(18.dp, 9.dp, 18.dp, 9.dp); elevation = 16f
+                      background = GradientDrawable().apply {
+                          cornerRadius = 10.dp.toFloat()
+                          setColor(0xFF2C2C2C.toInt()); setStroke(1.dp, 0xFF666666.toInt())
+                      }
+                      layoutParams = FrameLayout.LayoutParams(
+                          ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT)
+                      visibility = View.GONE
+                  }
+              }
+
+              private fun showPullHint(keyView: TextView, label: String) {
+                  val rl = IntArray(2); rootFrame.getLocationOnScreen(rl)
+                  val kl = IntArray(2); keyView.getLocationOnScreen(kl)
+                  hintBubble.text = label
+                  hintBubble.measure(
+                      View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED),
+                      View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED))
+                  val bw = hintBubble.measuredWidth; val bh = hintBubble.measuredHeight
+                  var x = kl[0] - rl[0] + keyView.width / 2 - bw / 2
+                  x = x.coerceIn(2.dp, maxOf(rootFrame.width - bw - 2.dp, 2.dp))
+                  var y = kl[1] - rl[1] - bh - 6.dp
+                  if (y < 2.dp) y = 2.dp
+                  hintBubble.layoutParams = FrameLayout.LayoutParams(
+                      ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT).apply {
+                      gravity = Gravity.TOP or Gravity.START
+                      leftMargin = x; topMargin = y
+                  }
+                  setPullArmed(false)
+                  dimView.visibility = View.VISIBLE
+                  hintBubble.visibility = View.VISIBLE
+              }
+
+              private fun setPullArmed(a: Boolean) {
+                  if (a == pullArmed) return
+                  pullArmed = a
+                  (hintBubble.background as GradientDrawable).setColor(if (a) 0xFF1565C0.toInt() else 0xFF2C2C2C.toInt())
+              }
+
+              private fun hidePullHint() {
+                  dimView.visibility = View.GONE
+                  hintBubble.visibility = View.GONE
+                  setPullArmed(false)
+              }
+
+              private fun bottomRowTop(): Float {
+                  val loc = IntArray(2); bottomRow.getLocationOnScreen(loc)
+                  return loc[1].toFloat()
               }
 
               // ── Overlay ───────────────────────────────────────────────────────
@@ -552,6 +623,43 @@ jobs:
                       }
                   }
               }
+
+              // Letter key that types on lift, or runs a shortcut when pulled down to the bottom row
+              private fun setupPullKey(view: View, keyView: TextView, letter: Char, label: String, action: () -> Unit) {
+                  keyView.setTag(R.id.original_bg_tag, R.drawable.key_bg)
+                  var startY = 0f; var pulling = false
+                  val showAt = 12.dp.toFloat()
+                  view.setOnTouchListener { _, e ->
+                      when (e.actionMasked) {
+                          MotionEvent.ACTION_DOWN -> { pressKey(keyView); startY = e.rawY; pulling = false; true }
+                          MotionEvent.ACTION_MOVE -> {
+                              if (!pulling && e.rawY - startY > showAt) { pulling = true; showPullHint(keyView, label) }
+                              if (pulling) setPullArmed(e.rawY >= bottomRowTop())
+                              true
+                          }
+                          MotionEvent.ACTION_UP -> {
+                              releaseKey(keyView)
+                              val armed = pulling && e.rawY >= bottomRowTop()
+                              hidePullHint()
+                              if (armed) action() else if (!pulling) typeChar(letter)
+                              pulling = false; true
+                          }
+                          MotionEvent.ACTION_CANCEL -> { releaseKey(keyView); hidePullHint(); pulling = false; true }
+                          else -> true
+                      }
+                  }
+              }
+
+              // ── Shortcut actions ──────────────────────────────────────────────
+
+              private fun syncClip() {
+                  val c = (getSystemService(Context.CLIPBOARD_SERVICE) as? ClipboardManager)
+                      ?.primaryClip?.getItemAt(0)?.coerceToText(this)?.toString()
+                  if (!c.isNullOrEmpty()) addToClipboard(c)
+              }
+              private fun doSelectAll() { currentInputConnection?.performContextMenuAction(android.R.id.selectAll) }
+              private fun doCopy() { currentInputConnection?.performContextMenuAction(android.R.id.copy); bsHandler.postDelayed({ syncClip() }, 50) }
+              private fun doPaste() { currentInputConnection?.performContextMenuAction(android.R.id.paste); syncClip(); clearSugs() }
 
               // ── CLIPBOARD overlay ─────────────────────────────────────────────
 
@@ -786,6 +894,7 @@ jobs:
 
               private fun buildQwerty(): View {
                   val v = layoutInflater.inflate(R.layout.qwerty, null)
+                  bottomRow = v.findViewById(R.id.row_bottom)
                   sugView1 = v.findViewById(R.id.sug1); sugView2 = v.findViewById(R.id.sug2); sugView3 = v.findViewById(R.id.sug3)
                   listOf(sugView1, sugView2, sugView3).forEach { sv ->
                       if (sv == null) return@forEach
@@ -813,15 +922,49 @@ jobs:
                           else -> true
                       }
                   }
+
+                  // ── Del: tap = delete, hold = repeat, swipe left = select then delete on lift
                   val backspace = v.findViewById<TextView>(R.id.btn_backspace)
                   backspace.setTag(R.id.original_bg_tag, R.drawable.key_bg_dark)
+                  var bx = 0f; var bDrag = false; var bRepeated = false; var bAnchor = 0; var bSel = 0
+                  val BDT = 50.dp.toFloat(); val BCI = 20.dp.toFloat(); val BSLOP = 10.dp.toFloat()
                   backspace.setOnTouchListener { _, e ->
                       when (e.actionMasked) {
-                          MotionEvent.ACTION_DOWN -> { pressKey(backspace); sendKey(KeyEvent.KEYCODE_DEL); bsRunnable = object : Runnable { override fun run() { sendKey(KeyEvent.KEYCODE_DEL); bsHandler.postDelayed(this, 50) } }; bsHandler.postDelayed(bsRunnable!!, 300); true }
-                          MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> { releaseKey(backspace); stopBackspaceRepeat(); bsHandler.postDelayed({ updateSuggestions() }, 80); true }
+                          MotionEvent.ACTION_DOWN -> {
+                              pressKey(backspace); bx = e.x; bDrag = false; bRepeated = false; bSel = 0
+                              bsRunnable = object : Runnable { override fun run() { bRepeated = true; sendKey(KeyEvent.KEYCODE_DEL); bsHandler.postDelayed(this, 50) } }
+                              bsHandler.postDelayed(bsRunnable!!, 300); true
+                          }
+                          MotionEvent.ACTION_MOVE -> {
+                              val d = e.x - bx
+                              if (!bRepeated && !bDrag && abs(d) > BSLOP) stopBackspaceRepeat()
+                              if (!bRepeated && !bDrag && d <= -BDT) {
+                                  val ext = currentInputConnection?.getExtractedText(ExtractedTextRequest().apply { token = 0; flags = 0 }, 0)
+                                  if (ext != null) { bAnchor = ext.startOffset + ext.selectionStart; bDrag = true }
+                              }
+                              if (bDrag) {
+                                  val n = if (d <= -BDT) 1 + ((-d - BDT) / BCI).toInt() else 0
+                                  val sel = minOf(n, bAnchor)
+                                  if (sel != bSel) { bSel = sel; currentInputConnection?.setSelection(bAnchor - sel, bAnchor) }
+                              }
+                              true
+                          }
+                          MotionEvent.ACTION_UP -> {
+                              releaseKey(backspace); stopBackspaceRepeat()
+                              if (bDrag) { if (bSel > 0) sendKey(KeyEvent.KEYCODE_DEL) }
+                              else if (!bRepeated) sendKey(KeyEvent.KEYCODE_DEL)
+                              bDrag = false; bSel = 0
+                              bsHandler.postDelayed({ updateSuggestions() }, 80); true
+                          }
+                          MotionEvent.ACTION_CANCEL -> {
+                              releaseKey(backspace); stopBackspaceRepeat()
+                              if (bDrag && bSel > 0) currentInputConnection?.setSelection(bAnchor, bAnchor)
+                              bDrag = false; bSel = 0; true
+                          }
                           else -> true
                       }
                   }
+
                   val spaceView = v.findViewById<TextView>(R.id.btn_space)
                   spaceView.setTag(R.id.original_bg_tag, R.drawable.key_bg_dark)
                   var sx = 0f; var drag = false; var lx = 0f
@@ -841,8 +984,14 @@ jobs:
                   setupPanelKey(v.findViewById(R.id.btn_tools),     R.drawable.key_bg_dark) { showToolsOverlay() }
                   setupPanelKey(v.findViewById(R.id.btn_emoji),     R.drawable.key_bg_dark) { showEmojiOverlay() }
                   setupPanelKey(v.findViewById(R.id.btn_symbols),   R.drawable.key_bg_dark) { showSymbolsOverlay() }
+
+                  // ── Pull-down shortcuts: a = Select all, c = Copy, v = Paste
                   val keyA = v.findViewById<TextView>(R.id.ka); val keyL = v.findViewById<TextView>(R.id.kl)
-                  v.findViewById<View>(R.id.asdf_spacer_left)?.setOnTouchListener { _, e -> when (e.actionMasked) { MotionEvent.ACTION_DOWN -> { keyA?.let { pressKey(it) }; typeChar('a'); true }; MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> { keyA?.let { releaseKey(it) }; true }; else -> true } }
+                  val keyC = v.findViewById<TextView>(R.id.kc); val keyV = v.findViewById<TextView>(R.id.kv)
+                  setupPullKey(keyA, keyA, 'a', "Select all") { doSelectAll() }
+                  setupPullKey(v.findViewById<View>(R.id.asdf_spacer_left), keyA, 'a', "Select all") { doSelectAll() }
+                  setupPullKey(keyC, keyC, 'c', "Copy") { doCopy() }
+                  setupPullKey(keyV, keyV, 'v', "Paste") { doPaste() }
                   v.findViewById<View>(R.id.asdf_spacer_right)?.setOnTouchListener { _, e -> when (e.actionMasked) { MotionEvent.ACTION_DOWN -> { keyL?.let { pressKey(it) }; typeChar('l'); true }; MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> { keyL?.let { releaseKey(it) }; true }; else -> true } }
                   return v
               }
